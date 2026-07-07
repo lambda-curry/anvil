@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: [self-hosted, macos, arm64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
@@ -35,29 +35,6 @@ jobs:
         working-directory: docs-site
         run: npm run build
 
-      - name: Ensure GNU tar
-        if: runner.os == 'macOS'
-        run: |
-          if command -v gtar >/dev/null 2>&1; then
-            echo "$(dirname "$(command -v gtar)")" >> "$GITHUB_PATH"
-            exit 0
-          fi
-
-          cat > "$RUNNER_TEMP/gtar" <<'EOF'
-          #!/bin/bash
-          args=()
-          for arg in "$@"; do
-            if [[ "$arg" == "--hard-dereference" ]]; then
-              continue
-            fi
-            args+=("$arg")
-          done
-
-          exec tar "${args[@]}"
-          EOF
-
-          chmod +x "$RUNNER_TEMP/gtar"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -66,7 +43,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: [self-hosted, macos, arm64]
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

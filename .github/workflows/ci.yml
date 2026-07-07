@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    runs-on: [self-hosted, macos, arm64]
+ validate:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
