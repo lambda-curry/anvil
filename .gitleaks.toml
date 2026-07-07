@@ -1,0 +1,11 @@
+title = "Anvil gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Docs that intentionally contain example or archived sample credentials for audit research"
+paths = [
+  '''(?:^|/)docs/audits/artifacts/''',
+  '''(?:^|/)docs/bootstrap-templates/security-patterns\.md$''',
+]

@@ -1,0 +1,9 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "command": "echo blocked && exit 2"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  poem: false
+  review_status: true
+  review_details: false
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+  path_instructions:
+    - path: "scripts/**/*.ts"
+      instructions: |
+        Focus on audit scoring, report formatting, and CLI behavior. Flag any change that could alter saved report contents, structural lint math, guardrail scoring, or caller-relative artifact paths without matching tests or proof artifacts.
+    - path: "bin/**/*.ts"
+      instructions: |
+        Treat launcher changes as user-facing contract changes. Verify help/version behavior, command wiring, and published-package entrypoints stay aligned with README and getting-started docs.
+    - path: ".github/**/*.yml"
+      instructions: |
+        Treat workflow changes as guardrails. Verify they keep the required validation contract (`bun run lint`, `bun run format:check`, `bun run typecheck`, `bun test`) and preserve `pull_request` plus `merge_group` coverage when merge safety depends on queued merges.
+    - path: "docs/**/*.md"
+      instructions: |
+        When docs define first-user proof, audit semantics, or setup commands, flag any mismatch with README.md, package.json scripts, or the currently pinned published version.

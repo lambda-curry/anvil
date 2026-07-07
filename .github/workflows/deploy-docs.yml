@@ -1,0 +1,76 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs-site/**"
+      - ".github/workflows/deploy-docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: [self-hosted, macos, arm64]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: docs-site
+        run: npm ci
+
+      - name: Build site
+        working-directory: docs-site
+        run: npm run build
+
+      - name: Ensure GNU tar
+        if: runner.os == 'macOS'
+        run: |
+          if command -v gtar >/dev/null 2>&1; then
+            echo "$(dirname "$(command -v gtar)")" >> "$GITHUB_PATH"
+            exit 0
+          fi
+
+          cat > "$RUNNER_TEMP/gtar" <<'EOF'
+          #!/bin/bash
+          args=()
+          for arg in "$@"; do
+            if [[ "$arg" == "--hard-dereference" ]]; then
+              continue
+            fi
+            args+=("$arg")
+          done
+
+          exec tar "${args[@]}"
+          EOF
+
+          chmod +x "$RUNNER_TEMP/gtar"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-site/dist
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, macos, arm64]
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

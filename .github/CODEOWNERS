@@ -1,0 +1,7 @@
+# Require Scout review on the core Anvil surface.
+* @lambda-curry/scout
+
+# Product logic and report generation.
+/scripts/ @lambda-curry/scout
+/docs/ @lambda-curry/scout
+/bin/ @lambda-curry/scout

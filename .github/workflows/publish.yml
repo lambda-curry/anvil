@@ -1,0 +1,99 @@
+name: publish
+
+on:
+  # Auto-publish on merges to main when the publish-relevant surface changes
+  # AND the version in package.json hasn't already been published. This makes
+  # alpha refreshes a normal CI/CD outcome of merging a PR with a version bump,
+  # rather than a separate manual step.
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "bin/**"
+      - "package.json"
+  # Tagged release path stays for explicit version cuts.
+  release:
+    types: [published]
+  # Manual dispatch stays for ad-hoc cases (e.g., re-publishing after a transient failure).
+  workflow_dispatch:
+
+jobs:
+  publish:
+    # ubuntu-latest, not the self-hosted minis: npm's OIDC trusted-publishing exchange only
+    # runs on GitHub-hosted runners. This job is portable (bun install + lint/typecheck/test).
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Trusted publishing (2026-07-03): GitHub mints a short-lived OIDC token asserting
+      # "this is publish.yml on lambda-curry/anvil"; npm exchanges it for a minutes-lived
+      # publish credential. No NPM_TOKEN secret exists anymore — nothing to expire or rotate
+      # (the Apr-18 token's silent expiry killed the alpha.5 publish; this removes the class).
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # `npm publish` is invoked directly below — setup-bun doesn't ship npm,
+      # so install Node here.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm >= 11.5.1 (the OIDC exchange lives in the CLI).
+      - name: Ensure npm supports trusted publishing
+        run: npm install -g npm@latest && npm --version
+
+      # Skip-if-already-published guard. Lets the merge trigger fire safely
+      # on PRs that touch publish-relevant paths but don't bump the version
+      # (e.g., script refactors that don't warrant a new alpha). When the
+      # version is already on npm, exit cleanly instead of failing the run.
+      - name: Check if version already published
+        id: version_check
+        run: |
+          VERSION=$(jq -r .version package.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "@lambdacurry/anvil@$VERSION" version >/dev/null 2>&1; then
+            echo "Version $VERSION already published. Nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Version $VERSION not yet published. Will publish after checks pass."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install dependencies
+        if: steps.version_check.outputs.skip != 'true'
+        run: bun install
+
+      - name: Run lint
+        if: steps.version_check.outputs.skip != 'true'
+        run: bun run lint
+
+      - name: Run typecheck
+        if: steps.version_check.outputs.skip != 'true'
+        run: bun run typecheck
+
+      - name: Run tests
+        if: steps.version_check.outputs.skip != 'true'
+        run: bun test
+
+      - name: Determine npm tag
+        if: steps.version_check.outputs.skip != 'true'
+        id: npm_tag
+        run: |
+          VERSION=${{ steps.version_check.outputs.version }}
+          if [[ "$VERSION" == *"-alpha."* || "$VERSION" == *"-beta."* || "$VERSION" == *"-rc."* ]]; then
+            echo "tag=--tag alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      # No token: trusted publishing authenticates via the job's OIDC identity
+      # (configured on npmjs.com → @lambdacurry/anvil → Trusted Publisher).
+      - name: Publish to npm
+        if: steps.version_check.outputs.skip != 'true'
+        run: npm publish --access public ${{ steps.npm_tag.outputs.tag }}

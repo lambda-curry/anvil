@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Preflight evidence, ephemeral runtime output, never tracked
+cycle-evidence/
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Test / coverage
+coverage/
+
+# Bun
+.bun/
+
+# Docs site
+docs-site/node_modules/
+docs-site/dist/
+docs-site/.astro/
+docs/audits/artifacts/
+
+# Agent-workspace files — never tracked in the product repo (workspace/repo split)
+memory/
+SCRATCHPAD.md
+AGENTS.md
+SOUL.md
+IDENTITY.md
+TOOLS.md
+HEARTBEAT.md
+MEMORY.md
+USER.md
+DREAMS.md
+.project/
+data/
+history/
+notes/
+drift-report*.md

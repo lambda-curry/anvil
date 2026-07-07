@@ -1,0 +1,16 @@
+# Lefthook git hooks for Anvil
+# Installed automatically via `bun install` (prepare script)
+
+pre-commit:
+  commands:
+    format:
+      glob: "*.ts"
+      run: bunx oxfmt --check {staged_files}
+    lint:
+      glob: "*.ts"
+      run: bunx oxlint {staged_files}
+
+pre-push:
+  commands:
+    typecheck:
+      run: bun run typecheck

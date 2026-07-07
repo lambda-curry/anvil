@@ -1,0 +1,14 @@
+---
+description: Cursor guidance for everyday TypeScript edits in this repo
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# TypeScript Workflow
+
+*Last validated: 2026-05-10*
+
+- Edit the source file in `src/`; do not patch built output.
+- Run `bun test` when behavior changes.
+- Run `bunx tsc --noEmit` after type-shape edits.
+- Prefer small pure functions with named exports.

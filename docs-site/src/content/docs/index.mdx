@@ -1,0 +1,54 @@
+---
+title: Anvil
+description: AI rules audit engine — score, detect drift, and improve rules in any AI-assisted codebase
+template: splash
+hero:
+  tagline: Make your AI rules actually work.
+  actions:
+    - text: Get Started
+      link: /anvil/getting-started/installation
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/lambda-curry/anvil
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+Audit AI rule files in any codebase. Score coverage gaps, detect drift, mine PR history for missing rules, and bootstrap new rule sets from your tech stack.
+
+## Start with one real audit
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit \
+  --target . \
+  --ci
+```
+
+This local-only lane gives new users a real report on the first try with just Bun. If you are one directory above the target repo instead, swap `--target .` for `--target ./my-repo`. For the full AI-backed lane or alternate launchers, continue to [Installation](/anvil/getting-started/installation) or [First Audit](/anvil/getting-started/first-audit). If no working provider is available, rerun with `--ci` for deterministic local-only structural lint.
+
+<CardGrid stagger>
+	<Card title="Audit rules" icon="pencil">
+		Score existing rules for coverage gaps, conflicts, drift, and format compliance.
+	</Card>
+	<Card title="Detect drift" icon="warning">
+		Flag stale globs, broken path references, and uncovered patterns.
+	</Card>
+	<Card title="Bootstrap rules" icon="add-document">
+		Generate starter rule sets from your tech stack analysis.
+	</Card>
+	<Card title="Mine PRs" icon="magnifier">
+		Surface recurring review feedback that should become rules.
+	</Card>
+</CardGrid>
+
+## What Anvil checks
+
+- **Coverage gaps** — patterns with no rule protection
+- **Drift** — stale globs, missing paths, outdated references
+- **Conflicts** — contradictory instructions across rule files
+- **Sizing** — rules that bloat context without earning their place
+- **Format** — compliance with rule-writing best practices
+
+Framework-agnostic. Works on any AI-assisted codebase — not just OpenClaw workspaces.

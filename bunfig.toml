@@ -1,0 +1,5 @@
+[test]
+coverage = true
+coverageThreshold = 0.45
+coverageSkipTestFiles = true
+coveragePathIgnorePatterns = ["scripts/lib/ai-synthesis.ts", "scripts/mine-pr-rules.ts"]

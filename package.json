@@ -1,0 +1,75 @@
+{
+  "name": "@lambdacurry/anvil",
+  "version": "0.1.0-alpha.5",
+  "description": "AI rules + engineering guardrails audit engine for AI-assisted codebases",
+  "keywords": [
+    "agents",
+    "ai-rules",
+    "audit",
+    "claude",
+    "cursor"
+  ],
+  "homepage": "https://github.com/lambda-curry/anvil",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lambda-curry/anvil"
+  },
+  "bin": {
+    "anvil": "./bin/anvil.ts"
+  },
+  "files": [
+    "bin",
+    "scripts/audit.ts",
+    "scripts/bootstrap-detect.ts",
+    "scripts/bootstrap-generate.ts",
+    "scripts/drift-detect.ts",
+    "scripts/lib",
+    "scripts/mine-pr-rules.ts",
+    "scripts/verify-first-user-proof.ts",
+    "docs/bootstrap-templates",
+    "docs/getting-started.md",
+    "docs/byok-trust-model.md",
+    "docs/first-user-proof.md",
+    "docs/first-user-proof-packet.md",
+    "docs/proofs/README.md",
+    "docs/proofs/current-outside-tester-send-packet.md",
+    "docs/proofs/first-user-proof-template.md",
+    "docs/rubric.md",
+    "docs/operator-contract.md",
+    "docs/tooling-contract.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "audit": "bun run scripts/audit.ts",
+    "format": "oxfmt --write bin scripts package.json tsconfig.json .github/workflows",
+    "lint": "oxlint --quiet bin scripts",
+    "lint:advisory": "oxlint bin scripts",
+    "format:check": "oxfmt --check bin scripts package.json tsconfig.json .github/workflows",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "verify:first-user-proof": "bun run scripts/verify-first-user-proof.ts",
+    "verify:milestone3-proof-lane": "bun run scripts/verify-milestone3-proof-lane.ts",
+    "verify:proof-lane-docs": "bun run scripts/verify-proof-lane-docs.ts",
+    "verify:self-audit-proof": "bun run scripts/verify-self-audit-proof.ts",
+    "typecheck:strict:share-bundle": "tsc -p tsconfig.strict-share-bundle.json --noEmit",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "bun-types": "^1.3.12",
+    "lefthook": "^2.1.6",
+    "oxfmt": "^0.57.0",
+    "oxlint": "^1.60.0",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=20"
+  },
+  "packageManager": "bun@1.3.13"
+}

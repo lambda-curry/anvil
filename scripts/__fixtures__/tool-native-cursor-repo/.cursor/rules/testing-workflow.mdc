@@ -1,0 +1,14 @@
+---
+description: Cursor guidance for tests in this repo
+globs: src/**/*.test.ts
+alwaysApply: false
+---
+
+# Test Workflow
+
+*Last validated: 2026-05-10*
+
+- Keep tests next to the production module they exercise.
+- Name the observable behavior in the `describe` block.
+- Add or update one focused assertion per behavior change.
+- Prefer tiny fixtures over broad integration setup in this sample repo.

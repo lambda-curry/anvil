@@ -1,0 +1,1109 @@
+# Anvil
+
+> AI rules audit engine — score, detect drift, and improve rules in any AI-assisted codebase.
+
+> Source: https://lambda-curry.github.io/anvil/
+> Generated: 2026-07-03
+
+## Installation
+
+
+## Start here
+
+If you want the fastest successful first run, start with one local-only command and read the variants below only if you need them:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit --target . --ci
+```
+
+If you are one directory above the repo you want to audit, use `--target ./my-repo` instead.
+
+Need `npx`, global `anvil`, or the full AI-backed lane? The install options below keep those paths, but this is the first command Anvil wants a new user to trust.
+
+> **Proof-lane note:** If you arrived here because someone sent you Anvil's external first-user proof packet, do not switch to the floating `@alpha` commands on this page. Keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note for the full proof run.
+
+## Prerequisites
+
+- [Bun](https://bun.sh) ≥ 1.0
+- Node.js ≥ 20 only if you want to launch the published package with `npx` instead of `bunx`
+- A local repo you want to audit (any codebase with CLAUDE.md, AGENTS.md, `.cursor/rules/`, or similar AI rule files)
+
+You do **not** need an AI provider for a successful first run if you use `--ci`. The full default `audit` path needs a working provider.
+
+## Install options
+
+### Zero-install local-only first pass
+
+No install step, no provider setup required:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo \
+  --ci
+```
+
+### Zero-install full AI-backed audit
+
+Use this when you already have Claude Code, Codex CLI, Gemini CLI, opencode, or `OPENAI_API_KEY` available:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo
+```
+
+### npm launcher (Bun still required)
+
+Use this only if Bun is already installed and you prefer `npx` as the launcher:
+
+```bash wrap
+npx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo
+```
+
+### Global install
+
+```bash wrap
+bun add -g @lambdacurry/anvil@alpha
+anvil audit --target ./my-repo
+```
+
+## Verify the CLI
+
+Use the same launcher you picked above:
+
+### `bunx`
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha --help
+bunx @lambdacurry/anvil@alpha --version
+```
+
+### `npx` (still launches the Bun-native CLI)
+
+```bash wrap
+npx @lambdacurry/anvil@alpha --help
+npx @lambdacurry/anvil@alpha --version
+```
+
+### Global install only
+
+```bash wrap
+anvil --help
+anvil --version
+```
+
+## All commands
+
+> **Note:** If you are using `bunx` or `npx`, keep your chosen launcher prefix when you run these commands. The list below uses the plain `anvil [subcommand]` form for readability.
+
+- `anvil audit` — Full rule audit
+- `anvil drift` — Detect drift in rule surfaces
+- `anvil bootstrap` — Generate starter rules from tech stack
+- `anvil mine-pr` — Mine PR review comments for rule candidates
+
+## Recommended tooling
+
+The published CLI is Bun-native. `npx` is an alternate launcher, not a Node-only compatibility lane. These optional tools unlock more of Anvil's capabilities:
+
+### GitHub CLI (`gh`)
+
+Used by `mine-pr` to fetch PR review comments and cluster recurring feedback into rule candidates.
+
+```bash wrap
+# install
+brew install gh
+gh auth login
+
+# verify
+gh auth status
+```
+
+Without `gh`: `mine-pr` falls back to the GitHub API via `GITHUB_TOKEN` environment variable. With `gh` installed and authenticated, you get a smoother auth flow and higher rate limits.
+
+### AI synthesis (auto-detected)
+
+The default `anvil audit` path is the full AI-backed report. Anvil scans the repo locally, then uses a working AI provider for repo-specific improvement suggestions, prioritization, and natural-language explanations.
+
+Use `--ci` when you want deterministic local-only structural lint instead:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci
+```
+
+You can also force a specific provider. Keep the same launcher you already chose:
+
+```bash wrap
+# bunx
+bunx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo \
+  --ai-provider openai
+
+# npx (Bun still required)
+npx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo \
+  --ai-provider openai
+
+# global install only
+anvil audit \
+  --target ./my-repo \
+  --ai-provider openai
+```
+
+Swap `openai` for `claude-code`, `codex-cli`, `gemini-cli`, or `opencode` as needed.
+
+**Any installed AI coding CLI works automatically.** If you already use Claude Code, Codex, Gemini CLI, or opencode, Anvil can pick it up with zero extra API-key setup.
+
+### What you get at each level
+
+#### Bun installed
+
+`audit --ci`, drift detection, coverage scoring, and bootstrap all work locally with no keys.
+
+#### Bun installed + `gh` CLI authenticated
+
+`mine-pr` gets a smoother auth flow and higher rate limits.
+
+#### Bun installed + any AI coding CLI on `PATH`
+
+The full `audit` path can auto-detect AI synthesis, so you get smarter suggestions with no extra API-key setup.
+
+#### Bun installed + `OPENAI_API_KEY`
+
+The full `audit` path can run through OpenAI models directly.
+
+## Next
+
+Read [First Audit](https://lambda-curry.github.io/anvil/getting-started/first-audit) to run your first audit and understand the output. Keep the same launcher you chose above (`bunx`, `npx`, or global `anvil`) when you move to that page.
+
+## First Audit
+
+
+## Recommended first run
+
+If you want the first real Anvil report with the least setup, start here and keep the same launcher until you see a report:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit --target . --ci
+```
+
+If you are one directory above the target repo, swap `--target .` for `--target ./my-repo`.
+
+> **Proof-lane note:** If you arrived here from [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) or [First User Proof Packet](https://lambda-curry.github.io/anvil/guides/first-user-proof-packet), keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note. The `@alpha` examples below are for general public usage, not for Milestone 3 proof collection.
+
+If you picked `npx` or the global `anvil` install on [Installation](https://lambda-curry.github.io/anvil/getting-started/installation), keep that same launcher here too. The audit flags stay the same; only the executable prefix changes.
+
+Pick one launcher for this page and stick with it. The command should read like one trustworthy next action, not a comparison exercise.
+
+<details>
+<summary>Need the repo-parent, <code>npx</code>, or global <code>anvil</code> variants?</summary>
+
+**`bunx` from one directory above the target repo:**
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo \
+  --ci
+```
+
+**`npx` from the target repo root:**
+
+```bash wrap
+npx @lambdacurry/anvil@alpha audit \
+  --target . \
+  --ci
+```
+
+**`npx` from one directory above the target repo:**
+
+```bash wrap
+npx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo \
+  --ci
+```
+
+**Global `anvil` from the target repo root:**
+
+```bash wrap
+anvil audit \
+  --target . \
+  --ci
+```
+
+**Global `anvil` from one directory above the target repo:**
+
+```bash wrap
+anvil audit \
+  --target ./my-repo \
+  --ci
+```
+
+</details>
+
+**Success looks like this:**
+
+- Anvil prints a markdown report right away
+- you see rule files found, coverage gaps, and drift issues
+- nothing leaves your machine
+
+## If you already have a provider and want the richer report
+
+Start with the full AI-backed audit so you see Anvil's best report on the first run:
+
+**Primary lane (Bun recommended):**
+
+If you are already in the target repo root:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit \
+  --target .
+```
+
+If you are one directory above the target repo:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo
+```
+
+<details>
+<summary>Need the same AI-backed lane with `npx` or global `anvil` instead?</summary>
+
+If Bun is already installed and you prefer a different launcher, keep the same audit path and swap only the executable prefix.
+
+**`npx` from the target repo root:**
+
+```bash wrap
+npx @lambdacurry/anvil@alpha audit \
+  --target .
+```
+
+**`npx` from one directory above the target repo:**
+
+```bash wrap
+npx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo
+```
+
+**Global `anvil` from the target repo root:**
+
+```bash wrap
+anvil audit \
+  --target .
+```
+
+**Global `anvil` from one directory above the target repo:**
+
+```bash wrap
+anvil audit \
+  --target ./my-repo
+```
+
+</details>
+
+If no provider is available, rerun the recommended first run above.
+
+## What happens
+
+1. **Discovery** — Anvil finds all rule surface files (CLAUDE.md, AGENTS.md, `.cursor/rules/`, `ai-rules/`, etc.)
+2. **Drift detection** — stale globs, missing path references, date-stale entries
+3. **Coverage scoring** — gaps against a community baseline of common rule categories
+4. **Report** — scored markdown output to stdout; on the full AI-backed lane, this includes synthesized improvement priorities when a provider is available
+
+## Example output
+
+```text wrap
+Anvil Audit — /path/to/my-repo
+Rule files found: 3
+Guardrail score: 22/35
+
+Coverage gaps:
+  • No rule covers: error handling patterns
+  • No rule covers: security/secrets hygiene
+
+Drift issues (2):
+  • CLAUDE.md:14 — glob 'src/legacy/**' matches 0 files (medium)
+  • AGENTS.md:8 — referenced path 'docs/arch.md' not found (low)
+```
+
+## After your first successful audit
+
+### Save the report
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo \
+  --output ./audit-report.md
+```
+
+The `--output` flag writes the full markdown report to the specified path. Relative paths resolve from your current shell cwd.
+
+### AI provider behavior
+
+The full `audit` path expects a real AI synthesis provider:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha audit \
+  --target ./my-repo
+```
+
+If you have Claude Code, Codex CLI, Gemini CLI, or opencode installed, Anvil uses it automatically. If `OPENAI_API_KEY` is set, it uses OpenAI. If no provider is available, Anvil tells you how to connect one and points you back to `--ci` for the deterministic local-only path.
+
+If you want provider-specific setup details or trust-boundary guidance, see [BYOK & Trust Model](https://lambda-curry.github.io/anvil/guides/byok-trust-model).
+
+### Tune expectations with config
+
+If your repo is a prototype, library, internal tool, or production app, create `.anvil/config.yml` to match:
+
+```yaml wrap
+version: 1
+profile: internal-tool
+hardGates:
+  dimensions:
+    ciDiscipline:
+      minScore: 3
+```
+
+See [Configuration](https://lambda-curry.github.io/anvil/guides/configuration) for copy-paste starting points by repo type.
+
+## Level up: mine PR history
+
+If you have the [GitHub CLI](https://cli.github.com) installed and authenticated, you can surface recurring review feedback that should become rules:
+
+```bash wrap
+bunx @lambdacurry/anvil@alpha mine-pr owner/repo
+```
+
+Anvil fetches merged PR review comments, clusters them by theme, and highlights the highest-frequency patterns that lack rule coverage. See [Mine PR History](https://lambda-curry.github.io/anvil/guides/mine-pr) for full details.
+
+## Troubleshooting
+
+**"No rule files found"** — Your target repo doesn't have AI rule files yet. Use `anvil bootstrap` to generate a starter set.
+
+**`bunx` not found** — Install Bun: `curl -fsSL https://bun.sh/install | bash`
+
+**AI synthesis fails** — Confirm your provider login/key is set and the model name is valid. If you need a deterministic local-only pass, rerun with `--ci`.
+
+## Configuration
+
+
+Use `.anvil/config.yml` to make guardrail scoring match the kind of repo you are auditing. Place it in the target repo root.
+
+## Internal tool
+
+Good default for operator workspaces, internal automation, and agent-facing repos.
+
+```yaml
+version: 1
+profile: internal-tool
+hardGates:
+  dimensions:
+    ciDiscipline:
+      minScore: 3
+    driftResilience:
+      minScore: 3
+```
+
+## Library
+
+Stricter on types and regression discipline for reusable packages.
+
+```yaml
+version: 1
+profile: library
+hardGates:
+  dimensions:
+    typeSafety:
+      minScore: 4
+    testDepth:
+      minScore: 3
+    driftResilience:
+      minScore: 3
+```
+
+## Production app
+
+Use when runtime, release, and security failures can escape the repo.
+
+```yaml
+version: 1
+profile: production-app
+hardGates:
+  dimensions:
+    ciDiscipline:
+      minScore: 4
+    typeSafety:
+      minScore: 4
+    testDepth:
+      minScore: 4
+    security:
+      minScore: 3
+```
+
+## Prototype
+
+Lighter weighting, but still keeps the repo honest about drift and security.
+
+```yaml
+version: 1
+profile: prototype
+hardGates:
+  enabled: false
+```
+
+## Dismiss one dimension
+
+Only use `not-applicable` when the repo truly does not have that surface:
+
+```yaml
+version: 1
+profile: internal-tool
+dimensions:
+  security:
+    applicability: not-applicable
+    reason: "Local operator workspace only, no deployed service or runtime secrets path."
+```
+
+## Schema quick reference
+
+```yaml
+version: 1
+profile: internal-tool
+
+hardGates:
+  enabled: true
+  exitCode: 2
+  dimensions:
+    ciDiscipline:
+      minScore: 3
+
+dimensions:
+  security:
+    applicability: not-applicable
+    reason: "No deployable runtime or secrets surface."
+  testDepth:
+    minScoreHint: 3
+```
+
+### Top-level fields
+
+- `version` — required integer, currently `1`
+- `profile` — optional preset: `internal-tool`, `library`, `production-app`, or `prototype`
+- `hardGates` — optional enforced minimums that can fail CI without hiding the rest of the report
+- `dimensions` — optional per-dimension overrides for applicability, weight, and recommendation floor
+
+### Merge rules
+
+- Missing config file: Anvil uses the built-in defaults
+- Missing `profile`: defaults to `internal-tool`
+- `hardGates.enabled` defaults to `true` when `hardGates` is present
+- `hardGates.exitCode` defaults to `2`
+- `reason` is required when `applicability: not-applicable`
+- a `not-applicable` dimension cannot also be hard-gated
+- `minScore` and `minScoreHint` are integer scores from `0` to `5`
+
+### What each preset emphasizes
+
+- `internal-tool` — drift resilience and practical guardrails for agent/operator repos
+- `library` — stronger type safety and regression discipline for reusable packages
+- `production-app` — higher CI, testing, and security floors for deployed systems
+- `prototype` — lightest posture, good for short-lived spikes
+
+## BYOK & Trust Model
+
+
+*Last validated: 2026-04-23*
+
+## What BYOK means
+
+BYOK = Bring Your Own Keys for the AI-backed synthesis step when you choose a provider that uses API credentials. If you want a fully local no-provider run, use `--ci`.
+
+If you have not decided whether you trust provider-backed synthesis yet, start with `--ci` first. You still get a real report before adding a key or logging into a local AI CLI.
+
+## Default trust boundary
+
+By default, Anvil scans the repo locally, then expects a working AI provider for the final synthesis step:
+
+- You choose the target repo
+- Anvil reads the repo locally
+- Anvil generates the audit locally
+- On the default `audit` path, Anvil may send focused audit context to an auto-detected or explicitly selected provider
+
+```bash
+# privacy-first — zero outbound calls
+bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci
+```
+
+## What stays local
+
+- Source files in the target repo
+- Rule files and agent-instruction files discovered during audit
+- Generated audit artifacts and markdown output
+- Your provider API keys and local environment configuration
+- Git metadata not needed for the audit run
+
+## What may be sent to a provider
+
+Only on the full AI-backed path, Anvil may send a **focused subset of audit context** — relevant rule content, audit findings, and compact synthesized context. Not your entire repository.
+
+## What is never sent
+
+- Your API keys or provider credentials
+- Unrelated project files outside audit context
+- Arbitrary local secrets
+- Git history as part of the normal synthesis flow
+
+## At a glance
+
+| Surface | Local-only (`--ci`) | AI-assisted default `audit` |
+|---|---|---|
+| Repo scanning | stays local | stays local |
+| Drift / coverage scoring | stays local | stays local |
+| Markdown output | stays local | stays local |
+| Provider credentials | stay local | stay local |
+| Synthesis context | not sent | may be sent (opt-in only) |
+
+## FAQ
+
+**Does Anvil require a provider key?** No. `--ci` works without one, and the full path can also use local AI coding CLIs.
+
+**If I set an API key, will Anvil use it automatically?** On the default full `anvil audit` path, it can. Use `--ci` when you want to guarantee no provider involvement.
+
+**Does `--no-ai` still produce a real audit?** Yes — it is a deprecated alias for `--ci`, so the local-only structural lint path still works while the compatibility flag remains.
+
+## First User Proof
+
+
+Use this when you want one honest outside-Lambda-Curry proof that Anvil's first-run path works on a real repo.
+
+## Goal
+
+Capture one real external run that proves:
+
+1. a new user can run Anvil without Scout-internal context
+2. the user reaches a successful audit on their own repo
+3. the returned report suggests at least one plausible next fix
+4. the proof is saved as a small evidence packet instead of disappearing into chat
+
+## When to run this
+
+- after the exact published package version you want to validate is live
+- before Milestone 3 is called complete
+- only with an exact pinned version, never the floating `@alpha` tag
+
+## Exact command to send
+
+Send this opener and one command. It assumes the tester is already in the target repo root, so the saved report lands at `./anvil-audit.md`.
+
+```md
+Could you try one first-run Anvil audit on a real repo of yours?
+Paste the single command below from that repo's root; it saves `./anvil-audit.md`, stays local, and does not require an AI provider.
+Send back whether it worked first try, the first useful fix the report pointed to, and the saved report file or excerpt.
+```
+
+```bash wrap
+bunx @lambdacurry/anvil@<exact-version> audit --target . --ci --output ./anvil-audit.md
+```
+
+If the tester needs a different launcher or shell layout, save that as a deviation in the returned evidence packet instead of sending multiple choices up front. Keep the exact pinned package version and local-only `--ci` flag.
+The pinned `0.1.0-alpha.5` proof packet uses `--ci`.
+
+## Public docs to share with the tester
+
+- [Getting started](https://lambda-curry.github.io/anvil/getting-started/first-audit)
+- [BYOK trust model](https://lambda-curry.github.io/anvil/guides/byok-trust-model)
+
+If the tester opens those docs, tell them to keep using the exact pinned command from the proof packet instead of switching to the floating `@alpha` examples.
+
+## Capture questions
+
+- Did the exact command succeed on the first try?
+- If not, what failed first?
+- If you changed the launcher or command, what did you use instead?
+- Were you in the repo root when you ran it? If not, where were you?
+- What was the first useful fix the report pointed to?
+- What felt confusing, too internal, or too hand-wavy?
+
+## Minimum evidence packet
+
+Keep these together:
+
+1. the install path the tester used: `bunx`, `npx`, or global `anvil`
+2. the exact command the tester ran
+3. the shell layout they used
+4. the pinned CLI version named in the command, plus matching `--version` output if you captured it
+5. whether it succeeded on the first try
+6. one short usefulness/friction quote
+7. one saved report artifact path or screenshot excerpt
+
+If the tester used global `anvil`, keep both the pinned `bun add -g @lambdacurry/anvil@<exact-version>` line and the `anvil audit ...` line together in the saved packet's `Exact command` field.
+
+For a ready-to-send outreach note and fill-in template, use [First User Proof Packet](https://lambda-curry.github.io/anvil/guides/first-user-proof-packet).
+
+Count the returned proof as complete only if the retained audit command keeps the pinned `0.1.0-alpha.5` local-only `--ci` spelling.
+
+## First User Proof Packet
+
+
+Use this as the operator-facing companion to [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof).
+
+## Outreach note
+
+Send this three-line note, then paste the exact command below it:
+
+Could you try one first-run Anvil audit on a real repo of yours?
+
+Paste the single command below from that repo's root; it saves `./anvil-audit.md`, stays local, and does not require an AI provider.
+
+Send back whether it worked first try, the first useful fix the report pointed to, and the saved report file or excerpt.
+
+```bash wrap
+bunx @lambdacurry/anvil@<exact-version> audit --target . --ci --output ./anvil-audit.md
+```
+
+Replace `<exact-version>` with the published build you want validated. The alpha.5 proof packet uses one repo-root saved-report command so the tester is not choosing between layouts.
+The pinned `0.1.0-alpha.5` proof packet uses `--ci`.
+
+Helpful docs:
+- Getting started: https://lambda-curry.github.io/anvil/getting-started/first-audit
+- Trust model: https://lambda-curry.github.io/anvil/guides/byok-trust-model
+
+If you open those docs, please keep using the exact pinned command from this note. The `@alpha` examples are for general public usage, not for this proof run.
+
+What I'd love back:
+1. Whether the exact command worked on the first try
+2. If it did not, what failed first
+3. If you changed the launcher or command, what you used instead
+4. Whether you ran it from the repo root or somewhere else
+5. The first useful fix the report pointed to, if any
+6. Anything that felt confusing, too internal, or too hand-wavy
+7. The saved report file or one report excerpt / screenshot from the run
+
+If you want one extra cross-check, this should print the same pinned version:
+
+```bash wrap
+bunx \
+  @lambdacurry/anvil@<exact-version> \
+  --version
+```
+
+## Operator checklist
+
+- pin one exact published version before sending
+- prefer the Bun-native zero-install path (`bunx`); use `npx` only if the tester already has both Bun and Node and prefers that launcher
+- ask the tester to paste the shared command from the target repo root
+- keep `--output ./anvil-audit.md`
+- do not switch the tester onto the floating `@alpha` tag mid-proof
+- if you want extra verification, plan to capture one matching `--version` line with the same install path the tester used for the audit command, without appending global `anvil` lines to a `bunx` or `npx` packet
+- keep the linked docs on public docs-site URLs and make sure they match the current published behavior
+
+## Evidence template
+
+Save one small packet with these fields:
+
+- `Date`
+- `Tester`
+- `Outside Lambda Curry: yes / no`
+- `Repo tested`
+- `Install path: bunx / npx / global install`
+- `Shell layout: target repo root with --target . / other`
+- `Exact command`
+- `Pinned CLI version`
+- `Observed --version output, if captured`
+- `First-try result: success / failure`
+- `First failure, if any`
+- `First useful next action named by tester`
+- `Confusing wording or friction`
+- `Short quote about usefulness or friction`
+- `Saved report path or screenshot link`
+- `Follow-up issue or doc fix created`
+
+If the tester used global `anvil`, keep both the pinned `bun add -g @lambdacurry/anvil@<exact-version>` line and the `anvil audit ...` line together in `Exact command`. If the tester stayed on `bunx` or `npx`, keep the optional `--version` line on that same launcher instead of switching to global `anvil`.
+If the packet keeps the local report path, keep the same path the retained audit command wrote with `--output`; use a screenshot or approved external link only when the retained artifact is intentionally something else.
+
+Count the proof as complete only if the tester is outside Lambda Curry, the run succeeds on a real repo, the retained audit command keeps the pinned `0.1.0-alpha.5` local-only `--ci` spelling, the packet includes a real artifact, and any rough edge becomes a follow-up.
+
+## Drift Detection
+
+
+## What is rules drift?
+
+Rules drift occurs when AI rule files become misaligned with the codebase they describe. Types of drift:
+
+- **Path drift** — a referenced file path no longer exists
+- **Glob drift** — a glob pattern matches zero files
+- **Command drift** — a referenced command no longer works
+- **Coverage gap** — a codebase pattern has no rule covering it
+- **Date drift** — a rule's validation date exceeds its cadence threshold
+
+## Why it matters
+
+Drifted rules don't just fail to help — they actively mislead. A path drift causes agents to look for files that don't exist. A stale command causes failed tool invocations.
+
+## Running drift detection
+
+```bash
+# standalone drift check
+bunx @lambdacurry/anvil@alpha drift ./my-repo
+
+# drift is also included in the full audit
+bunx @lambdacurry/anvil@alpha audit --target ./my-repo
+```
+
+## What Anvil checks
+
+1. **Glob resolution** — every glob pattern in `.mdc` files is resolved against the actual file tree
+2. **Path existence** — referenced file paths are checked for existence
+3. **Validation dates** — rules with `Last validated` headers are checked against their cadence
+4. **Coverage analysis** — codebase patterns are checked for matching rule coverage
+
+## Interpreting drift output
+
+Each drift issue includes:
+
+- **File and line** — where in the rule file the drifted reference lives
+- **Type** — path, glob, command, coverage, or date
+- **Severity** — low, medium, or high based on impact
+- **Suggestion** — what to fix or remove
+
+## Fixing drift
+
+- **Stale globs** — update the glob pattern or remove the rule section
+- **Missing paths** — update the path reference or confirm the file was intentionally removed
+- **Date drift** — re-validate the rule and update the `Last validated` header
+- **Coverage gaps** — add a new rule or confirm the pattern is out of scope
+
+## Bootstrap Rules
+
+
+## When to use bootstrap
+
+If your repo has no AI rule files yet (no CLAUDE.md, AGENTS.md, `.cursor/rules/`, etc.), bootstrap generates a starter set tailored to your stack.
+
+## Usage
+
+```bash
+bunx @lambdacurry/anvil@alpha bootstrap ./my-repo \
+  --output ./bootstrap-draft.md
+```
+
+## What it detects
+
+Anvil reads signals from your project to determine the tech stack:
+
+- `package.json` — dependencies and scripts
+- `tsconfig.json` — TypeScript configuration
+- Framework configs — Next.js, Remix, Vite, etc.
+- Tool configs — ESLint, Prettier, Tailwind, etc.
+
+## Output
+
+The bootstrap draft includes:
+
+- **Project context rules** — tech stack, build commands, test commands
+- **Coding conventions** — patterns inferred from your tooling
+- **Common guardrails** — based on the detected framework and language
+- **Placeholder sections** — for you to fill in project-specific knowledge
+
+## After bootstrapping
+
+1. Review the generated draft
+2. Fill in project-specific sections (architecture decisions, gotchas, etc.)
+3. Place the final rules in the appropriate locations (CLAUDE.md, AGENTS.md, `.cursor/rules/`)
+4. Run `anvil audit` to score your new rule set
+
+## Mine PR History
+
+
+## What it does
+
+Surfaces recurring PR review feedback that lacks rule coverage. Anvil fetches merged PR review comments, clusters them by theme, and highlights the highest-frequency patterns.
+
+## Usage
+
+```bash
+bunx @lambdacurry/anvil@alpha mine-pr owner/repo
+```
+
+Requires `GITHUB_TOKEN` in your environment:
+
+```bash
+export GITHUB_TOKEN=ghp_...
+bunx @lambdacurry/anvil@alpha mine-pr my-org/my-repo
+```
+
+## How it works
+
+1. **Fetch** — retrieves merged PR review comments via GitHub API
+2. **Cluster** — groups comments by theme (error handling, naming, security, etc.)
+3. **Score** — ranks clusters by frequency and recurrence
+4. **Cross-reference** — checks which clusters lack rule coverage
+5. **Report** — outputs candidates with frequency, examples, and suggested rule text
+
+## Output
+
+Each rule candidate includes:
+
+- **Theme** — what pattern keeps coming up in reviews
+- **Frequency** — how often this feedback appears
+- **Example quotes** — representative review comments
+- **Suggested rule** — draft rule text you can adapt
+- **Coverage status** — whether any existing rule already covers this
+
+## When to use
+
+- **After onboarding** — mine recent PRs to capture institutional knowledge as rules
+- **Periodically** — surface new patterns as the codebase evolves
+- **Before audits** — use mined candidates to fill coverage gaps before running a full audit
+
+## CLI Reference
+
+
+## Global flags
+
+| Flag | Description |
+|---|---|
+| `--help` | Show usage information |
+| `--version` | Print current version |
+
+## `anvil audit`
+
+Run a full rule audit against a target repo.
+
+```bash
+anvil audit --target ./my-repo [options]
+```
+
+| Option | Description |
+|---|---|
+| `--target <path>` | Path to the repo to audit (required) |
+| `--output <path>` | Save report to a file |
+| `--ci` | Deterministic local-only structural lint mode (skips AI synthesis) |
+| `--ai-provider <provider>` | AI provider: `auto` \| `openai` \| `codex-cli` \| `claude-code` \| `gemini-cli` \| `opencode` \| `heuristic` |
+| hidden alias: `--no-ai` | Deprecated compatibility alias for `--ci` |
+| `--ai-model <model>` | Model to use for synthesis (e.g., `gpt-4o`) |
+
+Relative `--target` paths resolve from your current shell cwd.
+
+If you arrived here from the external first-user proof docs, use the exact pinned command from that packet. The current `0.1.0-alpha.5` packet uses the public `--ci` spelling; `--no-ai` remains only as a deprecated compatibility alias.
+
+## `anvil drift`
+
+Detect drift in rule surfaces.
+
+```bash
+anvil drift ./my-repo
+```
+
+Checks glob resolution, path existence, validation dates, and coverage gaps.
+
+## `anvil bootstrap`
+
+Generate starter rule sets from tech stack analysis.
+
+```bash
+anvil bootstrap ./my-repo --output ./bootstrap-draft.md
+```
+
+Reads `package.json`, `tsconfig.json`, and framework configs to generate tailored starter rules.
+
+## `anvil mine-pr`
+
+Mine GitHub PR review comments for rule candidates.
+
+```bash
+anvil mine-pr owner/repo
+```
+
+Requires `GITHUB_TOKEN` in the environment.
+
+## Install methods
+
+```bash
+# Zero-install
+bunx @lambdacurry/anvil@alpha <command>
+
+# npm fallback
+npx @lambdacurry/anvil@alpha <command>
+
+# Global install
+bun add -g @lambdacurry/anvil@alpha
+anvil <command>
+```
+
+## Scoring Rubric
+
+
+Anvil produces two companion scores:
+
+- **Rule Quality Score** (0–100) — how good are the AI rules
+- **Guardrail Readiness Score** (0–35) — how robust are the engineering guardrails
+
+## Quality gate
+
+Every rule must include:
+
+1. A clear **why** — the specific failure mode this rule prevents
+2. A **concrete example** where relevant (DO/DON'T)
+3. An **actionable instruction** — imperative, unambiguous, testable
+
+## Scoring dimensions
+
+Anvil evaluates rules across multiple dimensions:
+
+### Helpfulness
+Does the rule prevent a real, observed failure mode?
+
+### Clarity & actionability
+Clear why, concrete example, actionable instruction.
+
+### Consistency
+No conflicts with other rules in the codebase.
+
+### Maintainability
+One concern per rule. Approximately 50–150 lines as a hygiene guide.
+
+### Drift resistance
+Globs match real files. References are current. Validation dates are fresh.
+
+### Trust boundaries
+Rule provenance tracked. External rules reviewed before adoption.
+
+## Guardrail dimensions
+
+The guardrail readiness score covers:
+
+- CI discipline
+- Type safety
+- Test depth
+- Security
+- Drift resilience
+- Hook coverage
+
+Each dimension contributes to the 0–35 total. Hard gates can enforce minimum scores per dimension via `.anvil/config.yml`.
+
+## What strong rules look like
+
+- one concern per rule or file
+- a concrete failure mode in the `why`
+- imperative, testable instructions
+- examples that show both the right move and the common miss
+- current references, globs, and validation dates so the rule does not silently drift
+
+## Sizing and loading guidance
+
+- target roughly 50–150 lines per rule file or section
+- keep always-on instructions lean; move deep detail into scoped docs or on-demand material
+- use glob-matched rules for framework- or file-type-specific guidance
+- use hooks for truly mandatory enforcement that should not depend on model recall
+
+## Common anti-patterns
+
+- **kitchen-sink rules** — multiple unrelated constraints jammed together
+- **why-less rules** — instructions with no named failure mode
+- **repo drift** — stale paths, stale examples, or docs that no longer match shipped behavior
+- **policy without enforcement** — critical rules with no test, hook, or review backstop
+
+## Review lens
+
+When Anvil scores a rules surface, it is asking:
+
+1. does this rule prevent a real observed failure mode?
+2. is the instruction clear enough to follow on the first pass?
+3. does it stay consistent with neighboring rules?
+4. is the file small and scoped enough to earn its place in context?
+5. do the surrounding engineering guardrails catch what the rules alone will miss?
+
+## Agent Skill
+
+
+Copy the skill below into your agent's instruction file — `CLAUDE.md`, `.cursor/rules/anvil.mdc`, `AGENTS.md`, or any context file your agent reads.
+
+````markdown
+name: anvil
+description: Audit AI rule files for coverage gaps, drift, conflicts, and format compliance. Use Anvil when you need to evaluate or improve the quality of AI instructions in a codebase.
+
+# Anvil — AI Rules Audit
+
+## When to use
+
+- Starting work in a new repo — audit the existing AI rules to understand what's covered and what's missing
+- After modifying AI rule files — verify the changes didn't introduce drift or conflicts
+- Periodically — catch stale globs, broken references, and coverage gaps before they cause problems
+- When onboarding — bootstrap starter rules for a repo that has none
+
+## Install
+
+Zero-install. The default audit path expects either a local AI CLI login or an `OPENAI_API_KEY`; use `--ci` when you specifically want the local-only path.
+
+## Quick audit
+
+`bunx @lambdacurry/anvil@alpha audit --target .`
+
+This runs the full product path: discovers rule files, detects drift, scores coverage, and adds AI-synthesized improvement priorities to the markdown report.
+
+## Save the report
+
+`bunx @lambdacurry/anvil@alpha audit --target . --output ./audit-report.md`
+
+## CI / local-only mode
+
+If you want a deterministic local-only structural lint pass:
+
+`bunx @lambdacurry/anvil@alpha audit --target . --ci`
+
+Auto-detects available local AI CLIs (Claude Code, Codex, Gemini CLI, opencode) or OpenAI by default when you omit `--ci`.
+
+Force a specific provider: `--ai-provider claude-code|codex-cli|gemini-cli|opencode|openai|heuristic`
+
+## Other commands
+
+- `bunx @lambdacurry/anvil@alpha drift .` — detect drift only
+- `bunx @lambdacurry/anvil@alpha bootstrap . --output ./bootstrap-draft.md` — generate starter rules
+- `bunx @lambdacurry/anvil@alpha mine-pr owner/repo` — mine PR history for missing rules (requires gh CLI)
+
+## What to look for in the report
+
+- **Rule Quality Score (0–100)** — overall health of AI rules on the full AI-backed path
+- **Structural Lint Score (0–100)** — local-only score label when you run with `--ci`
+- **Guardrail Readiness Score (0–35)** — engineering guardrail coverage
+- **Coverage gaps** — patterns with no rule protection
+- **Drift issues** — stale globs, broken paths, outdated references
+- **Recommendations** — prioritized improvements
+
+## Trust model
+
+- `--ci` = fully local, zero outbound calls, no data leaves the machine
+- Default `audit` path = auto-detects local AI CLIs first, then OpenAI if API key is set
+- `--no-ai` = hidden deprecated alias for `--ci`
+- Anvil never modifies files in the target repo (read-only audit)
+
+## Repo config
+
+Create `.anvil/config.yml` in the target repo to tune scoring:
+
+```yaml
+version: 1
+profile: internal-tool  # or: library, production-app, prototype
+hardGates:
+  dimensions:
+    ciDiscipline:
+      minScore: 3
+```
+````
+
+## Full docs for agents
+
+If you want an agent to have access to the complete Anvil documentation (all guides, reference, and configuration), fetch the combined markdown bundle:
+
+```bash
+curl -s https://lambda-curry.github.io/anvil/llms-full.txt
+```
+
+For a concise index with links to individual pages:
+
+```bash
+curl -s https://lambda-curry.github.io/anvil/llms.txt
+```
+
+Both follow the [llms.txt convention](https://llmstxt.org) — a standard way for AI agents to discover and consume documentation.
+

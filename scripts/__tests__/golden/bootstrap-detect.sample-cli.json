@@ -1,0 +1,42 @@
+{
+  "projectName": "sample-cli-repo",
+  "projectPath": "<WORKSPACE>/scripts/__fixtures__/sample-cli-repo",
+  "packageManager": "bun",
+  "runtime": "bun",
+  "framework": "none",
+  "frameworkVersion": null,
+  "routerType": "unknown",
+  "ui": [],
+  "styling": [],
+  "orm": null,
+  "validation": [
+    "zod"
+  ],
+  "testing": "vitest",
+  "typescript": {
+    "present": true,
+    "strict": true,
+    "paths": false,
+    "esm": true
+  },
+  "configFiles": [
+    "biome.json",
+    "vitest.config.ts"
+  ],
+  "dirPatterns": [],
+  "scripts": {
+    "build": "bun build src/cli.ts --outfile dist/cli.js",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check ."
+  },
+  "dependencies": [
+    "commander",
+    "zod"
+  ],
+  "devDependencies": [
+    "biome",
+    "typescript",
+    "vitest"
+  ]
+}

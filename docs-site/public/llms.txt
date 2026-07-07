@@ -1,0 +1,21 @@
+# Anvil
+
+> AI rules audit engine — score, detect drift, and improve rules in any AI-assisted codebase.
+
+Anvil audits CLAUDE.md, .cursor/rules, AGENTS.md, and other AI rule files for coverage gaps, drift, conflicts, and format compliance. Zero-install, no API keys required for the baseline audit. Works with any codebase.
+
+
+- [Installation](https://lambda-curry.github.io/anvil/getting-started/installation): Install Anvil via bunx, npx, or global install
+- [First Audit](https://lambda-curry.github.io/anvil/getting-started/first-audit): Run your first Anvil audit and understand the output
+- [Configuration](https://lambda-curry.github.io/anvil/guides/configuration): Configure Anvil audit profiles and hard gates via .anvil/config.yml
+- [BYOK & Trust Model](https://lambda-curry.github.io/anvil/guides/byok-trust-model): What stays local and what is sent when using Anvil's optional AI synthesis
+- [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof): Capture one clean outside-user proof against one exact published Anvil build
+- [First User Proof Packet](https://lambda-curry.github.io/anvil/guides/first-user-proof-packet): Copy-paste outreach note and compact evidence template for the first outside-user proof
+- [Drift Detection](https://lambda-curry.github.io/anvil/guides/drift-detection): Detect stale globs, broken paths, and uncovered patterns in your AI rules
+- [Bootstrap Rules](https://lambda-curry.github.io/anvil/guides/bootstrap): Generate starter AI rule sets from your tech stack
+- [Mine PR History](https://lambda-curry.github.io/anvil/guides/mine-pr): Surface recurring review feedback that should become AI rules
+- [CLI Reference](https://lambda-curry.github.io/anvil/reference/cli): Complete Anvil CLI command reference
+- [Scoring Rubric](https://lambda-curry.github.io/anvil/reference/rubric): How Anvil scores rules and guardrails
+- [Agent Skill](https://lambda-curry.github.io/anvil/reference/agent-skill): Copy-paste skill for AI agents to run Anvil audits. Add to CLAUDE.md, .cursor/rules, or any agent instruction file.
+
+[Full documentation as a single file](https://lambda-curry.github.io/anvil/llms-full.txt)

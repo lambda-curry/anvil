@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: anvil-lint
+        name: anvil lint
+        entry: bun run lint
+        language: system
+        pass_filenames: false
+      - id: anvil-typecheck
+        name: anvil typecheck
+        entry: bun run typecheck
+        language: system
+        pass_filenames: false
+      - id: anvil-test
+        name: anvil test
+        entry: bun test
+        language: system
+        pass_filenames: false

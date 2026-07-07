@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run:*)",
+      "Bash(bun test:*)",
+      "Bash(git status:*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)"
+    ],
+    "deny": [
+      "Bash(npm publish:*)",
+      "Bash(bun publish:*)",
+      "Bash(git push:*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "python3 - <<'PY'
+import json, sys
+payload = json.load(sys.stdin)
+cmd = payload.get('tool_input', {}).get('command', '')
+blocked = ['npm publish', 'bun publish', 'git push', 'rm -rf']
+if any(token in cmd for token in blocked):
+    print('blocked: prevent high-risk shell actions without an explicit human handoff')
+    raise SystemExit(2)
+PY"
+      }
+    ]
+  }
+}

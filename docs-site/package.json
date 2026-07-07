@@ -1,0 +1,19 @@
+{
+  "name": "@lambdacurry/anvil-docs",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "prebuild": "bash scripts/generate-agent-docs.sh",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.38.5",
+    "astro": "^6.2.2",
+    "sharp": "^0.34.5"
+  }
+}
