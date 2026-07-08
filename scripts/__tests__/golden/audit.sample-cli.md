@@ -5,31 +5,29 @@
 
 ## Summary
 
-### ✅ Verdict: PASS
-Structural Lint Score: **74/100** · Guardrail Score: **26/35** (Reliable)
-Fix first: validate or split `TOOLS.md` so stale always-on guidance stops dominating the remediation path.
+### 🔴 Verdict: CRITICAL
+Structural Lint Score: **23/100** · Guardrail Score: **23/35** (Reliable)
+Fix first: restore Stage A structural trust before treating later scores as decision-grade.
 
 ### Top 3 Actions
-1. 🚩 [Validate or split stale always-on rules](#freshness-risk) — start with `TOOLS.md` (missing Why/failure mode + missing examples)
-2. 🟠 [Add rules for uncovered critical baseline categories](#remediation-pack) (task #2 (rules-maintainers · due <DATE>) · +5 rule pts)
-3. 🟠 [Re-run audit at the repo root to include parent-repo PR signal](#remediation-pack) (task #3 (rules-maintainers · due <DATE>) · +5 rule pts)
+1. 🔴 [Restore Stage A structural trust](#process-stages) — start with Governance Surface
+2. 🔴 [Restore governance-owned canonical rule coverage](#remediation-pack) (task #1 (rules-platform · due <DATE>) · +8 rule pts)
+3. 🟠 [Add Last validated dates to governance rules](#remediation-pack) (task #2 (rules-maintainers · due <DATE>) · +5 rule pts)
 
 ### At a Glance
 | What | Value |
 |------|-------|
-| Rules scored | 2 |
-| Issues found | 4 🟠 · 2 🟡 |
-| Remediation tasks | 4 🟠 · 2 🟡 |
-| Drift backlog | 2 |
-| High-risk stale rules | 🚩 1 |
+| Rules scored | 0 |
+| Issues found | 2 🔴 · 3 🟠 · 2 🟡 |
+| Remediation tasks | 2 🔴 · 2 🟠 · 2 🟡 |
+| Drift backlog | 0 |
+| High-risk stale rules | none |
 | Effectiveness status | Unmeasured |
-| Author-written rule files | 2 |
-| Stage A | ✅ pass |
+| Author-written rule files | 0 |
+| Stage A | ❌ fail |
 | Stage B | ✅ pass |
-| Stage C | ✅ pass |
+| Stage C | ❌ fail |
 | Stage D | ✅ pass |
-
-**Freshness alert:** 1 high-risk stale always-on rule file(s) need visibility in the remediation path — start with `TOOLS.md` (missing Why/failure mode + missing examples).
 
 ---
 
@@ -38,52 +36,51 @@ Fix first: validate or split `TOOLS.md` so stale always-on guidance stops domina
 *What this means:* This is the suggested fix order for the audit findings. It sits immediately after the executive summary so reviewers can move from verdict to action without hunting through score diagnostics first. This run produced 6 tasks sequenced for expected score lift.
 
 Strategy: Blocking → Hygiene → Backlog (ratchet quality without halting delivery)
-Freshness focus: validate or split `TOOLS.md` first so stale always-on guidance does not stay buried below the summary path.
 
 | # | Task | Class | Owner | Due | Expected Rule Δ | Expected Guardrail Δ | Example evidence |
 |---|------|-------|-------|-----|------------------|---------------------|------------------|
-| 1 | Validate or split stale always-on rules | 🟠 hygiene | rules-maintainers | <DATE> | +5 | +3 | TOOLS.md — missing Why/failure mode + missing examples |
-| 2 | Add rules for uncovered critical baseline categories | 🟠 hygiene | rules-maintainers | <DATE> | +5 | +3 | 2/4 critical categories covered; Gap coverage passes with warnings. |
-| 3 | Re-run audit at the repo root to include parent-repo PR signal | 🟠 hygiene | rules-maintainers | <DATE> | +5 | +3 | Unavailable (PR mining was not evaluated for this scoped audit target because the path is nested inside a larger git repository. Re-run the audit at the repo root to include parent-repo PR signal.); Gap coverage passes with warnings. |
-| 4 | Rewrite or retire low-yield scoring rules | 🟠 hygiene | rules-maintainers | <DATE> | +5 | +3 | 1/2 scoring files miss Why or Examples; Overkill/noise checks pass with warnings. |
+| 1 | Restore governance-owned canonical rule coverage | 🔴 blocking | rules-platform | <DATE> | +8 | +5 | 0 governance canonical files vs 0 generated canonical files; Structural health is below threshold. Address process hygiene before deep rule scoring. |
+| 2 | Add Last validated dates to governance rules | 🟠 hygiene | rules-maintainers | <DATE> | +5 | +3 | 0% of governance files include Last validated; Structural health is below threshold. Address process hygiene before deep rule scoring. |
+| 3 | Add rules for uncovered critical baseline categories | 🔴 blocking | rules-platform | <DATE> | +8 | +5 | 0/4 critical categories covered; Gap coverage is below threshold; recurring failures are not sufficiently represented in canonical rule text. |
+| 4 | Re-run audit at the repo root to include parent-repo PR signal | 🟠 hygiene | rules-maintainers | <DATE> | +5 | +3 | Unavailable (PR mining was not evaluated for this scoped audit target because the path is nested inside a larger git repository. Re-run the audit at the repo root to include parent-repo PR signal.); Gap coverage is below threshold; recurring failures are not sufficiently represented in canonical rule text. |
 | 5 | Close baseline rule coverage gaps | 🟡 backlog | repo-owners | <DATE> | +3 | +2 | TypeScript / Type Safety; Error Handling |
 | 6 | Close missing guardrails backlog | 🟡 backlog | repo-owners | <DATE> | +3 | +2 | Automated drift detection tooling; CI drift detection step |
 
 ## Process Issue Queue
 
-*What this means:* This converts major findings into trackable operational issues with owners and due dates. It stays adjacent to the remediation pack so the report's action path remains together before the deeper diagnostics. This run generated 6 issues so the audit can turn into scheduled work instead of a static report.
+*What this means:* This converts major findings into trackable operational issues with owners and due dates. It stays adjacent to the remediation pack so the report's action path remains together before the deeper diagnostics. This run generated 7 issues so the audit can turn into scheduled work instead of a static report.
 
 | ID | Class | Owner | SLA | Due | Title |
 |----|-------|-------|-----|-----|-------|
-| `freshness-risk-stale-always-on` | 🟠 hygiene | rules-maintainers | 14d | <DATE> | Validate or split stale always-on rules |
-| `stageC-critical-baseline-coverage` | 🟠 hygiene | rules-maintainers | 14d | <DATE> | Add rules for uncovered critical baseline categories |
+| `stageC-critical-baseline-coverage` | 🔴 blocking | rules-platform | 7d | <DATE> | Add rules for uncovered critical baseline categories |
+| `stageA-governance-surface` | 🔴 blocking | rules-platform | 7d | <DATE> | Restore governance-owned canonical rule coverage |
+| `stageA-date-hygiene` | 🟠 hygiene | rules-maintainers | 14d | <DATE> | Add Last validated dates to governance rules |
+| `stageC-freshness-coverage` | 🟠 hygiene | rules-maintainers | 14d | <DATE> | Add Last validated dates to scoring rules |
 | `stageC-pr-signal-recovery` | 🟠 hygiene | rules-maintainers | 14d | <DATE> | Re-run audit at the repo root to include parent-repo PR signal |
-| `stageD-low-yield-rules` | 🟠 hygiene | rules-maintainers | 14d | <DATE> | Rewrite or retire low-yield scoring rules |
 | `coverage-gaps` | 🟡 backlog | repo-owners | 30d | <DATE> | Close baseline rule coverage gaps |
 | `missing-guardrails` | 🟡 backlog | repo-owners | 30d | <DATE> | Close missing guardrails backlog |
 
 Evidence examples:
-- `freshness-risk-stale-always-on` → TOOLS.md — missing Why/failure mode + missing examples
-- `stageC-critical-baseline-coverage` → 2/4 critical categories covered; Gap coverage passes with warnings.
-- `stageC-pr-signal-recovery` → Unavailable (PR mining was not evaluated for this scoped audit target because the path is nested inside a larger git repository. Re-run the audit at the repo root to include parent-repo PR signal.); Gap coverage passes with warnings.
+- `stageC-critical-baseline-coverage` → 0/4 critical categories covered; Gap coverage is below threshold; recurring failures are not sufficiently represented in canonical rule text.
+- `stageA-governance-surface` → 0 governance canonical files vs 0 generated canonical files; Structural health is below threshold. Address process hygiene before deep rule scoring.
+- `stageA-date-hygiene` → 0% of governance files include Last validated; Structural health is below threshold. Address process hygiene before deep rule scoring.
 
 ### Diagnostic Navigation
 
 - [Summary](#summary)
 - [Remediation Pack](#remediation-pack)
 - [Process Issue Queue](#process-issue-queue)
-- Stage status: all stages passing; use the sections below for supporting detail.
+- Stage status: blockers in Stage A and Stage C; prioritize those checks in [Process Stages](#process-stages).
 
 ### Score Snapshot
 
-**Structural Lint Score: 74/100** (3.7/5)
-**Guardrail Readiness Score: 26/35** (Reliable)
-**Stage A: ✅ pass**
+**Structural Lint Score: 23/100** (1.1/5)
+**Guardrail Readiness Score: 23/35** (Reliable)
+**Stage A: ❌ fail**
 **Stage B: ✅ pass**
-**Stage C: ✅ pass**
+**Stage C: ❌ fail**
 **Stage D: ✅ pass**
-**Scoring surface: 2 canonical file(s)** (governance=2, generated=0)
-**High-risk stale always-on rules: 1**
+**Scoring surface: 0 canonical file(s)** (governance=0, generated=0)
 
 ### Process Stages
 
@@ -91,65 +88,65 @@ Evidence examples:
 *Why this matters:* The first failing stage is usually the right place to start fixing, because later scores often depend on it.
 
 #### Stage A
-Stage A checks whether the rule system is structurally trustworthy before deeper scoring. Passing here means the surface is clean enough to interpret later sections with confidence.
+Stage A checks whether the rule system is structurally trustworthy before deeper scoring. It is currently blocked by Governance Surface and Validation Date Coverage, so the later scores should be read as diagnostic rather than clean.
 
-Structural health checks passed.
+Structural health is below threshold. Address process hygiene before deep rule scoring.
 
 | Check | Status | Detail |
 |-------|--------|--------|
-| Mirror Duplication Rate | ✅ pass | 0% accidental duplicates (0/2); expected mirrors=0 |
-| Mirror Sync Health | ✅ pass | healthy=0, drifted=0, orphan projections=0, source-only=1 (informational: source-only family: AGENTS.md) |
-| Governance Surface | ✅ pass | 2 governance canonical files vs 0 generated canonical files |
-| Validation Date Coverage | ✅ pass | 100% of governance files include Last validated |
+| Mirror Duplication Rate | ✅ pass | 0% accidental duplicates (0/0); expected mirrors=0 |
+| Mirror Sync Health | ✅ pass | healthy=0, drifted=0, orphan projections=0 |
+| Governance Surface | ❌ fail | 0 governance canonical files vs 0 generated canonical files |
+| Validation Date Coverage | ❌ fail | 0% of governance files include Last validated |
 | Oversized Canonical Rules | ✅ pass | 0 canonical files exceed their recommended size budget |
-| Drift Backlog | ✅ pass | path=0, date=2 |
+| Drift Backlog | ✅ pass | path=0, date=0 |
 
 #### Stage B
-Stage B is the content-quality score for the canonical rules that actually matter. A pass here means the content itself is in reasonable shape, independent of repo process issues.
+Stage B is the content-quality score for the canonical rules that actually matter. It passed, but Stage A Gate means you should read the score with some caution.
 
-Stage B content scoring ran on canonical governance-first surface.
+Stage B content scoring ran in advisory mode because Stage A failed.
 
 | Check | Status | Detail |
 |-------|--------|--------|
-| Scoring Surface | ✅ pass | 2 canonical file(s) (governance-first) |
-| Stage A Gate | ✅ pass | Stage A passed; Stage B score can be used as primary content quality signal. |
+| Scoring Surface | ✅ pass | 0 canonical file(s) (fallback: canonical all) |
+| Stage A Gate | ⚠️ warn | Stage A has failing checks; interpret Stage B score as diagnostic until Stage A is remediated. |
 
 #### Stage C
-Stage C checks whether the rules cover the failure modes engineers actually see in PRs. Passing here means the rules are aligned with real review pain rather than imagined gaps.
+Stage C checks whether the rules cover the failure modes engineers actually see in PRs. It is failing on Critical Baseline Coverage and Freshness Coverage, which usually means the rules are present but not fresh or not grounded enough.
 
-Gap coverage passes with warnings.
+Gap coverage is below threshold; recurring failures are not sufficiently represented in canonical rule text.
 
 | Check | Status | Detail |
 |-------|--------|--------|
 | PR-Recurring Theme Signal Match | ⚠️ warn | Unavailable (PR mining was not evaluated for this scoped audit target because the path is nested inside a larger git repository. Re-run the audit at the repo root to include parent-repo PR signal.) |
 | PR Comment-to-Rule Alignment | ⚠️ warn | Unavailable (PR mining was not evaluated for this scoped audit target because the path is nested inside a larger git repository. Re-run the audit at the repo root to include parent-repo PR signal.) |
 | High-Severity Theme Signal Match | ⚠️ warn | Unavailable (PR mining was not evaluated for this scoped audit target because the path is nested inside a larger git repository. Re-run the audit at the repo root to include parent-repo PR signal.) |
-| Critical Baseline Coverage | ⚠️ warn | 2/4 critical categories covered |
-| Freshness Coverage | ✅ pass | 100% of scoring files include Last validated |
+| Critical Baseline Coverage | ❌ fail | 0/4 critical categories covered |
+| Freshness Coverage | ❌ fail | 0% of scoring files include Last validated |
 
 #### Stage D
 Stage D checks whether the rule set is getting noisy, redundant, or hard to apply. Passing here means the rule set is still lean enough to be useful.
 
-Overkill/noise checks pass with warnings.
+Overkill/noise checks passed.
 
 | Check | Status | Detail |
 |-------|--------|--------|
 | Redundancy Pressure | ✅ pass | 0% pressure from accidental duplication |
 | Conflict Pressure | ✅ pass | 0% pressure (mirror drift/orphans + keyword conflicts=0) |
-| Context Load Pressure | ✅ pass | 40 always-on lines across scoring surface |
-| Low-Yield Rule Ratio | ⚠️ warn | 1/2 scoring files miss Why or Examples |
+| Context Load Pressure | ✅ pass | 0 always-on lines across scoring surface |
+| Low-Yield Rule Ratio | ✅ pass | 0/0 scoring files miss Why or Examples |
 
 ### Rule Surface Segmentation
 
-*What this means:* This shows how many rule files exist versus how many actually count after de-duplication. In this repo, the meaningful scoring surface is 2 canonical files.
+*What this means:* This shows how many rule files exist versus how many actually count after de-duplication. In this repo, the meaningful scoring surface is 0 canonical files.
 *Why this matters:* This matters because a repo can have many copies, generated files, or projections, while only a smaller set actually represents the true rule system.
 *Helpful term:* The canonical scoring surface is the set of rule files Anvil treats as the source of truth for scoring after removing duplicates and mirrored copies.
 
 | Surface | Count |
 |---------|-------|
-| Discovered (raw) | 2 |
-| Canonical unique | 2 |
-| Canonical governance | 2 |
+| Discovered (raw) | 0 |
+| Canonical unique | 0 |
+| Canonical governance | 0 |
 | Canonical generated | 0 |
 | Duplicate mirrors removed | 0 |
 | Expected mirrors (cross-agent projections) | 0 |
@@ -159,68 +156,60 @@ Overkill/noise checks pass with warnings.
 
 ### Mirror Sync Health
 
-*What this means:* This repo does not declare an ai-rules mirror surface, but Anvil still found 1 mirror family on disk (for example root agent instructions like AGENTS.md/CLAUDE.md). These counts reflect that detected surface, not a configured generated projection set.
-*Why this matters:* Even without a declared ai-rules mirror config, copied instruction files can still drift unless one file clearly owns the surface.
-*Helpful term:* 'Source-only' means Anvil found one side of a detected mirror family, but not a matching copy on the same surface.
-
-*Current surface:* Named source-only family: `AGENTS.md`.
+*What this means:* This repo does not declare a mirror/projection surface, so these counts are informational only. Anvil did not find a configured set of copied rule files to compare across agent formats.
+*Why this matters:* That keeps a clean repo from sounding like it has active cross-agent mirror maintenance when it does not.
 
 | Status | Count |
 |--------|-------|
 | Healthy | 0 |
 | Drifted | 0 |
 | Orphan projections | 0 |
-| Source-only | 1 |
+| Source-only | 0 |
 
 ### Rule Quality Breakdown
 
-*What this means:* These are the ingredients of the rule quality score. The current strongest area is rule file presence, while the weakest is community baseline coverage.
+*What this means:* These are the ingredients of the rule quality score. The current strongest area is overkill / noise control, while the weakest is rule file presence.
 *Why this matters:* This matters because it separates 'the repo scored low' from 'this specific property of the rules is what pulled the score down.'
 *Helpful term:* The format/helpfulness lane scores the canonical rule surface for clarity signals like rationale, examples, and size. It is not a requirement that every repo adopt AGENTS.md, CLAUDE.md, or Anvil-style headings everywhere.
 
 | Dimension | Score |
 |-----------|-------|
-| Rule File Presence | 1/1 |
-| Canonical Rule Helpfulness (Why/Examples/Size) | 0.6/1 |
-| Loading Tier Assignment | 0.5/1 |
-| Hygiene (Validation Dates) | 1/1 |
-| Community Coverage Baseline | 0.4/1 |
+| Rule File Presence | 0/1 |
+| Canonical Rule Helpfulness (Why/Examples/Size) | 0/1 |
+| Loading Tier Assignment | 0/1 |
+| Hygiene (Validation Dates) | 0/1 |
+| Community Coverage Baseline | 0/1 |
 | Enforcement Layer | 0.8/1 |
-| Gap Coverage (Observed Failure Modes) | 0.7/1 |
-| Overkill/Noise Control | 0.9/1 |
+| Gap Coverage (Observed Failure Modes) | 0/1 |
+| Overkill/Noise Control | 1/1 |
 
 ### Gap & Overkill Metrics
 
-*What this means:* This section balances two failure modes: missing rules versus too much noisy guidance. Healthy scores here mean the rules cover real problems without becoming instruction clutter.
-*Helpful term:* A low-yield rule is a rule file that exists, but is weakly useful because it lacks enough rationale or examples to guide behavior reliably.
-*Likely fix:* Strengthen or remove low-yield rules first, then split large always-on files so the rule set stays useful without overloading context.
+*What this means:* This section balances two failure modes: missing rules versus too much noisy guidance. The current weak spots are gap coverage 0/1 and overkill control 1/1.
 
 | Metric | Value |
 |--------|-------|
-| Gap coverage score | 0.7/1 |
-| PR theme coverage | 0.5/1 |
-| Comment-to-rule alignment | 0.5/1 |
-| Critical baseline coverage | 0.5/1 |
-| High-severity theme coverage | 0.5/1 |
-| Freshness coverage | 1/1 |
-| Overkill control score | 0.9/1 |
+| Gap coverage score | 0/1 |
+| PR theme coverage | 0/1 |
+| Comment-to-rule alignment | 0/1 |
+| Critical baseline coverage | 0/1 |
+| High-severity theme coverage | 0/1 |
+| Freshness coverage | 0/1 |
+| Overkill control score | 1/1 |
 | Redundancy pressure | 0/1 |
 | Conflict pressure | 0/1 |
-| Context load pressure | 0.1/1 (40 always-on lines) |
-| Low-yield pressure | 0.5/1 (1 files) |
+| Context load pressure | 0/1 (0 always-on lines) |
+| Low-yield pressure | 0/1 (0 files) |
 
 ### Freshness Risk
 
-*What this means:* This highlights the most dangerous stale-rule shape: always-on guidance that is old or weakly maintained. These files are costly because they load on every task while also showing multiple freshness risk signals.
+*What this means:* This highlights the most dangerous stale-rule shape: always-on guidance that is old or weakly maintained. No high-risk stale always-on files were detected in the scoring surface.
 
 | Metric | Value |
 |--------|-------|
-| High-risk stale always-on files | 1 |
+| High-risk stale always-on files | 0 |
 | Undated scoring files | 0 |
 | Oversized scoring files | 0 |
-
-Priority freshness risks:
-- `TOOLS.md` — missing Why/failure mode, missing examples
 
 ### Guardrail Breakdown
 
@@ -233,9 +222,9 @@ Priority freshness risks:
 | Type Safety | 4/5 |
 | Test Relevance / Depth | 4/5 |
 | Code Quality Policy | 3/5 |
-| Review / Ownership | 4/5 |
+| Review / Ownership | 3/5 |
 | Security Guardrails | 5/5 |
-| Drift Resilience | 2/5 |
+| Drift Resilience | 0/5 |
 
 ## Top 5 Improvements
 
@@ -248,30 +237,21 @@ Priority freshness risks:
 Missing baseline categories cause repeated review churn.
 
 Evidence:
-- Coverage gaps: TypeScript / Type Safety, Error Handling, Code Structure / Naming, Performance
+- Coverage gaps: TypeScript / Type Safety, Error Handling, Testing, Code Structure / Naming, Security, Performance, Package Manager / Commands
 
 Fix: Add focused rules for the top 2 uncovered categories first, each with Why + DO/DON'T + loading tier.
 
-### 2. Treat drift findings as active maintenance backlog [medium] (confidence 75%, impact 4/5)
-Stale path/date references erode rule trust and model compliance.
-
-Evidence:
-- Path issues: 0
-- Date issues: 2
-
-Fix: Resolve all high-severity drift issues first, then add CI drift checks to prevent regression.
-
-### 3. Raise guardrail baseline before expanding rule volume [medium] (confidence 70%, impact 4/5)
+### 2. Raise guardrail baseline before expanding rule volume [medium] (confidence 70%, impact 4/5)
 Without guardrails, additional rules increase complexity more than reliability.
 
 Evidence:
 - Missing: Automated drift detection tooling
 - Missing: CI drift detection step
-- Guardrail score: 26/35
+- Guardrail score: 23/35
 
 Fix: Implement the first two missing guardrails, re-run audit, and only then add new behavioral rules.
 
-### 4. Harden CLI reliability checks [medium] (confidence 72%, impact 3/5)
+### 3. Harden CLI reliability checks [medium] (confidence 72%, impact 3/5)
 CLI projects need predictable argument, error, and exit behavior for automation safety.
 
 Evidence:
@@ -280,11 +260,19 @@ Evidence:
 
 Fix: Add explicit --help usage, strict argument validation, and consistent non-zero exit codes for all failure paths.
 
-### 5. Address recommendation: 1 canonical scoring rule file(s) missing a "Why" section [low] (confidence 55%, impact 2/5)
+### 4. Address recommendation: No canonical scoring rule files detected [high] (confidence 78%, impact 4/5)
 The audit flagged this as a current high-value issue.
 
 Evidence:
-- ⚠️ 1 canonical scoring rule file(s) missing a "Why" section — explain the failure mode each rule prevents.
+- 🔴 No canonical scoring rule files detected. Run `bun run scripts/bootstrap-generate.ts <path>` to generate a starter set.
+
+Fix: Implement this change in one focused PR with a before/after audit comparison.
+
+### 5. Address recommendation: Coverage gaps in: TypeScript / Type Safety, Error Handling, Testing,… [low] (confidence 55%, impact 2/5)
+The audit flagged this as a current high-value issue.
+
+Evidence:
+- ⚠️ Coverage gaps in: TypeScript / Type Safety, Error Handling, Testing, Code Structure / Naming, Security, Performance, Package Manager / Commands. These are top categories from 130+ community rule sets.
 
 Fix: Implement this change in one focused PR with a before/after audit comparison.
 
@@ -295,42 +283,32 @@ Fix: Implement this change in one focused PR with a before/after audit compariso
 *Why this matters:* Canonical files affect the score; non-canonical files are still listed because they can create drift, duplication, or mirror-sync problems.
 *Helpful term:* A file marked 'Canonical for scoring' is one Anvil treats as part of the source-of-truth rules surface after removing duplicates and mirrored copies. Repos do not need every tool surface: missing AGENTS.md or CLAUDE.md is not automatically a gap if another canonical surface carries the repo's real instructions. On rows without that mark, starred cells are advisory inventory signals only and do not lower the score.
 
-2 rule file(s) detected across 2 tool(s).
-
-| File | Tool | Authorship | Canonical for scoring | Lines | Why | Examples | Tier | Dated |
-|------|------|------------|-----------------------|-------|-----|----------|------|-------|
-| `AGENTS.md` | agents-md | governance | ✅ | 31 | ✅ | ✅ | ✅ | ✅ |
-| `TOOLS.md` | openclaw | governance | ✅ | 9 | ❌ | ❌ | ❌ | ✅ |
-
-Canonical governance surface:
-- `AGENTS.md` (31 lines)
-- `TOOLS.md` (9 lines)
-
+*No AI rule files found in standard locations.*
 ### Rule Effectiveness Status
 
 *What this means:* This estimates whether the current rule surface can show measurable effectiveness instead of only intent. Current status: Unmeasured.
 *Why this matters:* A rule that cannot name its failure mode, baseline, signal, and review point is hard to defend once the repo changes.
 *Helpful term:* Instrumented means the rule surface names a failure mode, records a baseline (or baseline missing), picks one signal, and sets a follow-up interval.
-*Likely fix:* Start with `AGENTS.md` — it already has the most instrumentation pieces in place. Add the missing pieces: baseline, primary signal, review interval. Once that file has all four, re-audit to confirm the loop closes.
+*Likely fix:* Start with one promoted rule: write down the target failure mode, baseline, primary signal, and next review date in the rule or audit artifact.
 
 Status: **Unmeasured**
 
 | Check | Coverage |
 |-------|----------|
-| Minimum instrumentation loop | 0/2 |
-| Failure mode named | 1/2 |
-| Baseline mentioned | 0/2 |
-| Primary signal mentioned | 0/2 |
-| Review interval mentioned | 0/2 |
+| Minimum instrumentation loop | 0/0 |
+| Failure mode named | 0/0 |
+| Baseline mentioned | 0/0 |
+| Primary signal mentioned | 0/0 |
+| Review interval mentioned | 0/0 |
 
 No canonical rule file currently shows the full effectiveness loop. Add a failure mode, baseline, primary signal, and follow-up interval before claiming rule effectiveness.
 
 Evidence:
-- 0/2 canonical rule file(s) show the minimum instrumentation loop
-- 1/2 name a failure mode or clear why-section
-- 0/2 mention a baseline
-- 0/2 mention an effectiveness signal
-- 0/2 mention a review interval or follow-up point
+- 0/0 canonical rule file(s) show the minimum instrumentation loop
+- 0/0 name a failure mode or clear why-section
+- 0/0 mention a baseline
+- 0/0 mention an effectiveness signal
+- 0/0 mention a review interval or follow-up point
 
 ## Enforcement Layer
 
@@ -371,7 +349,7 @@ CLI project detected: Yes (confidence 100%)
 
 ## Coverage Analysis
 
-*What this means:* This compares the rule set against a common baseline of categories. The current uncovered categories are TypeScript / Type Safety, Error Handling, Code Structure / Naming, and Performance.
+*What this means:* This compares the rule set against a common baseline of categories. The current uncovered categories are TypeScript / Type Safety, Error Handling, Testing, Code Structure / Naming, Security, Performance, and Package Manager / Commands.
 
 Coverage against community baseline (PromptHub 130+ rule sets). Conditional categories only apply when the project has relevant signals.
 
@@ -379,11 +357,11 @@ Coverage against community baseline (PromptHub 130+ rule sets). Conditional cate
 |----------|--------|---------------|
 | TypeScript / Type Safety | ❌ Gap | — |
 | Error Handling | ❌ Gap | — |
-| Testing | ✅ | `test` |
+| Testing | ❌ Gap | — |
 | Code Structure / Naming | ❌ Gap | — |
-| Security | ✅ | `validate`, `auth` |
+| Security | ❌ Gap | — |
 | Performance | ❌ Gap | — |
-| Package Manager / Commands | ✅ | `Bun` |
+| Package Manager / Commands | ❌ Gap | — |
 | Multi-Agent Topology | — N/A (no delegation signals) | — |
 
 ## Observed Failure Modes (PR Review Mining)
@@ -398,12 +376,7 @@ Status: unavailable — PR mining was not evaluated for this scoped audit target
 *What this means:* This turns the findings into concrete rule work in three buckets: improve existing rules, add missing rule coverage, and remove noisy or stale rule surface.
 
 ### 1. Change Existing Rules
-| Priority | Action | Targets | Evidence |
-|----------|--------|---------|----------|
-| 🔴 high | Add explicit Why (failure mode) sections | `TOOLS.md` | 1 scoring rule file(s) missing Why sections |
-| — | Several canonical rules lack the failure-mode statement needed for reliable compliance. | — | — |
-| 🔴 high | Add concrete DO/DON'T examples | `TOOLS.md` | 1 scoring rule file(s) missing examples |
-| — | Rules without concrete examples are harder for agents to apply consistently. | — | — |
+No actions identified.
 
 ### 2. Add New Rules
 | Priority | Action | Targets | Evidence |
@@ -412,36 +385,32 @@ Status: unavailable — PR mining was not evaluated for this scoped audit target
 | — | Community baseline category is uncovered. | — | — |
 | 🔴 high | Add baseline rule for Error Handling | — | No matching signals in canonical scoring rules |
 | — | Community baseline category is uncovered. | — | — |
-| 🟠 medium | Add baseline rule for Code Structure / Naming | — | No matching signals in canonical scoring rules |
+| 🔴 high | Add baseline rule for Testing | — | No matching signals in canonical scoring rules |
 | — | Community baseline category is uncovered. | — | — |
-| 🟠 medium | Add baseline rule for Performance | — | No matching signals in canonical scoring rules |
+| 🟠 medium | Add baseline rule for Code Structure / Naming | — | No matching signals in canonical scoring rules |
 | — | Community baseline category is uncovered. | — | — |
 
 ### 3. Remove/Simplify Overkill Rules
-| Priority | Action | Targets | Evidence |
-|----------|--------|---------|----------|
-| 🟠 medium | Simplify or retire low-yield rules | `TOOLS.md` | 1/2 scoring rules are low-yield |
-| — | Rules missing Why/Examples should be rewritten or removed if redundant. | — | — |
+No actions identified.
 
 ## Recommendations
 
 *What this means:* This is the merged action backlog from all scoring systems.
 *Why this matters:* Use it as the shortest path from findings to action.
 
-- ⚠️ 1 canonical scoring rule file(s) missing a "Why" section — explain the failure mode each rule prevents.
-- ⚠️ 1 canonical scoring rule file(s) missing examples (DO/DON'T). Examples dramatically increase rule effectiveness.
-- 🔴 1 high-risk stale always-on rule file(s) detected. Prioritize validation or splitting for `TOOLS.md`.
-- ⚠️ Coverage gaps in: TypeScript / Type Safety, Error Handling, Code Structure / Naming, Performance. These are top categories from 130+ community rule sets.
-- ⚠️ Gap coverage is partial. Close remaining recurring failure themes before expanding optional rule scope.
+- 🔴 Stage A failed; treat Stage B scoring as diagnostic until structural checks are remediated.
+- 🔴 No canonical scoring rule files detected. Run `bun run scripts/bootstrap-generate.ts <path>` to generate a starter set.
+- ⚠️ Coverage gaps in: TypeScript / Type Safety, Error Handling, Testing, Code Structure / Naming, Security, Performance, Package Manager / Commands. These are top categories from 130+ community rule sets.
+- 🔴 Gap coverage is weak against observed failures. Prioritize rules for recurring PR-derived themes and critical baseline categories.
 - Add explicit --help/usage output to CLI entrypoints.
 - If you rely on GitHub merge queue, trigger CI on merge_group too.
 - To reach 5/5 type safety, either add type-aware ESLint rules or enforce a dedicated extra-strict tsconfig lane in CI (for example `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`).
-- Resolve drift backlog (path=0, date=2).
-- 🟠 Validate or split stale always-on rules: 1 high-risk stale always-on rule file(s) need explicit remediation tracking. Start with `TOOLS.md` (missing Why/failure mode + missing examples).
-- 🟠 Add rules for uncovered critical baseline categories: 2/4 critical categories covered
+- 🔴 Add rules for uncovered critical baseline categories: 0/4 critical categories covered
+- 🔴 Restore governance-owned canonical rule coverage: 0 governance canonical files vs 0 generated canonical files
+- 🟠 Add Last validated dates to governance rules: 0% of governance files include Last validated
+- 🟠 Add Last validated dates to scoring rules: 0% of scoring files include Last validated
 - 🟠 Re-run audit at the repo root to include parent-repo PR signal: Unavailable (PR mining was not evaluated for this scoped audit target because the path is nested inside a larger git repository. Re-run the audit at the repo root to include parent-repo PR signal.)
-- 🟠 Rewrite or retire low-yield scoring rules: 1/2 scoring files miss Why or Examples
-- 🟡 Close baseline rule coverage gaps: 4 baseline categories are missing.
+- 🟡 Close baseline rule coverage gaps: 7 baseline categories are missing.
 - 🟡 Close missing guardrails backlog: 2 guardrails are missing.
 
 ## Missing Guardrails

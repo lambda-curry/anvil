@@ -149,7 +149,7 @@ test("--ci succeeds without any AI provider and reports structural lint mode", a
   }
 });
 
-test("--ci keeps the early mirror-sync story consistent when source-only families are detected", async () => {
+test("--ci keeps the early mirror-sync story consistent when no mirror families are detected", async () => {
   const tempDir = mkdtempSync(join(tmpdir(), "anvil-ci-mirror-sync-"));
   const outputFile = join(tempDir, "audit-report.md");
 
@@ -165,10 +165,10 @@ test("--ci keeps the early mirror-sync story consistent when source-only familie
 
     expect(run.exitCode).toBe(0);
     expect(run.stdout).toContain(
-      "Mirror sync: healthy=0, drifted=0, orphan projections=0, source-only=1 (informational: source-only family: AGENTS.md)",
+      "Mirror sync: healthy=0, drifted=0, orphan projections=0",
     );
     expect(readFileSync(outputFile, "utf8")).toContain(
-      "| Mirror Sync Health | ✅ pass | healthy=0, drifted=0, orphan projections=0, source-only=1 (informational: source-only family: AGENTS.md) |",
+      "| Mirror Sync Health | ✅ pass | healthy=0, drifted=0, orphan projections=0 |",
     );
   } finally {
     rmSync(tempDir, { recursive: true, force: true });

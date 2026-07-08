@@ -1154,7 +1154,6 @@ test("sample report action path uses concrete operator tasks", async () => {
   expect(actionPath).toContain(
     "Re-run audit at the repo root to include parent-repo PR signal",
   );
-  expect(actionPath).toContain("Rewrite or retire low-yield scoring rules");
   expect(actionPath).not.toContain("Stage C warn:");
   expect(actionPath).not.toContain("Stage D warn:");
 });

@@ -2,11 +2,6 @@
 
 AI rules and engineering guardrails audit engine. Anvil optimizes project outcomes — quality, reliability, and maintainability — by auditing what exists, detecting drift, scoring guardrail readiness, and giving concrete improvement paths grounded in observed failure modes.
 
-> **Charter:** Scout/Anvil | **Status:** Active — Report as Decision Tool shipped · Current: collect outside-Lambda-Curry first-run proof on pinned `0.1.0-alpha.5`
-> **Verification:** CI artifact (audit report) + downstream observed impact in rule quality
-
-Anvil is not primarily a UI project. Its real proof surface is whether downstream outputs and consumers reflect the intended rule behavior correctly.
-
 ## What Anvil Does
 
 Rules and guardrails in AI-assisted codebases accumulate organically. Contradictions emerge. Patterns go stale. Safety nets drift. Repeated PR feedback never becomes a durable standard. Anvil closes that loop.
@@ -22,37 +17,24 @@ Rules and guardrails in AI-assisted codebases accumulate organically. Contradict
 **Framework-agnostic.** Works on any AI-assisted codebase, not just OpenClaw workspaces.  
 **User-directed.** Users select which repos to evaluate — Anvil scores and recommends, does not self-select targets.
 
-## Current delivery posture
+## Start with one real audit
 
-Anvil now follows the shared exploration delivery model.
+If you want the first trustworthy command before you read deeper docs, start here:
 
-- **Cycle mode** still comes from the charter (`explore` / `align`)
-- **Delivery policy** lives in the registry under `deliveryPolicy`
-- **Verification defaults** live in the registry under `verificationDefaults`
+```bash
+# already in the target repo root
+bunx @lambdacurry/anvil@alpha audit --target . --ci
+```
 
-Current Anvil verification posture:
+That path stays local, skips AI synthesis, and still gives you a real markdown audit report on the first run.
 
-- `previewExpected: never`
-- default proof: `downstreamObserved`
-- additional proof: `ciArtifact`
+Next steps:
 
-## Current execution focus
+- [Getting started](https://lambda-curry.github.io/anvil/getting-started/first-audit) — first-run walkthrough and troubleshooting
+- [Installation](https://lambda-curry.github.io/anvil/getting-started/installation) — `bunx`, global install, and `npx` launcher options
+- [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) — use this only when you are collecting the pinned external proof packet
 
-- **Milestone 3 proof lane:** the remaining unchecked gate is one outside-Lambda-Curry first run on pinned `@lambdacurry/anvil@0.1.0-alpha.5`
-- **Active repo-side lane while Milestone 3 stays external:** keep the first-user proof packet sharp, capture returned evidence under `docs/proofs/`, and keep the public repo-facing contract honest
-- **Current checked-in self-audit:** `docs/audits/anvil-audit-2026-07-02.md` reports `98/100` Structural Lint, `35/35` Guardrail Readiness, `0` issues, and `0` remediation tasks on current `main`, and now names `AGENTS.md` as the single informational `source-only` mirror family
-- **Recently shipped:** `.anvil/config.yml` profile + hard-gate support is live in the audit pipeline, with config validation, profile-aware scoring, report rendering, and non-zero hard-gate exits
-- **Milestone 3 posture:** the publish refresh is done; the honest remaining path is one pinned outside-user run plus a retained evidence packet
-- **Current proof packet:** `@lambdacurry/anvil@0.1.0-alpha.5` uses one canonical repo-root command, saves `./anvil-audit.md`, and stays on the public `--ci` local-only spelling. The external proof lane should stay pinned to this exact version.
-- **Cycle policy:** keep unchanged external dependencies honest, but do not spend repeat cycles re-proving the same published-package behavior unless the build changes
-
-Why:
-
-- the meaningful proof is usually a produced report, rule output, or downstream consumer seeing the intended result
-- visual review is not the primary correctness surface here
-
-Shared contracts:
-
+If you are here because someone sent you the external proof lane, keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that packet instead of the floating `@alpha` examples in this README.
 
 ## Project structure
 
@@ -186,6 +168,17 @@ For first-run setup and CI/lint guidance, see:
 - [`docs/byok-trust-model.md`](https://lambda-curry.github.io/anvil/guides/byok-trust-model) — what stays local vs what is sent in AI-assisted mode
 - [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) — lightweight checklist for capturing the first real external success case against one pinned published package version
 - [First User Proof Packet](https://lambda-curry.github.io/anvil/guides/first-user-proof-packet) — copy-paste outreach note plus a compact evidence template for that first external run
+
+## Maintainer notes
+
+This repo still has an active Scout/Anvil charter behind it, but that charter state is secondary to the public product path above.
+
+- **Status:** Report as Decision Tool shipped; current charter follow-through is to collect outside-Lambda-Curry first-run proof on pinned `0.1.0-alpha.5`
+- **Verification posture:** CI artifact (audit report) + downstream observed impact in rule quality
+- **Current checked-in self-audit:** `docs/audits/anvil-audit-2026-07-02.md` reports `98/100` Structural Lint, `35/35` Guardrail Readiness, `0` issues, and `0` remediation tasks on current `main`
+- **Current proof packet:** `docs/proofs/current-outside-tester-send-packet.md` keeps the external proof lane on one canonical repo-root command that saves `./anvil-audit.md`; the pinned packet stays on `@lambdacurry/anvil@0.1.0-alpha.5`
+
+Anvil is not primarily a UI project. Its real proof surface is whether downstream outputs and consumers reflect the intended rule behavior correctly.
 
 ## Using Anvil
 

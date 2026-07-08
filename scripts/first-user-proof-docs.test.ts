@@ -28,9 +28,10 @@ function expectAll(text: string, snippets: string[]) {
 
 test("README and repo mirrors keep the alpha.5 proof lane pinned", () => {
   const readme = readRepoFile("README.md");
-  const goals = readRepoFile("data/goals.md");
-  const roadmap = readRepoFile(".project/ROADMAP.md");
-  const blockers = readRepoFile(".project/BLOCKERS.md");
+  const gettingStarted = readRepoFile("docs/getting-started.md");
+  const sendPacket = readRepoFile(
+    "docs/proofs/current-outside-tester-send-packet.md",
+  );
 
   expectAll(readme, [
     `collect outside-Lambda-Curry first-run proof on pinned \`${version}\``,
@@ -40,23 +41,16 @@ test("README and repo mirrors keep the alpha.5 proof lane pinned", () => {
     "--ci --output ./anvil-audit.md",
   ]);
 
-  expectAll(goals, [
-    `@lambdacurry/anvil@${version}`,
-    "one canonical repo-root `bunx` command",
-    `not on re-proving the already-verified alpha.${version.split("alpha.")[1]} path.`,
+  expectAll(gettingStarted, [
+    `published \`${version}\` proof packet uses one canonical repo-root \`bunx\` command`,
+    `--version\` prints \`${version}\``,
+    `${exactVersionPackageToken} audit --target . --ci --output ./anvil-audit.md`,
   ]);
 
-  expectAll(roadmap, [
+  expectAll(sendPacket, [
     `@lambdacurry/anvil@${version}`,
-    "one canonical repo-root command",
-    "guaranteed `./anvil-audit.md` output",
-    "outside-Lambda-Curry first-user run against that pinned published build",
-  ]);
-
-  expectAll(blockers, [
-    `@lambdacurry/anvil@${version}`,
-    "saved report header stays caller-portable at repo root",
-    "## Artifacts` links stay caller-relative",
+    "This packet stays pinned",
+    "--output ./anvil-audit.md",
   ]);
 });
 
