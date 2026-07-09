@@ -45,8 +45,12 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       # Trusted publishing needs npm >= 11.5.1 (the OIDC exchange lives in the CLI).
+      # Pinned to the npm 11 line (2026-07-09): trusted publishing needs >= 11.5.1, but
+      # `npm@latest` made the gate hostage to majors — npm 12.0.0 shipped day-one broken
+      # (`Cannot find module 'sigstore'` inside libnpmpublish's provenance path) and killed
+      # the alpha.6 publish. Bump deliberately after a new major has settled, never implicitly.
       - name: Ensure npm supports trusted publishing
-        run: npm install -g npm@latest && npm --version
+        run: npm install -g npm@11 && npm --version
 
       # Skip-if-already-published guard. Lets the merge trigger fire safely
       # on PRs that touch publish-relevant paths but don't bump the version
