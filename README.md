@@ -175,7 +175,7 @@ This repo still has an active Scout/Anvil charter behind it, but that charter st
 
 - **Status:** Report as Decision Tool shipped; current charter follow-through is to collect outside-Lambda-Curry first-run proof on pinned `0.1.0-alpha.5`
 - **Verification posture:** CI artifact (audit report) + downstream observed impact in rule quality
-- **Current checked-in self-audit:** `docs/audits/anvil-audit-2026-07-02.md` reports `98/100` Structural Lint, `35/35` Guardrail Readiness, `0` issues, and `0` remediation tasks on current `main`
+- **Current checked-in self-audit:** `docs/audits/anvil-audit-2026-07-09.md` reports `98/100` Structural Lint, `35/35` Guardrail Readiness, `0` issues, and `0` remediation tasks on current `main`
 - **Current proof packet:** `docs/proofs/current-outside-tester-send-packet.md` keeps the external proof lane on one canonical repo-root command that saves `./anvil-audit.md`; the pinned packet stays on `@lambdacurry/anvil@0.1.0-alpha.5`
 
 Anvil is not primarily a UI project. Its real proof surface is whether downstream outputs and consumers reflect the intended rule behavior correctly.

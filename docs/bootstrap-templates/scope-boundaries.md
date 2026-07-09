@@ -136,7 +136,7 @@ Scope boundaries and high-stakes registries are complementary but distinct:
 
 A scope boundary rule says "don't touch production config." A high-stakes registry says "if you're about to run a migration, show me the diff first." Both are needed.
 
-Reference: `docs/patterns/high-stakes-registry.md` (Goal 66)
+Reference: pair this template with a repo-local high-stakes operations rule when the project has migrations, payments, production deploys, or other irreversible actions that should require explicit confirmation.
 
 ---
 
@@ -155,6 +155,6 @@ The bootstrap generator should include this template when:
 
 - `docs/rubric.md` §Part 6 — Scope Boundary Declarations
 - `docs/rubric.md` §Part 9 — Reliability Lens
-- `docs/patterns/high-stakes-registry.md` (pending Atticus gate)
+- Add a companion high-stakes operations rule in the target repo when migrations, billing, production deploys, or destructive admin actions need explicit confirmation
 - Research Digest #13 — Agentic Workflow Reliability
 - Concentrix "12 Failure Patterns of Agentic AI Systems" (Nov 2025)
