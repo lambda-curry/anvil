@@ -24,7 +24,7 @@ Replace `<exact-version>` with the specific published build you want validated. 
 
 Helpful docs:
 - Getting started: https://lambda-curry.github.io/anvil/getting-started/first-audit
-  - If you open it, keep using the exact pinned command from this note. That guide's `@alpha` examples are for general public usage, not for this proof run.
+  - If you open it, keep using the exact pinned command from this note. That guide's unpinned examples are for general public usage, not for this proof run.
 - Trust model: https://lambda-curry.github.io/anvil/guides/byok-trust-model
 
 What I'd love back:
@@ -128,7 +128,7 @@ bun run verify:first-user-proof -- docs/proofs/YYYY-MM-DD-<tester>-first-user-pr
 ```
 
 The validator returns a deterministic `counts` / `does-not-count` result and names the missing proof fields or contract mismatches directly.
-For the current pinned `0.1.0-alpha.5` proof lane, that includes checking that the retained audit command keeps the packet's `--ci` spelling.
+For the current pinned `0.1.0-alpha.6` proof lane, that includes checking that the retained audit command keeps the packet's `--ci` spelling.
 When the packet keeps a local report artifact, it also requires `Saved report path or screenshot link` to match the retained audit command's `--output` path.
 
 Save one small packet with these fields:

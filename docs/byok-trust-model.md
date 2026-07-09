@@ -18,17 +18,17 @@ By default, Anvil scans your repo locally, then expects a working AI provider fo
 
 If you want the privacy-first path, run:
 
-> **Current alpha note:** The published `0.1.0-alpha.5` proof packet uses one canonical repo-root `bunx` command with `--ci --output ./anvil-audit.md`. Packaged relative `--target` and `--output` paths still resolve from your shell cwd, so normal repo-relative first-run commands are honest when you use `@alpha`.
+> **Current alpha note:** The published `0.1.0-alpha.6` proof packet uses one canonical repo-root `bunx` command with `--ci --output ./anvil-audit.md`. Packaged relative `--target` and `--output` paths still resolve from your shell cwd, so normal repo-relative first-run commands are honest when you use the unpinned command (it tracks the latest published build).
 
 ```bash
 # zero-install
-bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci
+bunx @lambdacurry/anvil audit --target ./my-repo --ci
 
 # npm launcher fallback (Bun still required)
-npx @lambdacurry/anvil@alpha audit --target ./my-repo --ci
+npx @lambdacurry/anvil audit --target ./my-repo --ci
 
 # or, if installed globally
-bun add -g @lambdacurry/anvil@alpha
+bun add -g @lambdacurry/anvil
 anvil audit --target ./my-repo --ci
 ```
 
@@ -96,7 +96,7 @@ That means the operator, not Anvil, chooses whether any external provider is inv
 
 - Use **`--ci`** when you need a fully local audit with no provider calls.
 - Use the default **`anvil audit`** path when you want the full repo-specific synthesis layer.
-- Good first run for your own evaluation: if a provider is already available, start with the default `audit` path; if you want the local-only baseline first, run `bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci` (or `anvil ...` after global install, or `npx ...` once Bun is installed) and then upgrade to the full path later.
+- Good first run for your own evaluation: if a provider is already available, start with the default `audit` path; if you want the local-only baseline first, run `bunx @lambdacurry/anvil audit --target ./my-repo --ci` (or `anvil ...` after global install, or `npx ...` once Bun is installed) and then upgrade to the full path later.
 - For an external first-user proof, default to one exact pinned `bunx @lambdacurry/anvil@<exact-version> audit ... --no-ai` command. If the tester already has both Bun and Node and explicitly prefers `npx`, the same command shape works there too; use [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) for the exact repo-root vs parent-directory command to send.
 
 ## Quick FAQ

@@ -81,16 +81,18 @@ jobs:
         if: steps.version_check.outputs.skip != 'true'
         run: bun test
 
+      # Every publish moves `latest` (2026-07-09): the tool is alpha-only, and a stale `latest`
+      # (it pointed at 0.1.0-alpha.1 for months) meant a bare `bunx @lambdacurry/anvil` handed
+      # improvising testers an ancient build. Docs use bare commands (= latest) for general usage
+      # and exact-pinned versions for the proof lane; the old floating `@alpha` tag is retired
+      # (frozen at 0.1.0-alpha.5, no longer referenced anywhere). Trusted publishing can't run
+      # `npm dist-tag add` (the OIDC credential only covers publish), so the tag set at publish
+      # time IS the tag policy — which is exactly why `latest` must be the default here.
       - name: Determine npm tag
         if: steps.version_check.outputs.skip != 'true'
         id: npm_tag
         run: |
-          VERSION=${{ steps.version_check.outputs.version }}
-          if [[ "$VERSION" == *"-alpha."* || "$VERSION" == *"-beta."* || "$VERSION" == *"-rc."* ]]; then
-            echo "tag=--tag alpha" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=" >> "$GITHUB_OUTPUT"
-          fi
+          echo "tag=" >> "$GITHUB_OUTPUT"
 
       # No token: trusted publishing authenticates via the job's OIDC identity
       # (configured on npmjs.com → @lambdacurry/anvil → Trusted Publisher).

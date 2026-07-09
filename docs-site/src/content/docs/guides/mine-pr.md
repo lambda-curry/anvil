@@ -10,14 +10,14 @@ Surfaces recurring PR review feedback that lacks rule coverage. Anvil fetches me
 ## Usage
 
 ```bash
-bunx @lambdacurry/anvil@alpha mine-pr owner/repo
+bunx @lambdacurry/anvil mine-pr owner/repo
 ```
 
 Requires `GITHUB_TOKEN` in your environment:
 
 ```bash
 export GITHUB_TOKEN=ghp_...
-bunx @lambdacurry/anvil@alpha mine-pr my-org/my-repo
+bunx @lambdacurry/anvil mine-pr my-org/my-repo
 ```
 
 ## How it works

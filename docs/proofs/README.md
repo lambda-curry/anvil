@@ -36,7 +36,7 @@ bun run verify:first-user-proof -- docs/proofs/YYYY-MM-DD-<tester>-first-user-pr
 
 The verifier ships with the published Anvil package as well as this repo checkout, so the same command stays valid from either Anvil package root.
 It validates against the saved packet's `Pinned CLI version`, not whatever version `package.json` reaches later on current `main`.
-For the current pinned `0.1.0-alpha.5` proof lane, it also requires the retained audit command to keep the pinned local-only `--ci` spelling from the packet.
+For the current pinned `0.1.0-alpha.6` proof lane, it also requires the retained audit command to keep the pinned local-only `--ci` spelling from the packet.
 When the packet keeps a local report artifact, it also checks that `Saved report path or screenshot link` matches the retained audit command's `--output` path.
 
 The command returns a deterministic `counts` / `does-not-count` result with explicit failures, so the proof decision does not live only in human interpretation.

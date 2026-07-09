@@ -10,7 +10,7 @@ If your repo has no AI rule files yet (no CLAUDE.md, AGENTS.md, `.cursor/rules/`
 ## Usage
 
 ```bash
-bunx @lambdacurry/anvil@alpha bootstrap ./my-repo \
+bunx @lambdacurry/anvil bootstrap ./my-repo \
   --output ./bootstrap-draft.md
 ```
 

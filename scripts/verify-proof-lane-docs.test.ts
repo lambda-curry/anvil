@@ -9,7 +9,7 @@ test("public proof-lane docs keep one local-only contract", () => {
   const result = validateProofLaneDocs();
   const requiredChecks = [
     "index.mdx keeps homepage first-audit block block 1 on the expected wrapped command lines",
-    "first-audit.md contains not for Milestone 3 proof collection",
+    "first-audit.md contains not for pinned proof collection",
     `first-user-proof.md contains ${threeLineOpener[0]}`,
     "first-user-proof.md keeps first-user-proof guide block 1 on the expected wrapped command lines",
     "first-user-proof-packet.md contains one repo-root saved-report command",

@@ -8,12 +8,12 @@ description: Run your first Anvil audit and understand the output
 If you want the first real Anvil report with the least setup, start here and keep the same launcher until you see a report:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit --target . --ci
+bunx @lambdacurry/anvil audit --target . --ci
 ```
 
 If you are one directory above the target repo, swap `--target .` for `--target ./my-repo`.
 
-> **Proof-lane note:** If you arrived here from [First User Proof](/anvil/guides/first-user-proof) or [First User Proof Packet](/anvil/guides/first-user-proof-packet), keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note. The `@alpha` examples below are for general public usage, not for pinned proof collection.
+> **Proof-lane note:** If you arrived here from [First User Proof](/anvil/guides/first-user-proof) or [First User Proof Packet](/anvil/guides/first-user-proof-packet), keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note. The unpinned examples below are for general public usage, not for pinned proof collection.
 
 If you picked `npx` or the global `anvil` install on [Installation](/anvil/getting-started/installation), keep that same launcher here too. The audit flags stay the same; only the executable prefix changes.
 
@@ -25,7 +25,7 @@ Pick one launcher for this page and stick with it. The command should read like 
 **`bunx` from one directory above the target repo:**
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit \
+bunx @lambdacurry/anvil audit \
   --target ./my-repo \
   --ci
 ```
@@ -33,7 +33,7 @@ bunx @lambdacurry/anvil@alpha audit \
 **`npx` from the target repo root:**
 
 ```bash wrap
-npx @lambdacurry/anvil@alpha audit \
+npx @lambdacurry/anvil audit \
   --target . \
   --ci
 ```
@@ -41,7 +41,7 @@ npx @lambdacurry/anvil@alpha audit \
 **`npx` from one directory above the target repo:**
 
 ```bash wrap
-npx @lambdacurry/anvil@alpha audit \
+npx @lambdacurry/anvil audit \
   --target ./my-repo \
   --ci
 ```
@@ -79,14 +79,14 @@ Start with the full AI-backed audit so you see Anvil's best report on the first 
 If you are already in the target repo root:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit \
+bunx @lambdacurry/anvil audit \
   --target .
 ```
 
 If you are one directory above the target repo:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit \
+bunx @lambdacurry/anvil audit \
   --target ./my-repo
 ```
 
@@ -98,14 +98,14 @@ If Bun is already installed and you prefer a different launcher, keep the same a
 **`npx` from the target repo root:**
 
 ```bash wrap
-npx @lambdacurry/anvil@alpha audit \
+npx @lambdacurry/anvil audit \
   --target .
 ```
 
 **`npx` from one directory above the target repo:**
 
 ```bash wrap
-npx @lambdacurry/anvil@alpha audit \
+npx @lambdacurry/anvil audit \
   --target ./my-repo
 ```
 
@@ -155,7 +155,7 @@ Drift issues (2):
 ### Save the report
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit \
+bunx @lambdacurry/anvil audit \
   --target ./my-repo \
   --output ./audit-report.md
 ```
@@ -167,7 +167,7 @@ The `--output` flag writes the full markdown report to the specified path. Relat
 The full `audit` path expects a real AI synthesis provider:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit \
+bunx @lambdacurry/anvil audit \
   --target ./my-repo
 ```
 
@@ -195,7 +195,7 @@ See [Configuration](/anvil/guides/configuration) for copy-paste starting points 
 If you have the [GitHub CLI](https://cli.github.com) installed and authenticated, you can surface recurring review feedback that should become rules:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha mine-pr owner/repo
+bunx @lambdacurry/anvil mine-pr owner/repo
 ```
 
 Anvil fetches merged PR review comments, clusters them by theme, and highlights the highest-frequency patterns that lack rule coverage. See [Mine PR History](/anvil/guides/mine-pr) for full details.

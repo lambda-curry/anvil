@@ -35,14 +35,14 @@ bunx @lambdacurry/anvil@<exact-version> audit --target . --ci --output ./anvil-a
 ```
 
 If the tester needs a different launcher or shell layout, save that as a deviation in the returned evidence packet instead of sending multiple choices up front. Keep the exact pinned package version and local-only `--ci` flag.
-The pinned `0.1.0-alpha.5` proof packet uses `--ci`.
+The pinned `0.1.0-alpha.6` proof packet uses `--ci`.
 
 ## Public docs to share with the tester
 
 - [Getting started](https://lambda-curry.github.io/anvil/getting-started/first-audit)
 - [BYOK trust model](https://lambda-curry.github.io/anvil/guides/byok-trust-model)
 
-If the tester opens those docs, tell them to keep using the exact pinned command from the proof packet instead of switching to the floating `@alpha` examples.
+If the tester opens those docs, tell them to keep using the exact pinned command from the proof packet instead of switching to the unpinned examples.
 
 ## Capture questions
 
@@ -69,4 +69,4 @@ If the tester used global `anvil`, keep both the pinned `bun add -g @lambdacurry
 
 For a ready-to-send outreach note and fill-in template, use [First User Proof Packet](https://lambda-curry.github.io/anvil/guides/first-user-proof-packet).
 
-Count the returned proof as complete only if the retained audit command keeps the pinned `0.1.0-alpha.5` local-only `--ci` spelling.
+Count the returned proof as complete only if the retained audit command keeps the pinned `0.1.0-alpha.6` local-only `--ci` spelling.
