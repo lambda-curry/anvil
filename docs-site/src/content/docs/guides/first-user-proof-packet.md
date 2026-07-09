@@ -20,13 +20,13 @@ bunx @lambdacurry/anvil@<exact-version> audit --target . --ci --output ./anvil-a
 ```
 
 Replace `<exact-version>` with the published build you want validated. The alpha.5 proof packet uses one repo-root saved-report command so the tester is not choosing between layouts.
-The pinned `0.1.0-alpha.5` proof packet uses `--ci`.
+The pinned `0.1.0-alpha.6` proof packet uses `--ci`.
 
 Helpful docs:
 - Getting started: https://lambda-curry.github.io/anvil/getting-started/first-audit
 - Trust model: https://lambda-curry.github.io/anvil/guides/byok-trust-model
 
-If you open those docs, please keep using the exact pinned command from this note. The `@alpha` examples are for general public usage, not for this proof run.
+If you open those docs, please keep using the exact pinned command from this note. The unpinned examples are for general public usage, not for this proof run.
 
 What I'd love back:
 1. Whether the exact command worked on the first try
@@ -79,4 +79,4 @@ Save one small packet with these fields:
 If the tester used global `anvil`, keep both the pinned `bun add -g @lambdacurry/anvil@<exact-version>` line and the `anvil audit ...` line together in `Exact command`. If the tester stayed on `bunx` or `npx`, keep the optional `--version` line on that same launcher instead of switching to global `anvil`.
 If the packet keeps the local report path, keep the same path the retained audit command wrote with `--output`; use a screenshot or approved external link only when the retained artifact is intentionally something else.
 
-Count the proof as complete only if the tester is outside Lambda Curry, the run succeeds on a real repo, the retained audit command keeps the pinned `0.1.0-alpha.5` local-only `--ci` spelling, the packet includes a real artifact, and any rough edge becomes a follow-up.
+Count the proof as complete only if the tester is outside Lambda Curry, the run succeeds on a real repo, the retained audit command keeps the pinned `0.1.0-alpha.6` local-only `--ci` spelling, the packet includes a real artifact, and any rough edge becomes a follow-up.

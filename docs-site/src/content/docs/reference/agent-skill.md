@@ -26,19 +26,19 @@ Zero-install. The default audit path expects either a local AI CLI login or an `
 
 ## Quick audit
 
-`bunx @lambdacurry/anvil@alpha audit --target .`
+`bunx @lambdacurry/anvil audit --target .`
 
 This runs the full product path: discovers rule files, detects drift, scores coverage, and adds AI-synthesized improvement priorities to the markdown report.
 
 ## Save the report
 
-`bunx @lambdacurry/anvil@alpha audit --target . --output ./audit-report.md`
+`bunx @lambdacurry/anvil audit --target . --output ./audit-report.md`
 
 ## CI / local-only mode
 
 If you want a deterministic local-only structural lint pass:
 
-`bunx @lambdacurry/anvil@alpha audit --target . --ci`
+`bunx @lambdacurry/anvil audit --target . --ci`
 
 Auto-detects available local AI CLIs (Claude Code, Codex, Gemini CLI, opencode) or OpenAI by default when you omit `--ci`.
 
@@ -46,9 +46,9 @@ Force a specific provider: `--ai-provider claude-code|codex-cli|gemini-cli|openc
 
 ## Other commands
 
-- `bunx @lambdacurry/anvil@alpha drift .` — detect drift only
-- `bunx @lambdacurry/anvil@alpha bootstrap . --output ./bootstrap-draft.md` — generate starter rules
-- `bunx @lambdacurry/anvil@alpha mine-pr owner/repo` — mine PR history for missing rules (requires gh CLI)
+- `bunx @lambdacurry/anvil drift .` — detect drift only
+- `bunx @lambdacurry/anvil bootstrap . --output ./bootstrap-draft.md` — generate starter rules
+- `bunx @lambdacurry/anvil mine-pr owner/repo` — mine PR history for missing rules (requires gh CLI)
 
 ## What to look for in the report
 

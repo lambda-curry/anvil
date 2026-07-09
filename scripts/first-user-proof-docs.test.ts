@@ -26,7 +26,7 @@ function expectAll(text: string, snippets: string[]) {
   }
 }
 
-test("README and repo mirrors keep the alpha.5 proof lane pinned", () => {
+test("README and repo mirrors keep the current proof lane pinned", () => {
   const readme = readRepoFile("README.md");
   const gettingStarted = readRepoFile("docs/getting-started.md");
   const sendPacket = readRepoFile(
@@ -79,21 +79,21 @@ test("repo proof docs expose the three-line opener and one saved-report command"
     "public docs-site URLs, not GitHub blob URLs or local repo-relative paths",
     plainRepoRootExactVersionAuditCommand,
     joinCommandLines(wrappedExactVersionCommand),
-    "For the current pinned `0.1.0-alpha.5` proof lane, that includes checking that the retained audit command keeps the packet's `--ci` spelling.",
+    `For the current pinned \`${version}\` proof lane, that includes checking that the retained audit command keeps the packet's \`--ci\` spelling.`,
   ]);
 
   expectAll(sendPacket, [
     `This packet stays pinned to \`@lambdacurry/anvil@${version}\`.`,
     plainPinnedRepoRootAuditCommand,
     `\`bunx @lambdacurry/anvil@${version} --version\``,
-    "It keys validation off the saved packet's `Pinned CLI version`, so this retained `0.1.0-alpha.5` packet can still be checked after current `main` advances to a later package version.",
+    `It keys validation off the saved packet's \`Pinned CLI version\`, so this retained \`${version}\` packet can still be checked after current \`main\` advances to a later package version.`,
     "Historical note: the original dated retained packet for this same pinned proof lane remains at `docs/proofs/2026-05-23-alpha4-outside-tester-send-packet.md`.",
   ]);
 
   expect(sendPacket).not.toContain(`npx @lambdacurry/anvil@${version}`);
 });
 
-test("public proof guides mirror the alpha.5 opener contract", () => {
+test("public proof guides mirror the current-version opener contract", () => {
   const publicGuide = readRepoFile(
     "docs-site/src/content/docs/guides/first-user-proof.md",
   );
@@ -106,7 +106,7 @@ test("public proof guides mirror the alpha.5 opener contract", () => {
     expectAll(doc, [
       plainRepoRootExactVersionAuditCommand,
       "exact pinned command",
-      "`@alpha` examples",
+      "unpinned examples",
     ]);
     expect(doc).not.toContain("--output ./your-repo/anvil-audit.md");
     expect(doc).not.toContain("```bash\n");
@@ -116,7 +116,7 @@ test("public proof guides mirror the alpha.5 opener contract", () => {
     joinCommandLines(wrappedExactVersionCommand),
     "Install path: bunx / npx / global install",
     "Saved report path or screenshot link",
-    "retained audit command keeps the pinned `0.1.0-alpha.5` local-only `--ci` spelling",
+    `retained audit command keeps the pinned \`${version}\` local-only \`--ci\` spelling`,
   ]);
 });
 
@@ -133,17 +133,18 @@ test("first-run docs fence proof testers away from floating alpha commands", () 
       "using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command",
     );
     expect(doc).toMatch(
-      /general public usage, not for Milestone 3 proof collection|do not switch to the floating `@alpha` commands/,
+      /general public usage, not for pinned proof collection|do not switch to the unpinned commands/,
     );
-    expect(doc).toContain(
-      "bunx @lambdacurry/anvil@alpha audit --target . --ci",
-    );
+    // The general-public command is BARE (tracks the `latest` dist-tag, which every publish moves) —
+    // the floating `@alpha` tag is retired, so docs must never recommend it.
+    expect(doc).toContain("bunx @lambdacurry/anvil audit --target . --ci");
+    expect(doc).not.toContain("@lambdacurry/anvil@alpha");
     expect(doc).toContain("```bash wrap");
     expect(doc).not.toContain("```bash\n");
   }
 });
 
-test("getting-started and BYOK notes match the current alpha.5 packet", () => {
+test("getting-started and BYOK notes match the current pinned packet", () => {
   const guide = readRepoFile("docs/getting-started.md");
   const byok = readRepoFile("docs/byok-trust-model.md");
   const publicByok = readRepoFile(
@@ -158,11 +159,11 @@ test("getting-started and BYOK notes match the current alpha.5 packet", () => {
 
   expectAll(byok, [
     `published \`${version}\` proof packet uses one canonical repo-root \`bunx\` command`,
-    "bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci",
+    "bunx @lambdacurry/anvil audit --target ./my-repo --ci",
   ]);
 
   expectAll(publicByok, [
-    "bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci",
+    "bunx @lambdacurry/anvil audit --target ./my-repo --ci",
     "deprecated alias for `--ci`",
   ]);
 });

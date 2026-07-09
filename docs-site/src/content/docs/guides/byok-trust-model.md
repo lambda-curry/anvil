@@ -22,7 +22,7 @@ By default, Anvil scans the repo locally, then expects a working AI provider for
 
 ```bash
 # privacy-first — zero outbound calls
-bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci
+bunx @lambdacurry/anvil audit --target ./my-repo --ci
 ```
 
 ## What stays local

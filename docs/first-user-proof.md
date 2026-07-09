@@ -15,7 +15,7 @@ Capture one real outside-Lambda-Curry run that proves:
 
 Do this only after the exact published version you want to validate is live, and before Milestone 3 is called complete.
 
-Do not send this packet with the floating `@alpha` tag. Replace `<exact-version>` in the command below with the specific published build you are validating, for example `0.1.0-alpha.5`.
+Do not send this packet with the floating `@alpha` tag. Replace `<exact-version>` in the command below with the specific published build you are validating, for example `0.1.0-alpha.6`.
 
 ## Suggested tester profile
 
@@ -48,7 +48,7 @@ bunx @lambdacurry/anvil@<exact-version> audit --target . --ci --output ./anvil-a
    - This canonical command assumes the tester is already in the target repo root. If they need a different launcher or shell layout, save that as a deviation in the returned evidence packet instead of sending multiple choices up front.
 1. getting-started guide, on the public docs site:
    - `https://lambda-curry.github.io/anvil/getting-started/first-audit`
-   - Tell the tester to keep using the exact pinned command from this packet if they open that guide. Its `@alpha` examples are for general usage, not for this proof run.
+   - Tell the tester to keep using the exact pinned command from this packet if they open that guide. Its unpinned examples are for general usage, not for this proof run.
 1. trust boundary guide, on the public docs site:
    - `https://lambda-curry.github.io/anvil/guides/byok-trust-model`
 1. the capture questions below
@@ -115,7 +115,7 @@ bun run verify:first-user-proof -- docs/proofs/YYYY-MM-DD-<tester>-first-user-pr
 ```
 
 That validator checks the outside-tester status, pinned CLI version, first-try success, returned artifact, and other minimum packet fields, then returns `counts` or `does-not-count` with explicit reasons.
-For the current pinned `0.1.0-alpha.5` proof lane, it requires the retained audit command to keep the exact `--ci` spelling from the packet.
+For the current pinned `0.1.0-alpha.6` proof lane, it requires the retained audit command to keep the exact `--ci` spelling from the packet.
 
 ## Done signal for Milestone 3 gate
 

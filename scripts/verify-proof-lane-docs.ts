@@ -41,7 +41,7 @@ type ValidationResult = {
 const DOC_CONTRACTS: DocContract[] = [
   {
     path: resolve(DOCS_ROOT, "getting-started", "first-audit.md"),
-    checks: ["`--ci`", "not for Milestone 3 proof collection"],
+    checks: ["`--ci`", "not for pinned proof collection"],
   },
   {
     path: resolve(DOCS_ROOT, "guides", "first-user-proof.md"),
@@ -113,7 +113,7 @@ const FIRST_USER_PROOF_SECTION_END_MARKER =
 const HOMEPAGE_SECTION_MARKER = "## Start with one real audit";
 const HOMEPAGE_SECTION_END_MARKER = "<CardGrid stagger>";
 const HOMEPAGE_FIRST_AUDIT_BLOCK = [
-  "bunx @lambdacurry/anvil@alpha audit \\",
+  "bunx @lambdacurry/anvil audit \\",
   "  --target . \\",
   "  --ci",
 ] as const;

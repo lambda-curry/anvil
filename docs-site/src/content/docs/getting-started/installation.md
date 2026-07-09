@@ -8,14 +8,14 @@ description: Install Anvil via bunx, npx, or global install
 If you want the fastest successful first run, start with one local-only command and read the variants below only if you need them:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit --target . --ci
+bunx @lambdacurry/anvil audit --target . --ci
 ```
 
 If you are one directory above the repo you want to audit, use `--target ./my-repo` instead.
 
 Need `npx`, global `anvil`, or the full AI-backed lane? The install options below keep those paths, but this is the first command Anvil wants a new user to trust.
 
-> **Proof-lane note:** If you arrived here because someone sent you Anvil's external first-user proof packet, do not switch to the floating `@alpha` commands on this page. Keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note for the full proof run.
+> **Proof-lane note:** If you arrived here because someone sent you Anvil's external first-user proof packet, do not switch to the unpinned commands on this page; they track the latest build, not your pinned proof version. Keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note for the full proof run.
 
 ## Prerequisites
 
@@ -32,7 +32,7 @@ You do **not** need an AI provider for a successful first run if you use `--ci`.
 No install step, no provider setup required:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit \
+bunx @lambdacurry/anvil audit \
   --target ./my-repo \
   --ci
 ```
@@ -42,7 +42,7 @@ bunx @lambdacurry/anvil@alpha audit \
 Use this when you already have Claude Code, Codex CLI, Gemini CLI, opencode, or `OPENAI_API_KEY` available:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit \
+bunx @lambdacurry/anvil audit \
   --target ./my-repo
 ```
 
@@ -51,14 +51,14 @@ bunx @lambdacurry/anvil@alpha audit \
 Use this only if Bun is already installed and you prefer `npx` as the launcher:
 
 ```bash wrap
-npx @lambdacurry/anvil@alpha audit \
+npx @lambdacurry/anvil audit \
   --target ./my-repo
 ```
 
 ### Global install
 
 ```bash wrap
-bun add -g @lambdacurry/anvil@alpha
+bun add -g @lambdacurry/anvil
 anvil audit --target ./my-repo
 ```
 
@@ -69,15 +69,15 @@ Use the same launcher you picked above:
 ### `bunx`
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha --help
-bunx @lambdacurry/anvil@alpha --version
+bunx @lambdacurry/anvil --help
+bunx @lambdacurry/anvil --version
 ```
 
 ### `npx` (still launches the Bun-native CLI)
 
 ```bash wrap
-npx @lambdacurry/anvil@alpha --help
-npx @lambdacurry/anvil@alpha --version
+npx @lambdacurry/anvil --help
+npx @lambdacurry/anvil --version
 ```
 
 ### Global install only
@@ -122,19 +122,19 @@ The default `anvil audit` path is the full AI-backed report. Anvil scans the rep
 Use `--ci` when you want deterministic local-only structural lint instead:
 
 ```bash wrap
-bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci
+bunx @lambdacurry/anvil audit --target ./my-repo --ci
 ```
 
 You can also force a specific provider. Keep the same launcher you already chose:
 
 ```bash wrap
 # bunx
-bunx @lambdacurry/anvil@alpha audit \
+bunx @lambdacurry/anvil audit \
   --target ./my-repo \
   --ai-provider openai
 
 # npx (Bun still required)
-npx @lambdacurry/anvil@alpha audit \
+npx @lambdacurry/anvil audit \
   --target ./my-repo \
   --ai-provider openai
 

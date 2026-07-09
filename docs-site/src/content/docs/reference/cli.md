@@ -29,7 +29,7 @@ anvil audit --target ./my-repo [options]
 
 Relative `--target` paths resolve from your current shell cwd.
 
-If you arrived here from the external first-user proof docs, use the exact pinned command from that packet. The current `0.1.0-alpha.5` packet uses the public `--ci` spelling; `--no-ai` remains only as a deprecated compatibility alias.
+If you arrived here from the external first-user proof docs, use the exact pinned command from that packet. The current `0.1.0-alpha.6` packet uses the public `--ci` spelling; `--no-ai` remains only as a deprecated compatibility alias.
 
 ## `anvil drift`
 
@@ -65,12 +65,12 @@ Requires `GITHUB_TOKEN` in the environment.
 
 ```bash
 # Zero-install
-bunx @lambdacurry/anvil@alpha <command>
+bunx @lambdacurry/anvil <command>
 
 # npm fallback
-npx @lambdacurry/anvil@alpha <command>
+npx @lambdacurry/anvil <command>
 
 # Global install
-bun add -g @lambdacurry/anvil@alpha
+bun add -g @lambdacurry/anvil
 anvil <command>
 ```

@@ -110,10 +110,10 @@ test("repo README and public installation guide match the published launcher con
   );
 
   expect(releasing).toContain(
-    "bunx @lambdacurry/anvil@alpha audit --target ./some-typescript-repo --output ./report.md --no-ai",
+    "bunx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --no-ai",
   );
   expect(releasing).not.toContain(
-    "npx @lambdacurry/anvil@alpha audit --target ./some-typescript-repo --output ./report.md --no-ai",
+    "npx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --no-ai",
   );
 });
 

@@ -64,11 +64,11 @@ Useful when a previous run failed for transient reasons (npm registry hiccup, ru
 
 ```sh
 # Check what's on npm under the alpha tag:
-npm view @lambdacurry/anvil@alpha version
+npm view @lambdacurry/anvil version
 
 # Test zero-install against a sample repo:
 mkdir /tmp/anvil-zero-install && cd /tmp/anvil-zero-install
-bunx @lambdacurry/anvil@alpha audit --target ./some-typescript-repo --output ./report.md --no-ai
+bunx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --no-ai
 ```
 
 Confirm:

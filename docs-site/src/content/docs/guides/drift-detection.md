@@ -21,10 +21,10 @@ Drifted rules don't just fail to help — they actively mislead. A path drift ca
 
 ```bash
 # standalone drift check
-bunx @lambdacurry/anvil@alpha drift ./my-repo
+bunx @lambdacurry/anvil drift ./my-repo
 
 # drift is also included in the full audit
-bunx @lambdacurry/anvil@alpha audit --target ./my-repo
+bunx @lambdacurry/anvil audit --target ./my-repo
 ```
 
 ## What Anvil checks

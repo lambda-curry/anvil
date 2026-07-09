@@ -23,7 +23,7 @@ If you want the first trustworthy command before you read deeper docs, start her
 
 ```bash
 # already in the target repo root
-bunx @lambdacurry/anvil@alpha audit --target . --ci
+bunx @lambdacurry/anvil audit --target . --ci
 ```
 
 That path stays local, skips AI synthesis, and still gives you a real markdown audit report on the first run.
@@ -63,7 +63,7 @@ docs/
 
 ## Project-local charter tooling
 
-This repo includes local helper scripts for Scout's charter flow. They are useful, but they are not the project's identity.
+This repo includes local helper scripts used by Lambda Curry's internal maintenance automation. They are useful, but they are not the project's identity.
 
 Run the local selector from this directory:
 
@@ -90,14 +90,14 @@ Bun is the runtime requirement for the published CLI. Node is optional and only 
 
 ```bash
 # Zero-install
-bunx @lambdacurry/anvil@alpha audit --target ./my-repo
+bunx @lambdacurry/anvil audit --target ./my-repo
 
 # Global install
-bun add -g @lambdacurry/anvil@alpha
+bun add -g @lambdacurry/anvil
 anvil audit --target ./my-repo
 
 # npm launcher fallback (Bun still required)
-npx @lambdacurry/anvil@alpha audit --target ./my-repo
+npx @lambdacurry/anvil audit --target ./my-repo
 ```
 
 Relative `--target` paths resolve from your current shell cwd. If you are already in the target repo root, use `--target .` instead. If you are one directory above the target repo, use `--target ./my-repo`.
@@ -106,7 +106,7 @@ Relative `--target` paths resolve from your current shell cwd. If you are alread
 
 Choose the lane that matches your setup before your first run.
 
-If you are collecting the outside-user proof for Milestone 3, stay on the exact pinned version and launcher from [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) instead of switching to the floating `@alpha` examples in this README. The current pinned `0.1.0-alpha.5` proof packet uses one repo-root `bunx` command with `--ci --output ./anvil-audit.md` so the saved report comes back from the first run.
+If you are collecting the outside-user proof, stay on the exact pinned version and launcher from [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) instead of switching to the unpinned examples in this README. The current pinned `0.1.0-alpha.6` proof packet uses one repo-root `bunx` command with `--ci --output ./anvil-audit.md` so the saved report comes back from the first run.
 
 ### Local-only first pass (no provider required)
 
@@ -114,10 +114,10 @@ If you want to see a real report before wiring provider access, start here:
 
 ```bash
 # already in the target repo root
-bunx @lambdacurry/anvil@alpha audit --target . --ci
+bunx @lambdacurry/anvil audit --target . --ci
 
 # one directory above the target repo
-bunx @lambdacurry/anvil@alpha audit --target ./my-repo --ci
+bunx @lambdacurry/anvil audit --target ./my-repo --ci
 ```
 
 This path stays on your machine, skips AI synthesis, and still produces a real structural lint report on the first try.
@@ -128,10 +128,10 @@ Use this when you already have Claude Code, Codex CLI, Gemini CLI, opencode, or 
 
 ```bash
 # already in the target repo root
-bunx @lambdacurry/anvil@alpha audit --target .
+bunx @lambdacurry/anvil audit --target .
 
 # one directory above the target repo
-bunx @lambdacurry/anvil@alpha audit --target ./my-repo
+bunx @lambdacurry/anvil audit --target ./my-repo
 ```
 
 (`npx ...` follows the same relative-target rule if Bun and Node are both installed, and `anvil ...` follows it after global install.)
@@ -151,7 +151,7 @@ bun run ./bin/anvil.ts --version
 Verified on the current alpha packet:
 
 - `--help` prints the four shipped entry commands: `audit`, `drift`, `bootstrap`, `mine-pr`
-- `--version` prints `0.1.0-alpha.5`
+- `--version` prints `0.1.0-alpha.6`
 
 Why you might choose this lane:
 
@@ -171,12 +171,12 @@ For first-run setup and CI/lint guidance, see:
 
 ## Maintainer notes
 
-This repo still has an active Scout/Anvil charter behind it, but that charter state is secondary to the public product path above.
+Lambda Curry maintains this project with internal automation behind it, but that machinery is secondary to the public product path above.
 
-- **Status:** Report as Decision Tool shipped; current charter follow-through is to collect outside-Lambda-Curry first-run proof on pinned `0.1.0-alpha.5`
+- **Status:** Report as Decision Tool shipped; current charter follow-through is to collect outside-Lambda-Curry first-run proof on pinned `0.1.0-alpha.6`
 - **Verification posture:** CI artifact (audit report) + downstream observed impact in rule quality
 - **Current checked-in self-audit:** `docs/audits/anvil-audit-2026-07-09.md` reports `98/100` Structural Lint, `35/35` Guardrail Readiness, `0` issues, and `0` remediation tasks on current `main`
-- **Current proof packet:** `docs/proofs/current-outside-tester-send-packet.md` keeps the external proof lane on one canonical repo-root command that saves `./anvil-audit.md`; the pinned packet stays on `@lambdacurry/anvil@0.1.0-alpha.5`
+- **Current proof packet:** `docs/proofs/current-outside-tester-send-packet.md` keeps the external proof lane on one canonical repo-root command that saves `./anvil-audit.md`; the pinned packet stays on `@lambdacurry/anvil@0.1.0-alpha.6`
 
 Anvil is not primarily a UI project. Its real proof surface is whether downstream outputs and consumers reflect the intended rule behavior correctly.
 
