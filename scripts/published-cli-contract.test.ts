@@ -28,7 +28,16 @@ function readRepoFile(relativePath: string): string {
 
 function readPackedFilePaths(): string[] {
   const run = Bun.spawnSync(
-    ["npm", "pack", "--dry-run", "--json", "--ignore-scripts"],
+    // --loglevel=error keeps npm's warn chatter out of the pipes; CI environments (setup-node's
+    // npmrc/auth env) provoke `npm warn` lines that can land in stdout ahead of the JSON.
+    [
+      "npm",
+      "pack",
+      "--dry-run",
+      "--json",
+      "--ignore-scripts",
+      "--loglevel=error",
+    ],
     {
       cwd: REPO_ROOT,
       stdout: "pipe",
@@ -38,19 +47,30 @@ function readPackedFilePaths(): string[] {
 
   expect(run.exitCode).toBe(0);
 
+  // Robust extraction: any non-JSON preamble may contain "[" (e.g. `npm warn config [dev]`), so try
+  // each "[" candidate until one parses — never trust the first bracket in a polluted stream.
   const stdout = new TextDecoder().decode(run.stdout);
-  const jsonStart = stdout.indexOf("[");
   const jsonEnd = stdout.lastIndexOf("]");
+  expect(jsonEnd).toBeGreaterThanOrEqual(0);
+  let packed: NpmPackDryRunEntry[] | null = null;
+  for (
+    let at = stdout.indexOf("[");
+    at !== -1 && at < jsonEnd;
+    at = stdout.indexOf("[", at + 1)
+  ) {
+    try {
+      packed = JSON.parse(
+        stdout.slice(at, jsonEnd + 1),
+      ) as NpmPackDryRunEntry[];
+      break;
+    } catch {
+      // preamble bracket — advance to the next candidate
+    }
+  }
+  expect(packed).not.toBeNull();
+  expect(packed!).toHaveLength(1);
 
-  expect(jsonStart).toBeGreaterThanOrEqual(0);
-  expect(jsonEnd).toBeGreaterThan(jsonStart);
-
-  const packed = JSON.parse(
-    stdout.slice(jsonStart, jsonEnd + 1),
-  ) as NpmPackDryRunEntry[];
-  expect(packed).toHaveLength(1);
-
-  return packed[0].files.map((file) => file.path);
+  return packed![0].files.map((file) => file.path);
 }
 
 test("published package metadata declares the Bun-native launcher contract", () => {
