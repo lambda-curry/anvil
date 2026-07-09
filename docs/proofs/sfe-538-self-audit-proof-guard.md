@@ -1,17 +1,19 @@
 # SFE-538 — Self-audit proof guard
 
-Date: 2026-07-03
-Repo: `/home/node/.openclaw/workspace/projects/anvil`
-Checked-in audit packet: `docs/audits/anvil-audit-2026-07-02.md`
+Date: 2026-07-09
+Repo: current Scout workspace checkout `/home/node/.openclaw/workspace/charters/anvil/repo`
+Checked-in audit packet: `docs/audits/anvil-audit-2026-07-09.md`
 
 ## Why this proof exists
 
 `SFE-538` adds a repo-native reproducibility guard for Anvil's checked-in self-audit packet. The point is to prove one deterministic contract:
 
-- a fresh `bun run audit --target . --ci` rerun still matches `docs/audits/anvil-audit-2026-07-02.md` after normalizing expected date-stamped metadata
+- a fresh `bun run audit --target . --ci` rerun still matches `docs/audits/anvil-audit-2026-07-09.md` after normalizing expected date-stamped metadata
 - the checked-in packet still carries the trust-summary markers needed to compare it honestly
 - the checked-in packet filename date matches the embedded `*Date:*` header instead of silently drifting
 - a seeded mismatch fails loudly instead of silently drifting
+
+The original proof lane started before Scout split the charter wrapper from the product checkout. Use the current repo root and treat `projects/anvil` as stale historical context only.
 
 ## Exact commands
 
@@ -29,8 +31,8 @@ bun run verify:self-audit-proof --retain-dir /tmp/anvil-self-audit-proof-bundle
 
 ## Observed result
 
-- `git rev-parse --short HEAD` returned the merged-main head that already includes PR #58
-- `bun test scripts/verify-self-audit-proof.test.ts` passed all 9 checks:
+- `git rev-parse --short HEAD` returned the current repo head before the packet refresh
+- `bun test scripts/verify-self-audit-proof.test.ts` passed all 10 checks:
   - identical reports pass
   - day-over-day date/artifact-path changes normalize away
   - PR-mining summary count drift normalizes away
@@ -40,6 +42,7 @@ bun run verify:self-audit-proof --retain-dir /tmp/anvil-self-audit-proof-bundle
   - `--retain-dir` resolves to an absolute bundle path
   - `--retain-dir` without a value fails fast
   - the proof guard doc stays pinned to the verifier's checked-in packet path
+  - the retained proof docs no longer point at the stale `projects/anvil` mirror path
 - `bun run verify:self-audit-proof --retain-dir /tmp/anvil-sfd162-workspace-retain-2026-06-07` passed on the live workspace copy
 - a copied clean repo path still named `anvil` also passed the same verifier command with a retained bundle at `/tmp/anvil-sfd162-clean-verify-retain`
 - the June 7 refresh also proves the verifier is no longer coupled to the workspace-only `TOOLS.md` projection or raw directory iteration order; the checked-in packet now stays stable across both the normal workspace repo and a clean copied repo path
@@ -48,6 +51,7 @@ bun run verify:self-audit-proof --retain-dir /tmp/anvil-self-audit-proof-bundle
 - the June 26 refresh closed a new continuity hole in the same proof surface: the retained packet contents had advanced to `*Date: 2026-06-24*` and `./artifacts/anvil-2026-06-24`, but the verifier still pointed at `anvil-audit-2026-06-19.md`. The retained packet now moves forward to `docs/audits/anvil-audit-2026-06-26.md`, and the verifier fails if a future checked-in packet's filename date no longer matches its embedded report date.
 - the July 2 refresh moved the retained packet and verifier forward to `docs/audits/anvil-audit-2026-07-02.md` after the mirror-health formatter started naming the live `source-only` family directly. `bun run verify:self-audit-proof` now passes again against that packet, so the retained proof lane and the live formatter wording are back in sync.
 - the July 3 recheck caught fresh same-head date drift on a clean repo copy still named `anvil`: `AGENTS.md` had aged past its 30-day validation threshold, which dropped the fresh rerun to `34/35` Guardrail Readiness with `Drift backlog | 1` even though the checked-in packet still advertised `35/35`. Refreshing `AGENTS.md` to `Last validated: 2026-07-03` returned `bun run verify:self-audit-proof --retain-dir /tmp/sfd-232-proof-refresh-retain` to exit `0`, so the retained July 2 packet stays truthful without needing to move forward again.
+- the July 9 repo-root refresh closed the workspace-split drift opened by the public `repo/` clone. Three proof docs stopped teaching the stale `projects/anvil` mirror path, `scope-boundaries.md` dropped a dead `docs/patterns/high-stakes-registry.md` reference, a new `performance-measure-before-optimize.md` template restored baseline category coverage, and the retained packet advanced to `docs/audits/anvil-audit-2026-07-09.md`. `bun run verify:self-audit-proof` now passes again on the split repo root with `98/100`, `35/35`, and `0` remediation tasks.
 
 ## Contract going forward
 

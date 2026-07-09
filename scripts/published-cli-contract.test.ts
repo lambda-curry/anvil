@@ -39,7 +39,15 @@ function readPackedFilePaths(): string[] {
   expect(run.exitCode).toBe(0);
 
   const stdout = new TextDecoder().decode(run.stdout);
-  const packed = JSON.parse(stdout) as NpmPackDryRunEntry[];
+  const jsonStart = stdout.indexOf("[");
+  const jsonEnd = stdout.lastIndexOf("]");
+
+  expect(jsonStart).toBeGreaterThanOrEqual(0);
+  expect(jsonEnd).toBeGreaterThan(jsonStart);
+
+  const packed = JSON.parse(
+    stdout.slice(jsonStart, jsonEnd + 1),
+  ) as NpmPackDryRunEntry[];
   expect(packed).toHaveLength(1);
 
   return packed[0].files.map((file) => file.path);

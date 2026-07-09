@@ -23,6 +23,12 @@ const CLEAN_REPORT = `# Anvil Audit — anvil
 - Action path: none generated for this run; use the supporting diagnostics below if you need the evidence behind the pass verdict.
 `;
 
+const SELF_AUDIT_PROOF_DOCS = [
+  "docs/proofs/sfd-161-self-audit-clean-recheck.md",
+  "docs/proofs/sfd-162-current-main-clean-recheck.md",
+  "docs/proofs/sfe-538-self-audit-proof-guard.md",
+] as const;
+
 test("passes when checked-in report and fresh rerun are byte-identical", () => {
   const result = compareSelfAuditReports(CLEAN_REPORT, CLEAN_REPORT);
 
@@ -163,4 +169,17 @@ test("proof guard doc names the same checked-in packet the verifier uses", () =>
   expect(proofGuardDoc).toContain(
     `still matches \`docs/audits/${basename(defaultCheckedInReport)}\``,
   );
+});
+
+test("self-audit proof docs do not point at the stale projects/anvil mirror", () => {
+  for (const relativePath of SELF_AUDIT_PROOF_DOCS) {
+    const proofDoc = readFileSync(
+      resolve(import.meta.dir, "..", relativePath),
+      "utf8",
+    );
+
+    expect(proofDoc).not.toContain(
+      "/home/node/.openclaw/workspace/projects/anvil",
+    );
+  }
 });

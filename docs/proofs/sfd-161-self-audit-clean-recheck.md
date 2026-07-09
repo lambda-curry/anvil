@@ -1,7 +1,7 @@
 # SFD-161 — Clean self-audit recheck on synced main
 
 Date: 2026-06-03
-Repo: `/home/node/.openclaw/workspace/projects/anvil`
+Repo: current Scout workspace checkout `/home/node/.openclaw/workspace/charters/anvil/repo`
 Commit: `0b00002` (`report: explain type-safety plateau paths`)
 
 ## Why this proof exists
@@ -9,6 +9,8 @@ Commit: `0b00002` (`report: explain type-safety plateau paths`)
 Loupe finding `SFD-161` claimed the checked-in self-audit packet at `docs/audits/anvil-audit-2026-06-03.md` still said "no action" while a fresh current-head deterministic rerun surfaced a `TOOLS.md` freshness-risk task.
 
 This packet captures the Scout-side recheck on synced `main`.
+
+The original capture happened before Scout split the charter wrapper from the product clone. Re-run the proof from the current Anvil repo root instead of the stale `projects/anvil` mirror path.
 
 ## Exact commands
 

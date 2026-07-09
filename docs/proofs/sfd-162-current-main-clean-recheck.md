@@ -1,7 +1,7 @@
 # SFD-162 — Current-main clean self-audit recheck
 
 Date: 2026-06-07
-Repo: `/home/node/.openclaw/workspace/projects/anvil`
+Repo: current Scout workspace checkout `/home/node/.openclaw/workspace/charters/anvil/repo`
 Verified head at capture: `7bc9da0`
 
 ## Why this proof exists
@@ -10,10 +10,12 @@ Loupe finding `SFD-162` claimed current `main` could still fail Anvil's self-aud
 
 The concrete root cause turned out not to be a vague runtime split. Anvil's rule-surface discovery still counted tracked symlinked rule files whose targets lived outside the repo, so Scout's long-lived workspace picked up the projected root `TOOLS.md` while a clean repo copy did not. The audit output also still depended on raw directory iteration order for wildcard rule discovery and workflow scans.
 
+The original evidence predates Scout's charter/product split. Re-run these commands from the current Anvil repo root instead of the stale `projects/anvil` mirror path.
+
 ## Exact commands
 
 ```bash
-cd /home/node/.openclaw/workspace/projects/anvil
+# run from the Anvil repo root
 bun test scripts/__tests__/golden.test.ts
 bun test scripts/verify-self-audit-proof.test.ts
 bun run scripts/audit.ts --target . --ci --output docs/audits/anvil-audit-2026-06-07.md
@@ -21,7 +23,7 @@ bun run verify:self-audit-proof --retain-dir /tmp/anvil-sfd162-workspace-retain-
 
 rm -rf /tmp/anvil-sfd162-clean-verify /tmp/anvil-sfd162-clean-verify-retain
 mkdir -p /tmp/anvil-sfd162-clean-verify
-cp -a /home/node/.openclaw/workspace/projects/anvil/. /tmp/anvil-sfd162-clean-verify/anvil/
+cp -a . /tmp/anvil-sfd162-clean-verify/anvil/
 cd /tmp/anvil-sfd162-clean-verify/anvil
 bun run verify:self-audit-proof --retain-dir /tmp/anvil-sfd162-clean-verify-retain
 ```
