@@ -18,7 +18,7 @@ export default defineConfig({
       social: [
         {
           icon: 'github',
-          label: 'GitHub (private)',
+          label: 'GitHub',
           href: 'https://github.com/lambda-curry/anvil',
         },
         {

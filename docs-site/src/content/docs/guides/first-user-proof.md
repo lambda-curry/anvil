@@ -9,7 +9,7 @@ Use this when you want one honest outside-Lambda-Curry proof that Anvil's first-
 
 Capture one real external run that proves:
 
-1. a new user can run Anvil without Scout-internal context
+1. a new user can run Anvil without any Lambda Curry–internal context
 2. the user reaches a successful audit on their own repo
 3. the returned report suggests at least one plausible next fix
 4. the proof is saved as a small evidence packet instead of disappearing into chat
@@ -17,7 +17,7 @@ Capture one real external run that proves:
 ## When to run this
 
 - after the exact published package version you want to validate is live
-- before Milestone 3 is called complete
+- before the first outside-user milestone is called complete
 - only with an exact pinned version, never the floating `@alpha` tag
 
 ## Exact command to send

@@ -13,7 +13,7 @@ bunx @lambdacurry/anvil@alpha audit --target . --ci
 
 If you are one directory above the target repo, swap `--target .` for `--target ./my-repo`.
 
-> **Proof-lane note:** If you arrived here from [First User Proof](/anvil/guides/first-user-proof) or [First User Proof Packet](/anvil/guides/first-user-proof-packet), keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note. The `@alpha` examples below are for general public usage, not for Milestone 3 proof collection.
+> **Proof-lane note:** If you arrived here from [First User Proof](/anvil/guides/first-user-proof) or [First User Proof Packet](/anvil/guides/first-user-proof-packet), keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note. The `@alpha` examples below are for general public usage, not for pinned proof collection.
 
 If you picked `npx` or the global `anvil` install on [Installation](/anvil/getting-started/installation), keep that same launcher here too. The audit flags stay the same; only the executable prefix changes.
 
@@ -207,3 +207,7 @@ Anvil fetches merged PR review comments, clusters them by theme, and highlights 
 **`bunx` not found** — Install Bun: `curl -fsSL https://bun.sh/install | bash`
 
 **AI synthesis fails** — Confirm your provider login/key is set and the model name is valid. If you need a deterministic local-only pass, rerun with `--ci`.
+
+## Found something?
+
+Still stuck, hit a bug, or got a report that looks wrong? [Open a GitHub issue](https://github.com/lambda-curry/anvil/issues) — first-run feedback is exactly what the alpha needs.
