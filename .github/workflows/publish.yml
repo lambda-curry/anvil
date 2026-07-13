@@ -39,10 +39,21 @@ jobs:
 
       # `npm publish` is invoked directly below — setup-bun doesn't ship npm,
       # so install Node here.
+      #
+      # NO `registry-url:` — it is what broke trusted publishing (five red runs, 2026-07-09).
+      # Passing it makes setup-node write an .npmrc containing
+      #   //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+      # and export a DUMMY NODE_AUTH_TOKEN (`XXXXX-XXXXX-XXXXX-XXXXX`), on the assumption that a
+      # publish step will override it with a real token. Since the migration to trusted publishing
+      # there IS no token — so npm found a credential already sitting in .npmrc, used it, never
+      # attempted the OIDC exchange (the runs print not one word about OIDC or provenance), and the
+      # registry rejected the fake token as `404 Not Found - PUT` — npm's way of saying unauthorized.
+      # The Trusted Publisher config on npmjs.com was correct the whole time; it was never consulted.
+      # npm defaults to registry.npmjs.org anyway, so dropping this leaves no .npmrc auth line and
+      # lets the OIDC exchange actually run.
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
 
       # Trusted publishing needs npm >= 11.5.1 (the OIDC exchange lives in the CLI).
       # Pinned to the npm 11 line (2026-07-09): trusted publishing needs >= 11.5.1, but
