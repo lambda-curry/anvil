@@ -79,6 +79,8 @@ test("repo proof docs expose the three-line opener and one saved-report command"
     "public docs-site URLs, not GitHub blob URLs or local repo-relative paths",
     plainRepoRootExactVersionAuditCommand,
     joinCommandLines(wrappedExactVersionCommand),
+    `The current \`${version}\` proof packet sends only the repo-root saved-report command above`,
+    `For the current \`${version}\` packet, the canonical layout is Bun zero-install from the target repo root.`,
     `For the current pinned \`${version}\` proof lane, that includes checking that the retained audit command keeps the packet's \`--ci\` spelling.`,
   ]);
 
