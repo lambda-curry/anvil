@@ -20,7 +20,7 @@ Send back whether it worked first try, the first useful fix the report pointed t
 bunx @lambdacurry/anvil@<exact-version> audit --target . --ci --output ./anvil-audit.md
 ```
 
-Replace `<exact-version>` with the specific published build you want validated. The alpha.5 proof packet sends only the repo-root saved-report command above so the artifact comes back from the same first run without asking the tester to choose between layouts.
+Replace `<exact-version>` with the specific published build you want validated. The current `0.1.0-alpha.6` proof packet sends only the repo-root saved-report command above so the artifact comes back from the same first run without asking the tester to choose between layouts.
 
 Helpful docs:
 - Getting started: https://lambda-curry.github.io/anvil/getting-started/first-audit
@@ -54,7 +54,7 @@ Before sending the note above, make sure:
 
 ## 3. Exact command blocks to send
 
-Pick one install path and one shell layout, then send only that exact command so the tester is not choosing between multiple moving parts. For alpha.5, the canonical layout is Bun zero-install from the target repo root.
+Pick one install path and one shell layout, then send only that exact command so the tester is not choosing between multiple moving parts. For the current `0.1.0-alpha.6` packet, the canonical layout is Bun zero-install from the target repo root.
 
 Replace `<exact-version>` before you send anything. Do not use the floating `@alpha` tag in the external proof packet.
 
