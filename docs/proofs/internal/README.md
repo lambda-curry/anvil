@@ -1,8 +1,10 @@
-# Internal Alpha.5 Proof Pass
+# Internal Published-Package Proofs
 
 This directory captures Anvil's internal dogfood pass for the published `@lambdacurry/anvil@0.1.0-alpha.5` CLI across Lambda Curry-owned repos.
 
 - Summary: [`2026-07-05-alpha5-internal-proof-pass.md`](./2026-07-05-alpha5-internal-proof-pass.md)
+- Alpha.6 clean distribution check:
+  [`2026-07-15-alpha6-clean-distribution-check.md`](./2026-07-15-alpha6-clean-distribution-check.md)
 - Repo packets:
   - [`2026-07-05-saffron-starter-alpha5-proof.md`](./2026-07-05-saffron-starter-alpha5-proof.md)
   - [`2026-07-05-watchtower-alpha5-proof.md`](./2026-07-05-watchtower-alpha5-proof.md)
