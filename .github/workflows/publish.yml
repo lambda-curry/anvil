@@ -94,6 +94,10 @@ jobs:
         if: steps.version_check.outputs.skip != 'true'
         run: bun run lint
 
+      - name: Check formatting
+        if: steps.version_check.outputs.skip != 'true'
+        run: bun run format:check
+
       - name: Run typecheck
         if: steps.version_check.outputs.skip != 'true'
         run: bun run typecheck
