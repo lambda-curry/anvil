@@ -3,7 +3,7 @@
 > AI rules audit engine — score, detect drift, and improve rules in any AI-assisted codebase.
 
 > Source: https://lambda-curry.github.io/anvil/
-> Generated: 2026-07-09
+> Generated: 2026-07-17
 
 ## Installation
 
