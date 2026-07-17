@@ -12,6 +12,10 @@ on:
       - "scripts/**"
       - "bin/**"
       - "package.json"
+      # The workflow itself: a publish FIX merged to main should re-run the publish it fixes —
+      # during the 2026-07 outage every repair needed a manual workflow_dispatch because this
+      # file wasn't in its own trigger paths.
+      - ".github/workflows/publish.yml"
   # Tagged release path stays for explicit version cuts.
   release:
     types: [published]
@@ -40,17 +44,19 @@ jobs:
       # `npm publish` is invoked directly below — setup-bun doesn't ship npm,
       # so install Node here.
       #
-      # NO `registry-url:` — it is what broke trusted publishing (five red runs, 2026-07-09).
-      # Passing it makes setup-node write an .npmrc containing
-      #   //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
-      # and export a DUMMY NODE_AUTH_TOKEN (`XXXXX-XXXXX-XXXXX-XXXXX`), on the assumption that a
-      # publish step will override it with a real token. Since the migration to trusted publishing
-      # there IS no token — so npm found a credential already sitting in .npmrc, used it, never
-      # attempted the OIDC exchange (the runs print not one word about OIDC or provenance), and the
-      # registry rejected the fake token as `404 Not Found - PUT` — npm's way of saying unauthorized.
-      # The Trusted Publisher config on npmjs.com was correct the whole time; it was never consulted.
-      # npm defaults to registry.npmjs.org anyway, so dropping this leaves no .npmrc auth line and
-      # lets the OIDC exchange actually run.
+      # NO `registry-url:` — and an honest history, because the comment that first landed here
+      # blamed it for the five red runs of 2026-07-09 and was WRONG about the mechanism. The
+      # verified root cause was a STALE TRUSTED PUBLISHER BINDING: this repo was deleted and
+      # recreated for the open-source cut, and npm's Trusted Publisher binds the original
+      # repository — the npmjs.com UI kept showing the correct owner/repo string while the binding
+      # underneath pointed at the dead repo. Publishing recovered only after Jake deleted and
+      # re-added the Trusted Publisher (2026-07-13). npm attempts the OIDC exchange
+      # unconditionally (per its own CLI source), token present or not.
+      # What dropping `registry-url` DID do: setup-node writes an .npmrc with a dummy
+      # NODE_AUTH_TOKEN placeholder, which disguised the real failure as `404 Not Found - PUT`
+      # (npm's unauthorized). Without it the same failure reads as an honest ENEEDAUTH — so keep
+      # registry-url out for signal quality, and if a 404/ENEEDAUTH ever returns here, check the
+      # Trusted Publisher binding FIRST (especially after any repo rename/delete/recreate).
       - uses: actions/setup-node@v7
         with:
           node-version: 24
