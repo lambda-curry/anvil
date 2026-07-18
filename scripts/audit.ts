@@ -6052,6 +6052,12 @@ export async function main(): Promise<void> {
 
   if (args.jsonOutput) {
     console.log(JSON.stringify(result, null, 2));
+    if (
+      result.guardrail.hardGates.enabled &&
+      !result.guardrail.hardGates.passed
+    ) {
+      process.exit(result.guardrail.hardGates.exitCode);
+    }
     return;
   }
 
