@@ -54,9 +54,9 @@ function printHelp(version: string): void {
   console.log("");
   console.log("Examples:");
   console.log("  anvil audit --target /absolute/path/to/my-repo");
-  console.log("  anvil drift /absolute/path/to/my-repo");
+  console.log("  anvil drift --target /absolute/path/to/my-repo");
   console.log(
-    "  anvil bootstrap /absolute/path/to/my-repo --output /absolute/path/to/bootstrap-draft.md",
+    "  anvil bootstrap --target /absolute/path/to/my-repo --output /absolute/path/to/bootstrap-draft.md",
   );
   console.log("  anvil mine-pr owner/repo");
 }

@@ -36,20 +36,22 @@ If you arrived here from the external first-user proof docs, use the exact pinne
 Detect drift in rule surfaces.
 
 ```bash
-anvil drift ./my-repo
+anvil drift --target ./my-repo
 ```
 
 Checks glob resolution, path existence, validation dates, and coverage gaps.
+The positional form `anvil drift ./my-repo` remains supported for compatibility.
 
 ## `anvil bootstrap`
 
 Generate starter rule sets from tech stack analysis.
 
 ```bash
-anvil bootstrap ./my-repo --output ./bootstrap-draft.md
+anvil bootstrap --target ./my-repo --output ./bootstrap-draft.md
 ```
 
 Reads `package.json`, `tsconfig.json`, and framework configs to generate tailored starter rules.
+The positional form `anvil bootstrap ./my-repo` remains supported for compatibility.
 
 ## `anvil mine-pr`
 
@@ -59,7 +61,7 @@ Mine GitHub PR review comments for rule candidates.
 anvil mine-pr owner/repo
 ```
 
-Requires `GITHUB_TOKEN` in the environment.
+Requires the GitHub CLI (`gh`) installed and authenticated. A `GITHUB_TOKEN` environment variable alone is not a supported fallback.
 
 ## Install methods
 

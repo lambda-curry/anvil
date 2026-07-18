@@ -149,6 +149,21 @@ test("--ci succeeds without any AI provider and reports structural lint mode", a
   }
 });
 
+test("--json keeps stdout machine-parseable and sends progress to stderr", async () => {
+  const run = await runAuditCli([
+    "--target",
+    fixture,
+    "--skip-bootstrap",
+    "--ci",
+    "--json",
+  ]);
+
+  expect(run.exitCode).toBe(0);
+  expect(() => JSON.parse(run.stdout)).not.toThrow();
+  expect(run.stderr).toContain("🔍 Anvil Audit:");
+  expect(run.stdout).not.toContain("🔍 Anvil Audit:");
+});
+
 test("--ci keeps the early mirror-sync story consistent when no mirror families are detected", async () => {
   const tempDir = mkdtempSync(join(tmpdir(), "anvil-ci-mirror-sync-"));
   const outputFile = join(tempDir, "audit-report.md");

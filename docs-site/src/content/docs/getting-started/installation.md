@@ -113,7 +113,7 @@ gh auth login
 gh auth status
 ```
 
-Without `gh`: `mine-pr` falls back to the GitHub API via `GITHUB_TOKEN` environment variable. With `gh` installed and authenticated, you get a smoother auth flow and higher rate limits.
+`mine-pr` requires the `gh` executable and uses its authenticated session. A `GITHUB_TOKEN` environment variable alone does not replace the CLI.
 
 ### AI synthesis (auto-detected)
 

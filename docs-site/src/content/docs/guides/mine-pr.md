@@ -13,10 +13,11 @@ Surfaces recurring PR review feedback that lacks rule coverage. Anvil fetches me
 bunx @lambdacurry/anvil mine-pr owner/repo
 ```
 
-Requires `GITHUB_TOKEN` in your environment:
+Requires the GitHub CLI (`gh`) installed and authenticated:
 
 ```bash
-export GITHUB_TOKEN=ghp_...
+gh auth login
+gh auth status
 bunx @lambdacurry/anvil mine-pr my-org/my-repo
 ```
 

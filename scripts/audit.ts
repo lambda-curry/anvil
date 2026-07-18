@@ -5598,53 +5598,61 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
     mkdirSync(artifactsDir, { recursive: true });
   }
 
-  console.log(`🔍 Anvil Audit: ${projectName}`);
-  console.log(`   Target: ${projectRoot}`);
-  console.log(`   Date:   ${auditDate}`);
-  console.log(`   Artifacts: ${artifactsDir}`);
+  const logProgress = (...values: unknown[]): void => {
+    if (args.jsonOutput) {
+      console.error(...values);
+    } else {
+      console.log(...values);
+    }
+  };
+
+  logProgress(`🔍 Anvil Audit: ${projectName}`);
+  logProgress(`   Target: ${projectRoot}`);
+  logProgress(`   Date:   ${auditDate}`);
+  logProgress(`   Artifacts: ${artifactsDir}`);
   if (auditConfig.present) {
-    console.log(
+    logProgress(
       `   Guardrail config: ${auditConfig.path} (${auditConfig.config.profile})`,
     );
   }
-  console.log("");
+  logProgress("");
 
-  console.log("📁 Discovering rule files...");
+  logProgress("📁 Discovering rule files...");
   const ruleFiles = discoverRuleFiles(projectRoot);
-  console.log(`   Found: ${ruleFiles.length} file(s)`);
+  logProgress(`   Found: ${ruleFiles.length} file(s)`);
   for (const rf of ruleFiles) {
-    console.log(`   - ${rf.relativePath} (${rf.tool}, ${rf.sizeLines} lines)`);
+    logProgress(`   - ${rf.relativePath} (${rf.tool}, ${rf.sizeLines} lines)`);
   }
-  console.log("");
+  logProgress("");
 
   const mirrorConfig = loadMirrorConfig(projectRoot);
   const ruleInventory = buildRuleInventory(ruleFiles, mirrorConfig);
-  console.log("🧩 Rule surface segmentation...");
-  console.log(`   Canonical unique: ${ruleInventory.canonicalFiles.length}`);
-  console.log(
+  logProgress("🧩 Rule surface segmentation...");
+  logProgress(`   Canonical unique: ${ruleInventory.canonicalFiles.length}`);
+  logProgress(
     `   Governance canonical: ${ruleInventory.canonicalGovernanceFiles.length}`,
   );
-  console.log(
+  logProgress(
     `   Generated canonical: ${ruleInventory.canonicalGeneratedFiles.length}`,
   );
   if (mirrorConfig.hasConfig) {
-    console.log(
+    logProgress(
       `   Mirror config: ai-rules-config.yaml (agents: ${mirrorConfig.agents.join(", ") || "none"})`,
     );
   } else {
-    console.log("   Mirror config: not found");
+    logProgress("   Mirror config: not found");
   }
-  console.log(
+  logProgress(
     `   Duplicate mirrors removed for scoring: ${ruleInventory.duplicateMirrorCount}`,
   );
-  console.log(
+  logProgress(
     `   Expected mirrors: ${ruleInventory.expectedDuplicateMirrorCount}`,
   );
-  console.log(
+  logProgress(
     `   Accidental duplicates: ${ruleInventory.accidentalDuplicateMirrorCount}`,
   );
-  console.log(`   Mirror sync: ${formatMirrorSyncSummary(ruleInventory)}`);
-  console.log("");
+  logProgress(`   Mirror sync: ${formatMirrorSyncSummary(ruleInventory)}`);
+  logProgress("");
 
   const hasAiRulesDir = existsSync(join(projectRoot, "ai-rules"));
   const hasBlockAiRules = existsSync(
@@ -5654,7 +5662,7 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
   let driftReportPath: string | null = null;
   let driftSummary: DriftSummary = { pathIssues: 0, dateIssues: 0, notes: 0 };
 
-  console.log("🔍 Running drift detection...");
+  logProgress("🔍 Running drift detection...");
   const driftOutputPath = join(artifactsDir, "drift-report.md");
   const driftResult = spawnSync(
     "bun",
@@ -5671,20 +5679,20 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
   if (driftResult.status === 0) {
     driftReportPath = driftOutputPath;
     driftSummary = parseDriftSummary(driftResult.stdout);
-    console.log(`   Drift report: ${driftOutputPath}`);
-    console.log(`   - Path drift: ${driftSummary.pathIssues}`);
-    console.log(`   - Date drift: ${driftSummary.dateIssues}`);
-    console.log(`   - Non-drift notes: ${driftSummary.notes}`);
+    logProgress(`   Drift report: ${driftOutputPath}`);
+    logProgress(`   - Path drift: ${driftSummary.pathIssues}`);
+    logProgress(`   - Date drift: ${driftSummary.dateIssues}`);
+    logProgress(`   - Non-drift notes: ${driftSummary.notes}`);
   } else {
-    console.log(
+    logProgress(
       `   Drift detection encountered issues: ${driftResult.stderr?.slice(0, 200) ?? "unknown error"}`,
     );
   }
-  console.log("");
+  logProgress("");
 
   let bootstrapDraftPath: string | null = null;
   if (!args.skipBootstrap) {
-    console.log("🧬 Running bootstrap stack detection...");
+    logProgress("🧬 Running bootstrap stack detection...");
     const bootstrapOutputPath = join(artifactsDir, "bootstrap-draft.md");
     const bootstrapResult = spawnSync(
       "bun",
@@ -5700,7 +5708,7 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
 
     if (bootstrapResult.status === 0) {
       bootstrapDraftPath = bootstrapOutputPath;
-      console.log(`   Bootstrap draft: ${bootstrapOutputPath}`);
+      logProgress(`   Bootstrap draft: ${bootstrapOutputPath}`);
       const summaryLines = (bootstrapResult.stdout ?? "")
         .split("\n")
         .filter(
@@ -5708,25 +5716,25 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
             l.includes("rule") || l.includes("match") || l.includes("stub"),
         );
       for (const line of summaryLines.slice(0, 3)) {
-        if (line.trim()) console.log(`   ${line.trim()}`);
+        if (line.trim()) logProgress(`   ${line.trim()}`);
       }
     } else {
-      console.log(
+      logProgress(
         `   Bootstrap detection issues: ${bootstrapResult.stderr?.slice(0, 200) ?? "unknown"}`,
       );
     }
-    console.log("");
+    logProgress("");
   }
 
-  console.log("🧱 Stage A: structural process checks...");
+  logProgress("🧱 Stage A: structural process checks...");
   const stageA = assessStageA(ruleInventory, driftSummary);
-  console.log(`   Stage A status: ${stageA.status.toUpperCase()}`);
+  logProgress(`   Stage A status: ${stageA.status.toUpperCase()}`);
   for (const check of stageA.checks) {
     const marker =
       check.status === "pass" ? "✅" : check.status === "warn" ? "⚠️" : "❌";
-    console.log(`   ${marker} ${check.label}: ${check.detail}`);
+    logProgress(`   ${marker} ${check.label}: ${check.detail}`);
   }
-  console.log("");
+  logProgress("");
 
   const stageBAdvisory = stageA.status !== "pass";
   const governanceFirstTarget =
@@ -5767,7 +5775,7 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
     ],
   };
 
-  console.log("📊 Analyzing coverage gaps...");
+  logProgress("📊 Analyzing coverage gaps...");
   const coverageSurface = scoringRuleFiles;
   const coverageGaps = analyzeCoverage(coverageSurface, projectRoot);
   const applicableCoverage = coverageGaps.filter((c) => !c.notApplicable);
@@ -5777,90 +5785,90 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
   const notApplicableNames = coverageGaps
     .filter((c) => c.notApplicable)
     .map((c) => c.name);
-  console.log(
+  logProgress(
     `   Covered: ${applicableCoverage.filter((c) => c.present).length}/${applicableCoverage.length} applicable categories` +
       `${notApplicableNames.length > 0 ? ` (${notApplicableNames.join(", ")}: not applicable)` : ""}` +
       `${stageBAdvisory ? " — advisory mode due to Stage A fail" : ""}`,
   );
   if (missing.length > 0) {
-    console.log(`   Gaps: ${missing.join(", ")}`);
+    logProgress(`   Gaps: ${missing.join(", ")}`);
   }
-  console.log("");
+  logProgress("");
 
-  console.log("🧾 Mining PR review comments for recurring failure modes...");
+  logProgress("🧾 Mining PR review comments for recurring failure modes...");
   const prMining = await minePrInsights(
     projectRoot,
     artifactsDir,
     scoringRuleFiles,
   );
   if (prMining.status === "available") {
-    console.log(`   Repo: ${prMining.repo}`);
-    console.log(`   PRs analyzed: ${prMining.analyzedPrs}`);
-    console.log(`   Comments reviewed: ${prMining.reviewedComments}`);
-    console.log(`   Candidates surfaced: ${prMining.candidateCount}`);
+    logProgress(`   Repo: ${prMining.repo}`);
+    logProgress(`   PRs analyzed: ${prMining.analyzedPrs}`);
+    logProgress(`   Comments reviewed: ${prMining.reviewedComments}`);
+    logProgress(`   Candidates surfaced: ${prMining.candidateCount}`);
     if (prMining.artifactPath) {
-      console.log(`   PR candidates artifact: ${prMining.artifactPath}`);
+      logProgress(`   PR candidates artifact: ${prMining.artifactPath}`);
     }
   } else {
-    console.log(`   Skipped: ${prMining.reason ?? "PR mining unavailable"}`);
+    logProgress(`   Skipped: ${prMining.reason ?? "PR mining unavailable"}`);
   }
-  console.log("");
+  logProgress("");
 
-  console.log("🧭 Stage C: gap coverage checks...");
+  logProgress("🧭 Stage C: gap coverage checks...");
   const { stage: stageC, metrics: gapCoverage } = assessStageC(
     coverageGaps,
     prMining,
     scoringRuleFiles,
   );
-  console.log(
+  logProgress(
     `   Stage C status: ${stageC.status.toUpperCase()} (score ${gapCoverage.score}/1)`,
   );
   for (const check of stageC.checks) {
     const marker =
       check.status === "pass" ? "✅" : check.status === "warn" ? "⚠️" : "❌";
-    console.log(`   ${marker} ${check.label}: ${check.detail}`);
+    logProgress(`   ${marker} ${check.label}: ${check.detail}`);
   }
-  console.log("");
+  logProgress("");
 
-  console.log("🧼 Stage D: overkill/noise checks...");
+  logProgress("🧼 Stage D: overkill/noise checks...");
   const { stage: stageD, metrics: overkill } = assessStageD(
     ruleInventory,
     scoringRuleFiles,
     surfacePosture,
   );
-  console.log(
+  logProgress(
     `   Stage D status: ${stageD.status.toUpperCase()} (score ${overkill.score}/1)`,
   );
   for (const check of stageD.checks) {
     const marker =
       check.status === "pass" ? "✅" : check.status === "warn" ? "⚠️" : "❌";
-    console.log(`   ${marker} ${check.label}: ${check.detail}`);
+    logProgress(`   ${marker} ${check.label}: ${check.detail}`);
   }
-  console.log("");
+  logProgress("");
 
-  console.log("🔐 Detecting enforcement layer...");
+  logProgress("🔐 Detecting enforcement layer...");
   const enforcementLayer = detectEnforcementLayer(
     projectRoot,
     ruleInventory.canonicalFiles,
   );
-  console.log(`   Level: ${enforcementLayer.level}`);
+  logProgress(`   Level: ${enforcementLayer.level}`);
   for (const signal of clamp(enforcementLayer.detected, 5)) {
-    console.log(`   ✓ ${signal}`);
+    logProgress(`   ✓ ${signal}`);
   }
   if (enforcementLayer.detected.length === 0) {
-    console.log("   (none detected — rules are advisory text only)");
+    logProgress("   (none detected — rules are advisory text only)");
   }
-  console.log("");
+  logProgress("");
 
-  console.log("🖥️ Detecting CLI quality signals...");
+  logProgress("🖥️ Detecting CLI quality signals...");
   const cliSignals = detectCliSignals(projectRoot);
-  console.log(
+  logProgress(
     `   CLI project: ${cliSignals.isCliProject ? "yes" : "no"} (confidence ${Math.round(cliSignals.confidence * 100)}%)`,
   );
   if (cliSignals.isCliProject && cliSignals.missingChecks.length > 0) {
-    console.log(`   Missing checks: ${cliSignals.missingChecks.join(", ")}`);
+    logProgress(`   Missing checks: ${cliSignals.missingChecks.join(", ")}`);
   }
-  console.log("");
+  logProgress("");
 
   const scoreResult = scoreAudit(
     scoringRuleFiles,
@@ -5873,7 +5881,7 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
   const { ruleScore5, ruleScore100, breakdown, recommendations, diagnostics } =
     scoreResult;
 
-  console.log("🛡️ Scoring guardrails...");
+  logProgress("🛡️ Scoring guardrails...");
   const guardrail = scoreGuardrails({
     projectRoot,
     ruleFilePaths: ruleFiles.map((r) => r.path),
@@ -5881,10 +5889,10 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
     auditConfig: auditConfig.config,
     configPresent: auditConfig.present,
   });
-  console.log(`   Guardrails: ${guardrail.total}/35 (${guardrail.maturity})`);
-  console.log("");
+  logProgress(`   Guardrails: ${guardrail.total}/35 (${guardrail.maturity})`);
+  logProgress("");
 
-  console.log("🧠 Synthesizing top improvements...");
+  logProgress("🧠 Synthesizing top improvements...");
   const nextRatchetLanes = buildWeakestRatchetLanes({
     scoreBreakdown: breakdown,
     guardrail,
@@ -5933,10 +5941,10 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
     throw new Error(buildAiRequiredMessage(args));
   }
 
-  console.log(
+  logProgress(
     `   Suggestions: ${aiSynthesis.suggestions.length} (${aiSynthesis.mode}${aiSynthesis.model ? `, ${aiSynthesis.model}` : ""})`,
   );
-  console.log("");
+  logProgress("");
 
   if (stageBAdvisory) {
     recommendations.unshift(
@@ -5983,13 +5991,13 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
     stageD,
     surfacePosture,
   });
-  console.log("📦 Process issue queue + remediation pack...");
-  console.log(`   Issues: ${processIssues.length}`);
-  console.log(`   Remediation tasks: ${remediationPack.tasks.length}`);
-  console.log(
+  logProgress("📦 Process issue queue + remediation pack...");
+  logProgress(`   Issues: ${processIssues.length}`);
+  logProgress(`   Remediation tasks: ${remediationPack.tasks.length}`);
+  logProgress(
     `   Rule portfolio actions: change=${rulePortfolio.changeExisting.length}, add=${rulePortfolio.addNew.length}, simplify/remove=${rulePortfolio.reduceOverkill.length}`,
   );
-  console.log("");
+  logProgress("");
 
   const result: AuditResult = {
     auditMode,
