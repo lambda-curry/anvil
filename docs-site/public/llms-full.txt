@@ -3,7 +3,7 @@
 > AI rules audit engine — score, detect drift, and improve rules in any AI-assisted codebase.
 
 > Source: https://lambda-curry.github.io/anvil/
-> Generated: 2026-07-17
+> Generated: 2026-07-18
 
 ## Installation
 
@@ -118,7 +118,7 @@ gh auth login
 gh auth status
 ```
 
-Without `gh`: `mine-pr` falls back to the GitHub API via `GITHUB_TOKEN` environment variable. With `gh` installed and authenticated, you get a smoother auth flow and higher rate limits.
+`mine-pr` requires the `gh` executable and uses its authenticated session. A `GITHUB_TOKEN` environment variable alone does not replace the CLI.
 
 ### AI synthesis (auto-detected)
 
@@ -828,10 +828,11 @@ Surfaces recurring PR review feedback that lacks rule coverage. Anvil fetches me
 bunx @lambdacurry/anvil mine-pr owner/repo
 ```
 
-Requires `GITHUB_TOKEN` in your environment:
+Requires the GitHub CLI (`gh`) installed and authenticated:
 
 ```bash
-export GITHUB_TOKEN=ghp_...
+gh auth login
+gh auth status
 bunx @lambdacurry/anvil mine-pr my-org/my-repo
 ```
 
@@ -895,20 +896,22 @@ If you arrived here from the external first-user proof docs, use the exact pinne
 Detect drift in rule surfaces.
 
 ```bash
-anvil drift ./my-repo
+anvil drift --target ./my-repo
 ```
 
 Checks glob resolution, path existence, validation dates, and coverage gaps.
+The positional form `anvil drift ./my-repo` remains supported for compatibility.
 
 ## `anvil bootstrap`
 
 Generate starter rule sets from tech stack analysis.
 
 ```bash
-anvil bootstrap ./my-repo --output ./bootstrap-draft.md
+anvil bootstrap --target ./my-repo --output ./bootstrap-draft.md
 ```
 
 Reads `package.json`, `tsconfig.json`, and framework configs to generate tailored starter rules.
+The positional form `anvil bootstrap ./my-repo` remains supported for compatibility.
 
 ## `anvil mine-pr`
 
@@ -918,7 +921,7 @@ Mine GitHub PR review comments for rule candidates.
 anvil mine-pr owner/repo
 ```
 
-Requires `GITHUB_TOKEN` in the environment.
+Requires the GitHub CLI (`gh`) installed and authenticated. A `GITHUB_TOKEN` environment variable alone is not a supported fallback.
 
 ## Install methods
 

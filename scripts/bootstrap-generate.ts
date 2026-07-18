@@ -8,6 +8,7 @@
  * Does NOT modify existing AGENTS.md or TOOLS.md — output is advisory only.
  *
  * Usage:
+ *   bun run scripts/bootstrap-generate.ts --target <project-path> [--output <file>]
  *   bun run scripts/bootstrap-generate.ts <project-path> [--output <file>]
  */
 
@@ -622,18 +623,41 @@ export function buildDraft(
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
 export function parseArgs(argv: string[]) {
-  const projectPath = argv[2];
-  if (!projectPath) {
-    console.error(
-      "Usage: bun run scripts/bootstrap-generate.ts <project-path> [--output <file>]",
-    );
-    process.exit(1);
+  let projectPath: string | null = null;
+  let outputFile: string | null = null;
+
+  for (let i = 2; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === "--target") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("--")) {
+        console.error("--target requires a project path");
+        process.exit(1);
+      }
+      projectPath = value;
+      i++;
+    } else if (arg === "--output") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("--")) {
+        console.error("--output requires a file path");
+        process.exit(1);
+      }
+      outputFile = value;
+      i++;
+    } else if (!arg.startsWith("--") && !projectPath) {
+      projectPath = arg;
+    } else {
+      console.error(`Unknown argument: ${arg}`);
+      process.exit(1);
+    }
   }
 
-  let outputFile: string | null = null;
-  const idx = argv.indexOf("--output");
-  if (idx !== -1 && argv[idx + 1]) {
-    outputFile = argv[idx + 1];
+  if (!projectPath) {
+    console.error(
+      "Usage: bun run scripts/bootstrap-generate.ts --target <project-path> [--output <file>]\n" +
+        "       bun run scripts/bootstrap-generate.ts <project-path> [--output <file>]",
+    );
+    process.exit(1);
   }
 
   return { projectPath, outputFile };

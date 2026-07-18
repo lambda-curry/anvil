@@ -187,10 +187,10 @@ Anvil is not primarily a UI project. Its real proof surface is whether downstrea
 bun run scripts/audit.ts --target /path/to/repo
 
 # Detect drift (stale globs, uncovered patterns)
-bun run scripts/drift-detect.ts /path/to/repo
+bun run scripts/drift-detect.ts --target /path/to/repo
 
 # Bootstrap starter rules from tech stack
-bun run scripts/bootstrap-generate.ts /path/to/repo
+bun run scripts/bootstrap-generate.ts --target /path/to/repo
 
 # Mine PR history for rule candidates
 bun run scripts/mine-pr-rules.ts owner/repo

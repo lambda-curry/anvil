@@ -101,7 +101,8 @@ function defaultReportOutputPath(projectRoot: string): string {
 
 export function usageAndExit(): never {
   console.error(
-    "Usage: bun run scripts/drift-detect.ts <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
+    "Usage: bun run scripts/drift-detect.ts --target <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
+      "       bun run scripts/drift-detect.ts <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
       "Default output: docs/audits/artifacts/<project>-<date>/drift-report.md",
   );
   process.exit(1);
@@ -119,13 +120,21 @@ export type IgnoreMatcher = {
 };
 
 export function parseArgs(argv: string[]): ParsedArgs {
-  const projectPath = argv[2];
+  let projectPath: string | null = null;
   let extraSkipDirs: string[] = [];
   let outputFile: string | null = null;
 
-  for (let i = 3; i < argv.length; i++) {
+  for (let i = 2; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === "--skip-dirs") {
+    if (arg === "--target") {
+      const val = argv[i + 1];
+      if (!val || val.startsWith("--")) {
+        console.error("--target requires a project path");
+        process.exit(1);
+      }
+      projectPath = val;
+      i++;
+    } else if (arg === "--skip-dirs") {
       const val = argv[i + 1];
       if (!val) {
         console.error(
@@ -140,16 +149,22 @@ export function parseArgs(argv: string[]): ParsedArgs {
       i++;
     } else if (arg === "--output") {
       const val = argv[i + 1];
-      if (!val) {
+      if (!val || val.startsWith("--")) {
         console.error("--output requires a file path");
         process.exit(1);
       }
       outputFile = val;
       i++;
+    } else if (!arg.startsWith("--") && !projectPath) {
+      projectPath = arg;
     } else {
       console.error(`Unknown argument: ${arg}`);
       usageAndExit();
     }
+  }
+
+  if (!projectPath) {
+    usageAndExit();
   }
 
   return { projectPath, extraSkipDirs, outputFile };
