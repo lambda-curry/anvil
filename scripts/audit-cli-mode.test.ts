@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -162,6 +169,43 @@ test("--json keeps stdout machine-parseable and sends progress to stderr", async
   expect(() => JSON.parse(run.stdout)).not.toThrow();
   expect(run.stderr).toContain("🔍 Anvil Audit:");
   expect(run.stdout).not.toContain("🔍 Anvil Audit:");
+});
+
+test("--json preserves the --ci hard-gate exit code after printing JSON", async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "anvil-json-hard-gate-"));
+  const targetDir = join(tempDir, "target");
+
+  try {
+    cpSync(resolve(repoRoot, fixture), targetDir, { recursive: true });
+    mkdirSync(join(targetDir, ".anvil"), { recursive: true });
+    writeFileSync(
+      join(targetDir, ".anvil", "config.yml"),
+      [
+        "version: 1",
+        "hardGates:",
+        "  enabled: true",
+        "  exitCode: 7",
+        "  dimensions:",
+        "    driftResilience:",
+        "      minScore: 1",
+      ].join("\n"),
+    );
+
+    const run = await runAuditCli([
+      "--target",
+      targetDir,
+      "--skip-bootstrap",
+      "--ci",
+      "--json",
+    ]);
+
+    expect(run.exitCode).toBe(7);
+    const result = JSON.parse(run.stdout);
+    expect(result.guardrail.hardGates.enabled).toBe(true);
+    expect(result.guardrail.hardGates.passed).toBe(false);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test("--ci keeps the early mirror-sync story consistent when no mirror families are detected", async () => {

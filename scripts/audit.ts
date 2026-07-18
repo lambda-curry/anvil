@@ -6043,6 +6043,15 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
   return result;
 }
 
+function enforceHardGateExit(result: AuditResult): void {
+  if (
+    result.guardrail.hardGates.enabled &&
+    !result.guardrail.hardGates.passed
+  ) {
+    process.exit(result.guardrail.hardGates.exitCode);
+  }
+}
+
 export async function main(): Promise<void> {
   const args = parseArgs(process.argv);
   if (args.noAiAliasUsed) {
@@ -6052,6 +6061,7 @@ export async function main(): Promise<void> {
 
   if (args.jsonOutput) {
     console.log(JSON.stringify(result, null, 2));
+    enforceHardGateExit(result);
     return;
   }
 
@@ -6073,12 +6083,7 @@ export async function main(): Promise<void> {
     `✅ Guardrail Readiness Score: ${result.guardrail.total}/35 (${result.guardrail.maturity})`,
   );
   console.log(`✅ Audit report written: ${outputPath}`);
-  if (
-    result.guardrail.hardGates.enabled &&
-    !result.guardrail.hardGates.passed
-  ) {
-    process.exit(result.guardrail.hardGates.exitCode);
-  }
+  enforceHardGateExit(result);
 }
 
 if (import.meta.main) {
