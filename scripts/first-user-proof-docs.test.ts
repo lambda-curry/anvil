@@ -12,6 +12,7 @@ import {
   plainRepoRootExactVersionAuditCommand,
   threeLineOpener,
   wrappedExactVersionCommand,
+  wrappedPinnedVersionCommand,
 } from "./proof-lane-contract.ts";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
@@ -105,21 +106,22 @@ test("public proof guides mirror the current-version opener contract", () => {
 
   for (const doc of [publicGuide, publicPacket]) {
     expectAll(doc, [...threeLineOpener]);
-    expectAll(doc, [
-      plainRepoRootExactVersionAuditCommand,
-      "exact pinned command",
-      "unpinned examples",
-    ]);
+    expectAll(doc, ["exact pinned command", "unpinned examples"]);
     expect(doc).not.toContain("--output ./your-repo/anvil-audit.md");
     expect(doc).not.toContain("```bash\n");
   }
 
+  expect(publicGuide).toContain(plainRepoRootExactVersionAuditCommand);
+
   expectAll(publicPacket, [
-    joinCommandLines(wrappedExactVersionCommand),
+    plainPinnedRepoRootAuditCommand,
+    joinCommandLines(wrappedPinnedVersionCommand),
     "Install path: bunx / npx / global install",
     "Saved report path or screenshot link",
     `retained audit command keeps the pinned \`${version}\` local-only \`--ci\` spelling`,
   ]);
+  expect(publicPacket).not.toContain("@<exact-version>");
+  expect(publicPacket).not.toContain("@lambdacurry/anvil@alpha");
 });
 
 test("first-run docs fence proof testers away from floating alpha commands", () => {
@@ -164,8 +166,11 @@ test("first-run success text matches the terminal summary and saved Markdown rep
   expect(firstAudit).not.toContain("scored markdown output to stdout");
 
   expect(publicPacket).toContain(
-    "The current pinned `0.1.0-alpha.6` proof packet uses one repo-root saved-report command with `--ci`",
+    "The current proof packet is pinned to `0.1.0-alpha.6` and uses one repo-root saved-report command with `--ci`",
   );
+  expect(publicPacket).toContain(plainPinnedRepoRootAuditCommand);
+  expect(publicPacket).not.toContain("@<exact-version>");
+  expect(publicPacket).not.toContain("@lambdacurry/anvil@alpha");
   expect(publicPacket).not.toContain("The alpha.5 proof packet");
 });
 
@@ -226,10 +231,10 @@ test("generated llms-full preserves the pinned proof-lane handoff contract", () 
   const llmsFull = readRepoFile("docs-site/public/llms-full.txt");
 
   expectAll(llmsFull, [
-    "keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note",
+    `The current proof packet is pinned to \`${version}\` and uses one repo-root saved-report command with \`--ci\``,
     pinnedProofPacketUsesCiNote,
     "https://lambda-curry.github.io/anvil/guides/first-user-proof-packet",
-    plainRepoRootExactVersionAuditCommand,
+    plainPinnedRepoRootAuditCommand,
   ]);
 
   expect(llmsFull).not.toContain(
