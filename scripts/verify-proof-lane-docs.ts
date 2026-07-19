@@ -8,7 +8,7 @@ import {
   plainPinnedRepoRootAuditCommand,
   plainRepoRootExactVersionAuditCommand,
   threeLineOpener,
-  wrappedExactVersionCommand,
+  wrappedPinnedVersionCommand,
 } from "./proof-lane-contract.ts";
 
 export { expectedVersion } from "./proof-lane-contract.ts";
@@ -118,8 +118,8 @@ const HOMEPAGE_FIRST_AUDIT_BLOCK = [
   "  --ci",
 ] as const;
 const PROOF_PACKET_BLOCKS = [
-  [plainRepoRootExactVersionAuditCommand],
-  wrappedExactVersionCommand,
+  [plainPinnedRepoRootAuditCommand],
+  wrappedPinnedVersionCommand,
 ] as const;
 const FIRST_USER_PROOF_BLOCKS = [
   [plainRepoRootExactVersionAuditCommand],

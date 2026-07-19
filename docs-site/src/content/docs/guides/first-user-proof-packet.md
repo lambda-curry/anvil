@@ -16,11 +16,10 @@ Paste the single command below from that repo's root; it saves `./anvil-audit.md
 Send back whether it worked first try, the first useful fix the report pointed to, and the saved report file or excerpt.
 
 ```bash wrap
-bunx @lambdacurry/anvil@<exact-version> audit --target . --ci --output ./anvil-audit.md
+bunx @lambdacurry/anvil@0.1.0-alpha.6 audit --target . --ci --output ./anvil-audit.md
 ```
 
-Replace `<exact-version>` with the published build you want validated. The alpha.5 proof packet uses one repo-root saved-report command so the tester is not choosing between layouts.
-The pinned `0.1.0-alpha.6` proof packet uses `--ci`.
+The current proof packet is pinned to `0.1.0-alpha.6` and uses one repo-root saved-report command with `--ci`, so the tester is not choosing between versions or layouts.
 
 Helpful docs:
 - Getting started: https://lambda-curry.github.io/anvil/getting-started/first-audit
@@ -41,7 +40,7 @@ If you want one extra cross-check, this should print the same pinned version:
 
 ```bash wrap
 bunx \
-  @lambdacurry/anvil@<exact-version> \
+  @lambdacurry/anvil@0.1.0-alpha.6 \
   --version
 ```
 
@@ -76,7 +75,7 @@ Save one small packet with these fields:
 - `Saved report path or screenshot link`
 - `Follow-up issue or doc fix created`
 
-If the tester used global `anvil`, keep both the pinned `bun add -g @lambdacurry/anvil@<exact-version>` line and the `anvil audit ...` line together in `Exact command`. If the tester stayed on `bunx` or `npx`, keep the optional `--version` line on that same launcher instead of switching to global `anvil`.
+If the tester used global `anvil`, keep both the pinned `bun add -g @lambdacurry/anvil@0.1.0-alpha.6` line and the `anvil audit ...` line together in `Exact command`. If the tester stayed on `bunx` or `npx`, keep the optional `--version` line on that same launcher instead of switching to global `anvil`.
 If the packet keeps the local report path, keep the same path the retained audit command wrote with `--output`; use a screenshot or approved external link only when the retained artifact is intentionally something else.
 
 Count the proof as complete only if the tester is outside Lambda Curry, the run succeeds on a real repo, the retained audit command keeps the pinned `0.1.0-alpha.6` local-only `--ci` spelling, the packet includes a real artifact, and any rough edge becomes a follow-up.

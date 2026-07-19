@@ -66,8 +66,9 @@ anvil audit \
 
 **Success looks like this:**
 
-- Anvil prints a markdown report right away
-- you see rule files found, coverage gaps, and drift issues
+- the terminal shows progress, then a concise score summary
+- the final terminal line names the saved Markdown report: `Audit report written: <path>`
+- without `--output`, the report is saved under `docs/audits/<repo>-audit-<date>.md` relative to the directory where you ran Anvil
 - nothing leaves your machine
 
 ## If you already have a provider and want the richer report
@@ -132,27 +133,21 @@ If no provider is available, rerun the recommended first run above.
 1. **Discovery** — Anvil finds all rule surface files (CLAUDE.md, AGENTS.md, `.cursor/rules/`, `ai-rules/`, etc.)
 2. **Drift detection** — stale globs, missing path references, date-stale entries
 3. **Coverage scoring** — gaps against a community baseline of common rule categories
-4. **Report** — scored markdown output to stdout; on the full AI-backed lane, this includes synthesized improvement priorities when a provider is available
+4. **Report** — the terminal prints a concise score summary and the full Markdown report is written to the path named by `Audit report written: <path>`; on the full AI-backed lane, the saved report includes synthesized improvement priorities when a provider is available
 
-## Example output
+## Example terminal finish
 
 ```text wrap
-Anvil Audit — /path/to/my-repo
-Rule files found: 3
-Guardrail score: 22/35
-
-Coverage gaps:
-  • No rule covers: error handling patterns
-  • No rule covers: security/secrets hygiene
-
-Drift issues (2):
-  • CLAUDE.md:14 — glob 'src/legacy/**' matches 0 files (medium)
-  • AGENTS.md:8 — referenced path 'docs/arch.md' not found (low)
+✅ Structural Lint Score: 78/100 (3.9/5)
+✅ Guardrail Readiness Score: 22/35 (Established)
+✅ Audit report written: /path/to/my-repo/docs/audits/my-repo-audit-2026-07-19.md
 ```
+
+Open the reported path to read the full Markdown audit, including coverage gaps, drift issues, and remediation guidance.
 
 ## After your first successful audit
 
-### Save the report
+### Choose the report path
 
 ```bash wrap
 bunx @lambdacurry/anvil audit \
@@ -160,7 +155,7 @@ bunx @lambdacurry/anvil audit \
   --output ./audit-report.md
 ```
 
-The `--output` flag writes the full markdown report to the specified path. Relative paths resolve from your current shell cwd.
+Anvil always saves the full Markdown report. Use `--output` when you want to choose its path instead of the default `docs/audits/<repo>-audit-<date>.md`. Relative paths resolve from your current shell cwd.
 
 ### AI provider behavior
 

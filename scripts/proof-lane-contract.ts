@@ -85,6 +85,10 @@ export const wrappedParentDirExactVersionAuditCommand =
 
 export const wrappedExactVersionCommand = buildWrappedVersionCommandLines();
 
+export const wrappedPinnedVersionCommand = buildWrappedVersionCommandLines({
+  packageToken: `@lambdacurry/anvil@${expectedVersion}`,
+});
+
 export const wrappedPinnedRepoRootAuditCommand = buildWrappedAuditCommandLines({
   output: canonicalSavedReportPath,
   packageToken: `@lambdacurry/anvil@${expectedVersion}`,
