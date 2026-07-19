@@ -146,6 +146,29 @@ test("first-run docs fence proof testers away from floating alpha commands", () 
   }
 });
 
+test("first-run success text matches the terminal summary and saved Markdown report", () => {
+  const firstAudit = readRepoFile(
+    "docs-site/src/content/docs/getting-started/first-audit.md",
+  );
+  const publicPacket = readRepoFile(
+    "docs-site/src/content/docs/guides/first-user-proof-packet.md",
+  );
+
+  expectAll(firstAudit, [
+    "the terminal shows progress, then a concise score summary",
+    "Audit report written: <path>",
+    "docs/audits/<repo>-audit-<date>.md",
+    "Anvil always saves the full Markdown report.",
+  ]);
+  expect(firstAudit).not.toContain("prints a markdown report right away");
+  expect(firstAudit).not.toContain("scored markdown output to stdout");
+
+  expect(publicPacket).toContain(
+    "The current pinned `0.1.0-alpha.6` proof packet uses one repo-root saved-report command with `--ci`",
+  );
+  expect(publicPacket).not.toContain("The alpha.5 proof packet");
+});
+
 test("getting-started and BYOK notes match the current pinned packet", () => {
   const guide = readRepoFile("docs/getting-started.md");
   const byok = readRepoFile("docs/byok-trust-model.md");

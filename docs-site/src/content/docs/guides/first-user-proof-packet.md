@@ -19,8 +19,7 @@ Send back whether it worked first try, the first useful fix the report pointed t
 bunx @lambdacurry/anvil@<exact-version> audit --target . --ci --output ./anvil-audit.md
 ```
 
-Replace `<exact-version>` with the published build you want validated. The alpha.5 proof packet uses one repo-root saved-report command so the tester is not choosing between layouts.
-The pinned `0.1.0-alpha.6` proof packet uses `--ci`.
+Replace `<exact-version>` with the published build you want validated. The current pinned `0.1.0-alpha.6` proof packet uses one repo-root saved-report command with `--ci`, so the tester is not choosing between versions or layouts.
 
 Helpful docs:
 - Getting started: https://lambda-curry.github.io/anvil/getting-started/first-audit
