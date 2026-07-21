@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
 
@@ -8,6 +9,7 @@ type PackageJson = {
   bin?: Record<string, string>;
   engines?: Record<string, string>;
   packageManager?: string;
+  version?: string;
 };
 
 type PackedFile = {
@@ -15,6 +17,7 @@ type PackedFile = {
 };
 
 type NpmPackDryRunEntry = {
+  filename?: string;
   files: PackedFile[];
 };
 
@@ -64,6 +67,22 @@ function readPackedFilePaths(): string[] {
   expect(entries).toHaveLength(1);
 
   return entries[0].files.map((file) => file.path);
+}
+
+function parseNpmPackOutput(stdout: Uint8Array): NpmPackDryRunEntry {
+  const lines = new TextDecoder().decode(stdout).split("\n");
+  const start = lines.findIndex(
+    (line) =>
+      line.trimStart().startsWith("{") || line.trimStart().startsWith("["),
+  );
+  expect(start).toBeGreaterThanOrEqual(0);
+
+  const parsed = JSON.parse(lines.slice(start).join("\n")) as
+    | NpmPackDryRunEntry[]
+    | Record<string, NpmPackDryRunEntry>;
+  const entries = Array.isArray(parsed) ? parsed : Object.values(parsed);
+  expect(entries).toHaveLength(1);
+  return entries[0];
 }
 
 test("published package metadata declares the Bun-native launcher contract", () => {
@@ -168,4 +187,72 @@ test("packed npm artifact keeps the runtime and proof surfaces while excluding i
   expect(filePaths).not.toContain("scripts/slack-notify.ts");
   expect(filePaths).not.toContain("scripts/verify-cycle-memory.ts");
   expect(filePaths).not.toContain("scripts/verify-first-user-proof.test.ts");
+});
+
+test("packed npm artifact executes version and audit commands through npx", () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), "anvil-npx-contract-"));
+
+  try {
+    const pack = Bun.spawnSync(
+      [
+        "npm",
+        "pack",
+        "--json",
+        "--ignore-scripts",
+        "--loglevel=error",
+        "--pack-destination",
+        tempRoot,
+      ],
+      {
+        cwd: REPO_ROOT,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
+    expect(pack.exitCode).toBe(0);
+
+    const packedEntry = parseNpmPackOutput(pack.stdout);
+    expect(packedEntry.filename).toBeTruthy();
+    const tarballPath = resolve(tempRoot, packedEntry.filename!);
+
+    const version = Bun.spawnSync(
+      ["npx", "--yes", `--package=${tarballPath}`, "--", "anvil", "--version"],
+      {
+        cwd: tempRoot,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
+    expect(version.exitCode).toBe(0);
+    expect(new TextDecoder().decode(version.stdout).trim()).toBe(
+      packageJson.version,
+    );
+
+    const reportPath = resolve(tempRoot, "anvil-audit.md");
+    const audit = Bun.spawnSync(
+      [
+        "npx",
+        "--yes",
+        `--package=${tarballPath}`,
+        "--",
+        "anvil",
+        "audit",
+        "--target",
+        resolve(REPO_ROOT, "scripts/__fixtures__/sample-cli-repo"),
+        "--ci",
+        "--output",
+        reportPath,
+      ],
+      {
+        cwd: tempRoot,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
+    expect(audit.exitCode).toBe(0);
+    expect(statSync(reportPath).size).toBeGreaterThan(0);
+    expect(readFileSync(reportPath, "utf8")).toContain("# Anvil Audit");
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 });
