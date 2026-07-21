@@ -85,6 +85,45 @@ function parseNpmPackOutput(stdout: Uint8Array): NpmPackDryRunEntry {
   return entries[0];
 }
 
+function packCli(tempRoot: string): string {
+  const pack = Bun.spawnSync(
+    [
+      "npm",
+      "pack",
+      "--json",
+      "--ignore-scripts",
+      "--loglevel=error",
+      "--pack-destination",
+      tempRoot,
+    ],
+    {
+      cwd: REPO_ROOT,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+  expect(pack.exitCode).toBe(0);
+
+  const packedEntry = parseNpmPackOutput(pack.stdout);
+  expect(packedEntry.filename).toBeTruthy();
+  return resolve(tempRoot, packedEntry.filename!);
+}
+
+function runPackedCli(
+  tarballPath: string,
+  cwd: string,
+  args: string[],
+): ReturnType<typeof Bun.spawnSync> {
+  return Bun.spawnSync(
+    ["npx", "--yes", `--package=${tarballPath}`, "--", "anvil", ...args],
+    {
+      cwd,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+}
+
 test("published package metadata declares the Bun-native launcher contract", () => {
   expect(packageJson.bin).toEqual({
     anvil: "./bin/anvil.ts",
@@ -193,62 +232,22 @@ test("packed npm artifact executes version and audit commands through npx", () =
   const tempRoot = mkdtempSync(join(tmpdir(), "anvil-npx-contract-"));
 
   try {
-    const pack = Bun.spawnSync(
-      [
-        "npm",
-        "pack",
-        "--json",
-        "--ignore-scripts",
-        "--loglevel=error",
-        "--pack-destination",
-        tempRoot,
-      ],
-      {
-        cwd: REPO_ROOT,
-        stdout: "pipe",
-        stderr: "pipe",
-      },
-    );
-    expect(pack.exitCode).toBe(0);
-
-    const packedEntry = parseNpmPackOutput(pack.stdout);
-    expect(packedEntry.filename).toBeTruthy();
-    const tarballPath = resolve(tempRoot, packedEntry.filename!);
-
-    const version = Bun.spawnSync(
-      ["npx", "--yes", `--package=${tarballPath}`, "--", "anvil", "--version"],
-      {
-        cwd: tempRoot,
-        stdout: "pipe",
-        stderr: "pipe",
-      },
-    );
+    const tarballPath = packCli(tempRoot);
+    const version = runPackedCli(tarballPath, tempRoot, ["--version"]);
     expect(version.exitCode).toBe(0);
     expect(new TextDecoder().decode(version.stdout).trim()).toBe(
       packageJson.version,
     );
 
     const reportPath = resolve(tempRoot, "anvil-audit.md");
-    const audit = Bun.spawnSync(
-      [
-        "npx",
-        "--yes",
-        `--package=${tarballPath}`,
-        "--",
-        "anvil",
-        "audit",
-        "--target",
-        resolve(REPO_ROOT, "scripts/__fixtures__/sample-cli-repo"),
-        "--ci",
-        "--output",
-        reportPath,
-      ],
-      {
-        cwd: tempRoot,
-        stdout: "pipe",
-        stderr: "pipe",
-      },
-    );
+    const audit = runPackedCli(tarballPath, tempRoot, [
+      "audit",
+      "--target",
+      resolve(REPO_ROOT, "scripts/__fixtures__/sample-cli-repo"),
+      "--ci",
+      "--output",
+      reportPath,
+    ]);
     expect(audit.exitCode).toBe(0);
     expect(statSync(reportPath).size).toBeGreaterThan(0);
     expect(readFileSync(reportPath, "utf8")).toContain("# Anvil Audit");
