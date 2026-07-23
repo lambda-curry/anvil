@@ -43,6 +43,11 @@ export default defineConfig({
             { label: 'Drift Detection', slug: 'guides/drift-detection' },
             { label: 'Bootstrap Rules', slug: 'guides/bootstrap' },
             { label: 'Mine PR History', slug: 'guides/mine-pr' },
+          ],
+        },
+        {
+          label: 'Proof Process',
+          items: [
             { label: 'First User Proof', slug: 'guides/first-user-proof' },
             {
               label: 'First User Proof Packet',

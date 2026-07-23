@@ -62,7 +62,7 @@ The intent is to send only what is needed for the optional interpretation/synthe
 | Drift / coverage scoring | stays local | stays local |
 | Markdown audit output | stays local unless you choose where to save/share it | stays local unless you choose where to save/share it |
 | Provider credentials | stay local | stay local |
-| Focused audit context for synthesis | not sent | may be sent only after explicit opt-in |
+| Focused audit context for synthesis | not sent | sent to an auto-detected or explicitly selected provider; use `--ci` to stay local |
 
 This table is the practical rule: use `--ci` when you need a fully local boundary; use the default `audit` path when you want the full AI-backed product output.
 
@@ -77,7 +77,7 @@ Anvil never sends:
 ## Operator responsibilities
 
 BYOK shifts provider trust decisions to the operator. You are responsible for:
-- choosing whether to enable provider-backed synthesis at all
+- choosing the local-only `--ci` path or the default provider-backed path
 - selecting the provider and model you trust
 - supplying provider credentials through your local environment
 - deciding whether the target repo is appropriate for external synthesis
@@ -90,7 +90,9 @@ You control provider/model selection with flags such as:
 - `--ai-provider`
 - `--ai-model`
 
-That means the operator, not Anvil, chooses whether any external provider is involved.
+The default `audit` path auto-detects an available provider. The operator chooses
+the fully local boundary by passing `--ci`, or can select a specific provider with
+the flags above.
 
 ## Practical decision rule
 

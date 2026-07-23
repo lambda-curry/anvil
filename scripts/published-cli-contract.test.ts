@@ -154,8 +154,12 @@ test("CLI help spells out the supported launcher paths", () => {
     "npx @lambdacurry/anvil <command> [...args]    Alternate launcher; Bun and Node.js >= 20 must already be installed",
   );
   expect(stdout).toContain(
-    "bun add -g @lambdacurry/anvil && anvil <command> [...args]",
+    "bun add -g @lambdacurry/anvil                 Global install",
   );
+  expect(stdout).toContain(
+    "anvil <command> [...args]                    Run after global install",
+  );
+  expect(stdout).not.toContain("&& anvil");
 });
 
 test("repo README and public installation guide match the published launcher contract", () => {

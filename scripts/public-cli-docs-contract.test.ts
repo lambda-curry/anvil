@@ -27,9 +27,35 @@ test("mine-pr docs require the gh CLI and do not promise a token-only fallback",
   );
 });
 
-test("first-user proof pages are discoverable from the public docs sidebar", () => {
+test("operator proof pages have a separate public docs sidebar section", () => {
   const config = readRepoFile("docs-site/astro.config.mjs");
 
+  expect(config).toContain("label: 'Proof Process'");
   expect(config).toContain("slug: 'guides/first-user-proof'");
   expect(config).toContain("slug: 'guides/first-user-proof-packet'");
+
+  const guidesStart = config.indexOf("label: 'Guides'");
+  const proofStart = config.indexOf("label: 'Proof Process'");
+  const referenceStart = config.indexOf("label: 'Reference'");
+  const guidesSection = config.slice(guidesStart, proofStart);
+  const proofSection = config.slice(proofStart, referenceStart);
+
+  expect(guidesSection).not.toContain("slug: 'guides/first-user-proof'");
+  expect(guidesSection).not.toContain("slug: 'guides/first-user-proof-packet'");
+  expect(proofSection).toContain("slug: 'guides/first-user-proof'");
+  expect(proofSection).toContain("slug: 'guides/first-user-proof-packet'");
+});
+
+test("BYOK docs describe provider auto-detection without an opt-in claim", () => {
+  const docs = [
+    readRepoFile("docs/byok-trust-model.md"),
+    readRepoFile("docs-site/src/content/docs/guides/byok-trust-model.md"),
+  ];
+
+  for (const doc of docs) {
+    expect(doc).not.toContain("opt-in only");
+    expect(doc).not.toContain("only after explicit opt-in");
+    expect(doc).toContain("auto-detected or explicitly selected provider");
+    expect(doc).toContain("use `--ci` to stay local");
+  }
 });
