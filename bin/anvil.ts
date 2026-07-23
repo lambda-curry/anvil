@@ -38,7 +38,10 @@ function printHelp(version: string): void {
   console.log(
     "  npx @lambdacurry/anvil <command> [...args]    Alternate launcher; Bun and Node.js >= 20 must already be installed",
   );
-  console.log("  bun add -g @lambdacurry/anvil && anvil <command> [...args]");
+  console.log("  bun add -g @lambdacurry/anvil                 Global install");
+  console.log(
+    "  anvil <command> [...args]                    Run after global install",
+  );
   console.log("");
   console.log("Commands:");
   console.log("  audit      Run full rule audit (scripts/audit.ts)");

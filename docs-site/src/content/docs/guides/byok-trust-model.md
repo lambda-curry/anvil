@@ -52,7 +52,7 @@ Only on the full AI-backed path, Anvil may send a **focused subset of audit cont
 | Drift / coverage scoring | stays local | stays local |
 | Markdown output | stays local | stays local |
 | Provider credentials | stay local | stay local |
-| Synthesis context | not sent | may be sent (opt-in only) |
+| Synthesis context | not sent | sent to an auto-detected or explicitly selected provider; use `--ci` to stay local |
 
 ## FAQ
 
