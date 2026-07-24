@@ -42,12 +42,13 @@ Rule provenance tracked. External rules reviewed before adoption.
 
 The guardrail readiness score covers:
 
-- CI discipline
-- Type safety
-- Test depth
-- Security
-- Drift resilience
-- Hook coverage
+- **CI discipline** — pull-request workflows run the core lint, test, build, and typecheck gates.
+- **Type safety** — TypeScript strictness and typechecking are configured and enforced.
+- **Test depth** — tests cover real scenarios and run as part of the delivery path.
+- **Code quality** — linting and formatting policies are configured and enforced.
+- **Review ownership** — pull-request review and ownership rules protect critical paths.
+- **Security** — secret, dependency, permission, and AI-specific risks have explicit guardrails.
+- **Drift resilience** — automation keeps rules and documentation aligned with the codebase.
 
 Each dimension contributes to the 0–35 total. Hard gates can enforce minimum scores per dimension via `.anvil/config.yml`.
 

@@ -22,10 +22,13 @@ anvil audit --target ./my-repo [options]
 |---|---|
 | `--target <path>` | Path to the repo to audit (required) |
 | `--output <path>` | Save report to a file |
+| `--artifacts-dir <dir>` | Write drift and bootstrap artifacts to this directory |
+| `--json` | Output JSON instead of a markdown report |
 | `--ci` | Deterministic local-only structural lint mode (skips AI synthesis) |
 | `--ai-provider <provider>` | AI provider: `auto` \| `openai` \| `codex-cli` \| `claude-code` \| `gemini-cli` \| `opencode` \| `heuristic` |
 | hidden alias: `--no-ai` | Deprecated compatibility alias for `--ci` |
 | `--ai-model <model>` | Model to use for synthesis (e.g., `gpt-4o`) |
+| `--ai-timeout-ms <ms>` | Set the AI synthesis timeout in milliseconds |
 
 Relative `--target` paths resolve from your current shell cwd.
 

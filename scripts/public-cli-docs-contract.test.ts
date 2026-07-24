@@ -59,3 +59,43 @@ test("BYOK docs describe provider auto-detection without an opt-in claim", () =>
     expect(doc).toContain("use `--ci` to stay local");
   }
 });
+
+test("CLI reference documents every public audit output and timeout flag", () => {
+  const cliReference = readRepoFile(
+    "docs-site/src/content/docs/reference/cli.md",
+  );
+
+  expect(cliReference).toContain("`--json`");
+  expect(cliReference).toContain("`--artifacts-dir <dir>`");
+  expect(cliReference).toContain("`--ai-timeout-ms <ms>`");
+});
+
+test("rubric reference matches the seven guardrail dimensions in code", () => {
+  const rubric = readRepoFile("docs-site/src/content/docs/reference/rubric.md");
+  const guardrailSource = readRepoFile("scripts/lib/guardrail-score.ts");
+
+  for (const dimension of [
+    "ciDiscipline",
+    "typeSafety",
+    "testDepth",
+    "codeQuality",
+    "reviewOwnership",
+    "security",
+    "driftResilience",
+  ]) {
+    expect(guardrailSource).toContain(`"${dimension}"`);
+  }
+
+  for (const heading of [
+    "CI discipline",
+    "Type safety",
+    "Test depth",
+    "Code quality",
+    "Review ownership",
+    "Security",
+    "Drift resilience",
+  ]) {
+    expect(rubric).toContain(`**${heading}**`);
+  }
+  expect(rubric).not.toContain("Hook coverage");
+});

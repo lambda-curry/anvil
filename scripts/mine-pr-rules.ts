@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 /* eslint-disable no-console */
 
+import { spawnSync } from "node:child_process";
+
 export type CliArgs = {
   repo: string;
   limit: number;
@@ -265,6 +267,19 @@ export function printUsageAndExit(code: number): never {
     "Usage:\n  bun run scripts/mine-pr-rules.ts <owner/repo> [--limit <N>] [--output <dir>] [--dry-run]\n\nExample:\n  bun run scripts/mine-pr-rules.ts block/ai-rules --limit 100",
   );
   process.exit(code);
+}
+
+export function assertGitHubCliAvailable(ghCommand = "gh"): void {
+  const check = spawnSync(ghCommand, ["--version"], {
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+
+  if (check.error || check.status !== 0) {
+    throw new Error(
+      "GitHub CLI (gh) was not found or could not run. Install it from https://cli.github.com and run `gh auth login`.",
+    );
+  }
 }
 
 const QUERY = `
@@ -1127,6 +1142,7 @@ export async function main() {
   const [owner, name] = args.repo.split("/");
 
   try {
+    assertGitHubCliAvailable();
     const { prs, comments } = await fetchMergedPRComments(
       owner,
       name,
