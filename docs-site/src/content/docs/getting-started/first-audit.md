@@ -139,7 +139,7 @@ If no provider is available, rerun the recommended first run above.
 
 ```text wrap
 ✅ Structural Lint Score: 78/100 (3.9/5)
-✅ Guardrail Readiness Score: 22/35 (Established)
+✅ Guardrail Readiness Score: 22/35 (Reliable)
 ✅ Audit report written: /path/to/my-repo/docs/audits/my-repo-audit-2026-07-19.md
 ```
 

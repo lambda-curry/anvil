@@ -49,7 +49,7 @@ test("heuristicTopImprovements uses a short sentence title instead of clipping c
   const suggestions = heuristicTopImprovements(
     makeInput({
       recommendations: [
-        "🔴 No AI rule files detected. Run `bun run scripts/bootstrap-generate.ts <path>` to generate a starter set.",
+        "🔴 No AI rule files detected. Run `anvil bootstrap --target <path>` to generate a starter set.",
       ],
     }),
   );
@@ -64,9 +64,7 @@ test("heuristicTopImprovements uses a short sentence title instead of clipping c
     "keeps the heading short without clipping the command",
   );
   assert(
-    suggestions[0]?.evidence[0]?.includes(
-      "`bun run scripts/bootstrap-generate.ts <path>`",
-    ),
+    suggestions[0]?.evidence[0]?.includes("`anvil bootstrap --target <path>`"),
     "preserves the full recommendation text in evidence",
   );
 });

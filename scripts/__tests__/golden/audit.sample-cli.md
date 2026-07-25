@@ -264,7 +264,7 @@ Fix: Add explicit --help usage, strict argument validation, and consistent non-z
 The audit flagged this as a current high-value issue.
 
 Evidence:
-- 🔴 No canonical scoring rule files detected. Run `bun run scripts/bootstrap-generate.ts <path>` to generate a starter set.
+- 🔴 No canonical scoring rule files detected. Run `anvil bootstrap --target <path>` to generate a starter set.
 
 Fix: Implement this change in one focused PR with a before/after audit comparison.
 
@@ -399,7 +399,7 @@ No actions identified.
 *Why this matters:* Use it as the shortest path from findings to action.
 
 - 🔴 Stage A failed; treat Stage B scoring as diagnostic until structural checks are remediated.
-- 🔴 No canonical scoring rule files detected. Run `bun run scripts/bootstrap-generate.ts <path>` to generate a starter set.
+- 🔴 No canonical scoring rule files detected. Run `anvil bootstrap --target <path>` to generate a starter set.
 - ⚠️ Coverage gaps in: TypeScript / Type Safety, Error Handling, Testing, Code Structure / Naming, Security, Performance, Package Manager / Commands. These are top categories from 130+ community rule sets.
 - 🔴 Gap coverage is weak against observed failures. Prioritize rules for recurring PR-derived themes and critical baseline categories.
 - Add explicit --help/usage output to CLI entrypoints.

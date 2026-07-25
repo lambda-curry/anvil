@@ -44,16 +44,10 @@ function printHelp(version: string): void {
   );
   console.log("");
   console.log("Commands:");
-  console.log("  audit      Run full rule audit (scripts/audit.ts)");
-  console.log(
-    "  drift      Detect drift in rule surfaces (scripts/drift-detect.ts)",
-  );
-  console.log(
-    "  bootstrap  Generate bootstrap rule draft (scripts/bootstrap-generate.ts)",
-  );
-  console.log(
-    "  mine-pr    Mine PR review comments for rule candidates (scripts/mine-pr-rules.ts)",
-  );
+  console.log("  audit      Run full rule audit");
+  console.log("  drift      Detect drift in rule surfaces");
+  console.log("  bootstrap  Generate bootstrap rule draft");
+  console.log("  mine-pr    Mine PR review comments for rule candidates");
   console.log("");
   console.log("Examples:");
   console.log("  anvil audit --target /absolute/path/to/my-repo");

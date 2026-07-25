@@ -16,10 +16,11 @@
  *  10. AI synthesis: top 5 repo-specific improvements
  *  11. Audit report output
  *
- * Does NOT modify the target project by default. Output is advisory only.
+ * Does not modify existing source files. Default report output goes to <cwd>/docs/audits/.
+ * Use --output to choose a different path. Output is advisory only.
  *
  * Usage:
- *   bun run scripts/audit.ts --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--no-ai] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]
+ *   anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--no-ai] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]
  */
 
 import { spawnSync } from "node:child_process";
@@ -593,7 +594,7 @@ export type ParsedArgs = {
 
 function usageAndExit(): never {
   console.error(
-    "Usage: bun run scripts/audit.ts --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]",
+    "Usage: anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]",
   );
   console.error("");
   console.error("Options:");
@@ -3126,7 +3127,7 @@ export function scoreAudit(
   if (ruleFiles.length === 0) {
     breakdown.presence = 0;
     recommendations.push(
-      "🔴 No canonical scoring rule files detected. Run `bun run scripts/bootstrap-generate.ts <path>` to generate a starter set.",
+      "🔴 No canonical scoring rule files detected. Run `anvil bootstrap --target <path>` to generate a starter set.",
     );
   } else if (ruleFiles.length === 1) {
     breakdown.presence = 0.5;
