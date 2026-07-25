@@ -3,6 +3,7 @@ import {
   cpSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -46,7 +47,7 @@ function isExitSignal(value: unknown): value is ExitSignal {
   );
 }
 
-async function runAuditCli(args: string[]) {
+async function runAuditCli(args: string[], cwd = repoRoot) {
   const stdout: string[] = [];
   const stderr: string[] = [];
   const originalArgv = [...process.argv];
@@ -75,7 +76,7 @@ async function runAuditCli(args: string[]) {
 
   applyNoProviderEnv();
   process.argv = ["bun", "audit", ...args];
-  process.chdir(repoRoot);
+  process.chdir(cwd);
 
   try {
     await main();
@@ -122,15 +123,39 @@ test("parseArgs supports --ci and tracks deprecated --no-ai alias", () => {
   expect(aliasArgs.noAiAliasUsed).toBe(true);
 });
 
-test("default audit path fails with guidance when no AI provider is available", async () => {
-  const run = await runAuditCli(["--target", fixture, "--skip-bootstrap"]);
+test("default audit path preserves a structural report when no AI provider is available", async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "anvil-full-fallback-"));
 
-  expect(run.exitCode).toBe(1);
-  const combined = `${run.stdout}\n${run.stderr}`;
-  expect(combined).toContain(
-    "AI synthesis is required for the default `anvil audit` path.",
-  );
-  expect(combined).toContain("--ci");
+  try {
+    const run = await runAuditCli(
+      ["--target", resolve(repoRoot, fixture), "--skip-bootstrap"],
+      tempDir,
+    );
+
+    expect(run.exitCode).toBe(0);
+    const combined = `${run.stdout}\n${run.stderr}`;
+    expect(combined).toContain(
+      "AI synthesis unavailable — showing structural results only.",
+    );
+    expect(combined).toContain("Audit report written:");
+
+    const auditDir = join(tempDir, "docs", "audits");
+    const reportName = readdirSync(auditDir).find((name) =>
+      name.endsWith(".md"),
+    );
+    expect(reportName).toBeDefined();
+
+    const report = readFileSync(join(auditDir, reportName!), "utf8");
+    expect(report).toContain(
+      "AI synthesis unavailable — showing structural results only.",
+    );
+    expect(report).toContain("Rule Quality Score");
+    expect(report).toContain("Guardrail Readiness Score");
+    expect(report).toContain("Drift");
+    expect(report).toContain("Coverage");
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test("--ci succeeds without any AI provider and reports structural lint mode", async () => {
