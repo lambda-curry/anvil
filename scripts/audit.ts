@@ -6070,7 +6070,11 @@ export async function main(): Promise<void> {
   const result = await runAudit(args);
 
   if (args.jsonOutput) {
-    console.log(JSON.stringify(result, null, 2));
+    const output: AuditResult & { aiFallbackWarning?: string } =
+      result.auditMode === "full" && result.aiSynthesis.mode !== "ai"
+        ? { ...result, aiFallbackWarning: buildAiFallbackMessage(args) }
+        : result;
+    console.log(JSON.stringify(output, null, 2));
     enforceHardGateExit(result);
     return;
   }
