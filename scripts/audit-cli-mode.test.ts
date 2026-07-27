@@ -233,6 +233,26 @@ test("--json preserves the --ci hard-gate exit code after printing JSON", async 
   }
 });
 
+test("--json includes aiFallbackWarning when full-mode audit falls back to heuristic", async () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "anvil-json-fallback-"));
+
+  try {
+    const run = await runAuditCli(
+      ["--target", resolve(repoRoot, fixture), "--skip-bootstrap", "--json"],
+      tempDir,
+    );
+
+    expect(run.exitCode).toBe(0);
+    const result = JSON.parse(run.stdout);
+    expect(result.auditMode).toBe("full");
+    expect(result.aiSynthesis.mode).toBe("heuristic");
+    expect(result.aiFallbackWarning).toBeDefined();
+    expect(result.aiFallbackWarning).toContain("AI synthesis unavailable");
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 test("--ci keeps the early mirror-sync story consistent when no mirror families are detected", async () => {
   const tempDir = mkdtempSync(join(tmpdir(), "anvil-ci-mirror-sync-"));
   const outputFile = join(tempDir, "audit-report.md");
