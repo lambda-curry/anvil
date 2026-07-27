@@ -985,9 +985,9 @@ export function printConsoleSummary(
   console.log(`- Missing symlink targets: ${brokenSymlinkCount}`);
   console.log(`- Date drift: ${counts.date}`);
   console.log(`- Non-drift path notes: ${notes.length}`);
-  console.log("- Glob drift: 0 (Phase 1b)");
-  console.log("- Command drift: 0 (Phase 1b)");
-  console.log("- Coverage gap: 0 (Phase 2)");
+  console.log("- Glob drift: not implemented (Phase 1b)");
+  console.log("- Command drift: not implemented (Phase 1b)");
+  console.log("- Coverage gap: not implemented (Phase 2)");
   console.log(`Report written to: ${outputPath}`);
 }
 

@@ -36,6 +36,7 @@ import {
   type DriftIssue,
   detectDateDrift,
   detectPathDrift,
+  printConsoleSummary,
 } from "../drift-detect.ts";
 import { discoverRuleSurfaceFiles } from "../lib/rule-surface.ts";
 import {
@@ -122,6 +123,28 @@ test("drift-detect report format stays stable", () => {
 
   const report = buildDriftReport(FIXTURE, issues, []);
   assertGolden("drift-detect.sample.md", normalize(report));
+});
+
+test("drift-detect console summary labels unimplemented checks honestly", () => {
+  const lines: string[] = [];
+  const originalLog = console.log;
+  console.log = (...parts: unknown[]) => {
+    lines.push(parts.map(String).join(" "));
+  };
+
+  try {
+    printConsoleSummary(FIXTURE, [], [], "/tmp/anvil-drift-report.md");
+  } finally {
+    console.log = originalLog;
+  }
+
+  const summary = lines.join("\n");
+  expect(summary).toContain("- Glob drift: not implemented (Phase 1b)");
+  expect(summary).toContain("- Command drift: not implemented (Phase 1b)");
+  expect(summary).toContain("- Coverage gap: not implemented (Phase 2)");
+  expect(summary).not.toContain("- Glob drift: 0");
+  expect(summary).not.toContain("- Command drift: 0");
+  expect(summary).not.toContain("- Coverage gap: 0");
 });
 
 test("detectDateDrift accepts markdown metadata Last validated format", () => {
