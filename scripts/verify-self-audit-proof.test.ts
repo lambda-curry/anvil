@@ -5,6 +5,7 @@ import { basename, resolve } from "node:path";
 import {
   compareSelfAuditReports,
   defaultCheckedInReport,
+  formatVerificationSummary,
   parseCliOptions,
   validateCheckedInReportDatePath,
 } from "./verify-self-audit-proof.ts";
@@ -168,6 +169,91 @@ test("proof guard doc names the same checked-in packet the verifier uses", () =>
   );
   expect(proofGuardDoc).toContain(
     `still matches \`docs/audits/${basename(defaultCheckedInReport)}\``,
+  );
+});
+
+test("validateCheckedInReportDatePath fails when report has no date header", () => {
+  const failure = validateCheckedInReportDatePath(
+    "/repo/docs/audits/anvil-audit-2026-06-19.md",
+    "# Anvil Audit — anvil\nNo date here\n",
+  );
+
+  expect(failure).toBe(
+    "checked-in report is missing an embedded *Date: YYYY-MM-DD* header",
+  );
+});
+
+test("validateCheckedInReportDatePath fails when path does not match naming pattern", () => {
+  const failure = validateCheckedInReportDatePath(
+    "/repo/docs/audits/custom-report.md",
+    "# Anvil Audit — anvil\n*Date: 2026-06-19*\n",
+  );
+
+  expect(failure).toBe(
+    "checked-in report path does not use the expected anvil-audit-YYYY-MM-DD.md naming",
+  );
+});
+
+test("validateCheckedInReportDatePath passes when dates align", () => {
+  const failure = validateCheckedInReportDatePath(
+    "/repo/docs/audits/anvil-audit-2026-06-19.md",
+    "# Anvil Audit — anvil\n*Date: 2026-06-19*\n",
+  );
+
+  expect(failure).toBeNull();
+});
+
+test("parseCliOptions rejects unknown arguments", () => {
+  expect(() => parseCliOptions(["--unknown-flag"])).toThrow(
+    "Unknown argument: --unknown-flag",
+  );
+});
+
+test("parseCliOptions with no args returns null retainDir", () => {
+  const options = parseCliOptions([]);
+  expect(options).toEqual({ retainDir: null });
+});
+
+test("formatVerificationSummary renders checks and failures", () => {
+  const summary = formatVerificationSummary({
+    checks: ["check one", "check two"],
+    failures: ["failure one"],
+  });
+
+  expect(summary).toContain("## Checks");
+  expect(summary).toContain("- check one");
+  expect(summary).toContain("- check two");
+  expect(summary).toContain("## Failures");
+  expect(summary).toContain("- failure one");
+});
+
+test("formatVerificationSummary renders empty result cleanly", () => {
+  const summary = formatVerificationSummary({
+    checks: [],
+    failures: [],
+  });
+
+  expect(summary).toBe("# Self-audit verification summary\n");
+});
+
+test("formatVerificationSummary renders only checks when no failures", () => {
+  const summary = formatVerificationSummary({
+    checks: ["all good"],
+    failures: [],
+  });
+
+  expect(summary).toContain("## Checks");
+  expect(summary).not.toContain("## Failures");
+});
+
+test("compareSelfAuditReports detects missing trust markers in fresh report", () => {
+  const result = compareSelfAuditReports(
+    CLEAN_REPORT,
+    CLEAN_REPORT.replace("### ✅ Verdict: PASS", "### Verdict unavailable"),
+  );
+
+  expect(result.failures).toContain(
+    "fresh rerun report is missing required trust marker: verdict",
   );
 });
 

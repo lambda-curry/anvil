@@ -203,7 +203,7 @@ export function parseCliOptions(
   return { retainDir };
 }
 
-function formatVerificationSummary(result: VerificationResult): string {
+export function formatVerificationSummary(result: VerificationResult): string {
   const lines = ["# Self-audit verification summary", ""];
 
   if (result.checks.length > 0) {
