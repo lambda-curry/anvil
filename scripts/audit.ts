@@ -16,8 +16,8 @@
  *  10. AI synthesis: top 5 repo-specific improvements
  *  11. Audit report output
  *
- * Does not modify existing source files. Default report output goes to <cwd>/docs/audits/.
- * Use --output to choose a different path. Output is advisory only.
+ * Does not modify existing source files — only creates new report/artifact files.
+ * Default report output: <cwd>/docs/audits/<name>-audit-<date>.md. Use --output to redirect.
  *
  * Usage:
  *   anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--no-ai] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]

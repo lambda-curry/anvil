@@ -407,7 +407,7 @@ anvil --version  Show version
 
 ## What Anvil does not do
 
-- It does not modify any files in your target repo (audit is read-only by default)
+- It does not modify existing source files. The default report is written to `docs/audits/<name>-audit-<date>.md`; use `--output` to redirect
 - It does not send credentials, git history, or unrelated project files to any provider
 - It does not auto-select repos — you direct it to a specific target
 
