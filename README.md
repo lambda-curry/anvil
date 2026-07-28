@@ -32,7 +32,7 @@ Next steps:
 
 - [Getting started](https://lambda-curry.github.io/anvil/getting-started/first-audit) — first-run walkthrough and troubleshooting
 - [Installation](https://lambda-curry.github.io/anvil/getting-started/installation) — `bunx`, global install, and `npx` launcher options
-- [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) — use this only when you are collecting the pinned external proof packet
+- [First User Proof](docs/first-user-proof.md) — use this only when you are collecting the pinned external proof packet
 
 If you are here because someone sent you the external proof lane, keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that packet instead of the floating `@alpha` examples in this README.
 
@@ -106,7 +106,7 @@ Relative `--target` paths resolve from your current shell cwd. If you are alread
 
 Choose the lane that matches your setup before your first run.
 
-If you are collecting the outside-user proof, stay on the exact pinned version and launcher from [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) instead of switching to the unpinned examples in this README. The current pinned `0.1.0-alpha.6` proof packet uses one repo-root `bunx` command with `--ci --output ./anvil-audit.md` so the saved report comes back from the first run.
+If you are collecting the outside-user proof, stay on the exact pinned version and launcher from [First User Proof](docs/first-user-proof.md) instead of switching to the unpinned examples in this README. The current pinned `0.1.0-alpha.6` proof packet uses one repo-root `bunx` command with `--ci --output ./anvil-audit.md` so the saved report comes back from the first run.
 
 ### Local-only first pass (no provider required)
 
@@ -166,8 +166,8 @@ For first-run setup and CI/lint guidance, see:
 - [`docs/getting-started.md`](https://lambda-curry.github.io/anvil/getting-started/first-audit) — first-run walkthrough, troubleshooting, local-vs-AI comparison
 - [`docs/config-examples.md`](https://lambda-curry.github.io/anvil/guides/configuration) — copy-paste `.anvil/config.yml` starting points for internal tools, libraries, production apps, and prototypes
 - [`docs/byok-trust-model.md`](https://lambda-curry.github.io/anvil/guides/byok-trust-model) — what stays local vs what is sent in AI-assisted mode
-- [First User Proof](https://lambda-curry.github.io/anvil/guides/first-user-proof) — lightweight checklist for capturing the first real external success case against one pinned published package version
-- [First User Proof Packet](https://lambda-curry.github.io/anvil/guides/first-user-proof-packet) — copy-paste outreach note plus a compact evidence template for that first external run
+- [First User Proof](docs/first-user-proof.md) — lightweight checklist for capturing the first real external success case against one pinned published package version
+- [First User Proof Packet](docs/first-user-proof-packet.md) — copy-paste outreach note plus a compact evidence template for that first external run
 
 ## Maintainer notes
 

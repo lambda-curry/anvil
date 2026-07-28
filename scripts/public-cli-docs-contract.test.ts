@@ -60,6 +60,16 @@ test("CLI reference documents every public audit output and timeout flag", () =>
   expect(cliReference).toContain("`--ai-timeout-ms <ms>`");
 });
 
+test("README does not link to removed docs-site proof pages", () => {
+  const readme = readRepoFile("README.md");
+
+  // SFD-328 removed operator proof pages from the public docs site.
+  // README links must point to internal docs/ paths, not docs-site URLs.
+  expect(readme).not.toContain(
+    "lambda-curry.github.io/anvil/guides/first-user-proof",
+  );
+});
+
 test("rubric reference matches the seven guardrail dimensions in code", () => {
   const rubric = readRepoFile("docs-site/src/content/docs/reference/rubric.md");
   const guardrailSource = readRepoFile("scripts/lib/guardrail-score.ts");
