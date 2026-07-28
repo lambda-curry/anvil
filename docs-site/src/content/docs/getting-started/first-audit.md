@@ -13,7 +13,7 @@ bunx @lambdacurry/anvil audit --target . --ci
 
 If you are one directory above the target repo, swap `--target .` for `--target ./my-repo`.
 
-> **Proof-lane note:** If you arrived here from [First User Proof](/anvil/guides/first-user-proof) or [First User Proof Packet](/anvil/guides/first-user-proof-packet), keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note. The unpinned examples below are for general public usage, not for pinned proof collection.
+> **Proof-lane note:** If you arrived here because someone sent you Anvil's external first-user proof packet, keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note. The unpinned examples below are for general public usage, not for pinned proof collection.
 
 If you picked `npx` or the global `anvil` install on [Installation](/anvil/getting-started/installation), keep that same launcher here too. The audit flags stay the same; only the executable prefix changes.
 

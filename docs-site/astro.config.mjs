@@ -46,16 +46,6 @@ export default defineConfig({
           ],
         },
         {
-          label: 'Proof Process',
-          items: [
-            { label: 'First User Proof', slug: 'guides/first-user-proof' },
-            {
-              label: 'First User Proof Packet',
-              slug: 'guides/first-user-proof-packet',
-            },
-          ],
-        },
-        {
           label: 'Reference',
           items: [
             { label: 'CLI Reference', slug: 'reference/cli' },

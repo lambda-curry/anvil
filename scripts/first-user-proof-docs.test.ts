@@ -7,12 +7,10 @@ import {
   joinCommandLines,
   legacyNoAiCompatibilityNote,
   legacyNoAiDiffNote,
-  pinnedProofPacketUsesCiNote,
   plainPinnedRepoRootAuditCommand,
   plainRepoRootExactVersionAuditCommand,
   threeLineOpener,
   wrappedExactVersionCommand,
-  wrappedPinnedVersionCommand,
 } from "./proof-lane-contract.ts";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
@@ -96,34 +94,6 @@ test("repo proof docs expose the three-line opener and one saved-report command"
   expect(sendPacket).not.toContain(`npx @lambdacurry/anvil@${version}`);
 });
 
-test("public proof guides mirror the current-version opener contract", () => {
-  const publicGuide = readRepoFile(
-    "docs-site/src/content/docs/guides/first-user-proof.md",
-  );
-  const publicPacket = readRepoFile(
-    "docs-site/src/content/docs/guides/first-user-proof-packet.md",
-  );
-
-  for (const doc of [publicGuide, publicPacket]) {
-    expectAll(doc, [...threeLineOpener]);
-    expectAll(doc, ["exact pinned command", "unpinned examples"]);
-    expect(doc).not.toContain("--output ./your-repo/anvil-audit.md");
-    expect(doc).not.toContain("```bash\n");
-  }
-
-  expect(publicGuide).toContain(plainRepoRootExactVersionAuditCommand);
-
-  expectAll(publicPacket, [
-    plainPinnedRepoRootAuditCommand,
-    joinCommandLines(wrappedPinnedVersionCommand),
-    "Install path: bunx / npx / global install",
-    "Saved report path or screenshot link",
-    `retained audit command keeps the pinned \`${version}\` local-only \`--ci\` spelling`,
-  ]);
-  expect(publicPacket).not.toContain("@<exact-version>");
-  expect(publicPacket).not.toContain("@lambdacurry/anvil@alpha");
-});
-
 test("first-run docs fence proof testers away from floating alpha commands", () => {
   const firstAudit = readRepoFile(
     "docs-site/src/content/docs/getting-started/first-audit.md",
@@ -152,9 +122,6 @@ test("first-run success text matches the terminal summary and saved Markdown rep
   const firstAudit = readRepoFile(
     "docs-site/src/content/docs/getting-started/first-audit.md",
   );
-  const publicPacket = readRepoFile(
-    "docs-site/src/content/docs/guides/first-user-proof-packet.md",
-  );
 
   expectAll(firstAudit, [
     "the terminal shows progress, then a concise score summary",
@@ -164,14 +131,6 @@ test("first-run success text matches the terminal summary and saved Markdown rep
   ]);
   expect(firstAudit).not.toContain("prints a markdown report right away");
   expect(firstAudit).not.toContain("scored markdown output to stdout");
-
-  expect(publicPacket).toContain(
-    "The current proof packet is pinned to `0.1.0-alpha.6` and uses one repo-root saved-report command with `--ci`",
-  );
-  expect(publicPacket).toContain(plainPinnedRepoRootAuditCommand);
-  expect(publicPacket).not.toContain("@<exact-version>");
-  expect(publicPacket).not.toContain("@lambdacurry/anvil@alpha");
-  expect(publicPacket).not.toContain("The alpha.5 proof packet");
 });
 
 test("getting-started and BYOK notes match the current pinned packet", () => {
@@ -227,22 +186,6 @@ test("proof packet README and template keep validation rules explicit", () => {
   ]);
 });
 
-test("generated llms-full preserves the pinned proof-lane handoff contract", () => {
-  const llmsFull = readRepoFile("docs-site/public/llms-full.txt");
-
-  expectAll(llmsFull, [
-    `The current proof packet is pinned to \`${version}\` and uses one repo-root saved-report command with \`--ci\``,
-    pinnedProofPacketUsesCiNote,
-    "https://lambda-curry.github.io/anvil/guides/first-user-proof-packet",
-    plainPinnedRepoRootAuditCommand,
-  ]);
-
-  expect(llmsFull).not.toContain(
-    "https://github.com/lambda-curry/anvil/blob/main/docs/",
-  );
-  expect(llmsFull).not.toContain("  --output ./your-repo/anvil-audit.md");
-});
-
 test("public proof-lane docs keep canonical no-trailing-slash URLs", () => {
   const files = [
     "README.md",
@@ -259,8 +202,6 @@ test("public proof-lane docs keep canonical no-trailing-slash URLs", () => {
     "https://lambda-curry.github.io/anvil/getting-started/first-audit",
     "https://lambda-curry.github.io/anvil/guides/configuration",
     "https://lambda-curry.github.io/anvil/guides/byok-trust-model",
-    "https://lambda-curry.github.io/anvil/guides/first-user-proof",
-    "https://lambda-curry.github.io/anvil/guides/first-user-proof-packet",
     "https://lambda-curry.github.io/anvil/guides/mine-pr",
   ];
 

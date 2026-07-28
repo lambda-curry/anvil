@@ -27,23 +27,13 @@ test("mine-pr docs require the gh CLI and do not promise a token-only fallback",
   );
 });
 
-test("operator proof pages have a separate public docs sidebar section", () => {
+test("operator proof pages are excluded from the public docs sidebar", () => {
   const config = readRepoFile("docs-site/astro.config.mjs");
 
-  expect(config).toContain("label: 'Proof Process'");
-  expect(config).toContain("slug: 'guides/first-user-proof'");
-  expect(config).toContain("slug: 'guides/first-user-proof-packet'");
-
-  const guidesStart = config.indexOf("label: 'Guides'");
-  const proofStart = config.indexOf("label: 'Proof Process'");
-  const referenceStart = config.indexOf("label: 'Reference'");
-  const guidesSection = config.slice(guidesStart, proofStart);
-  const proofSection = config.slice(proofStart, referenceStart);
-
-  expect(guidesSection).not.toContain("slug: 'guides/first-user-proof'");
-  expect(guidesSection).not.toContain("slug: 'guides/first-user-proof-packet'");
-  expect(proofSection).toContain("slug: 'guides/first-user-proof'");
-  expect(proofSection).toContain("slug: 'guides/first-user-proof-packet'");
+  // Proof pages are internal operator docs, not public docs-site pages
+  expect(config).not.toContain("label: 'Proof Process'");
+  expect(config).not.toContain("slug: 'guides/first-user-proof'");
+  expect(config).not.toContain("slug: 'guides/first-user-proof-packet'");
 });
 
 test("BYOK docs describe provider auto-detection without an opt-in claim", () => {

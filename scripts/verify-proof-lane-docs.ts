@@ -4,11 +4,8 @@ import {
   canonicalSavedReportPath,
   exactVersionPackageToken,
   expectedVersion,
-  pinnedProofPacketUsesCiNote,
   plainPinnedRepoRootAuditCommand,
-  plainRepoRootExactVersionAuditCommand,
   threeLineOpener,
-  wrappedPinnedVersionCommand,
 } from "./proof-lane-contract.ts";
 
 export { expectedVersion } from "./proof-lane-contract.ts";
@@ -44,20 +41,20 @@ const DOC_CONTRACTS: DocContract[] = [
     checks: ["`--ci`", "not for pinned proof collection"],
   },
   {
-    path: resolve(DOCS_ROOT, "guides", "first-user-proof.md"),
+    path: resolve(REPO_ROOT, "docs", "first-user-proof.md"),
     checks: [
       ...threeLineOpener,
       "`--ci`",
-      "one command",
+      "one exact first-run command",
       canonicalSavedReportPath,
     ],
   },
   {
-    path: resolve(DOCS_ROOT, "guides", "first-user-proof-packet.md"),
+    path: resolve(REPO_ROOT, "docs", "first-user-proof-packet.md"),
     checks: [
       ...threeLineOpener,
       "`--ci`",
-      "one repo-root saved-report command",
+      "repo-root saved-report command",
       canonicalSavedReportPath,
     ],
   },
@@ -72,12 +69,8 @@ const DOC_CONTRACTS: DocContract[] = [
   {
     path: resolve(PUBLIC_DOCS_ROOT, "llms-full.txt"),
     checks: [
-      pinnedProofPacketUsesCiNote,
       "keep using the exact pinned `bunx @lambdacurry/anvil@<exact-version> ...` command from that outreach note",
-      "https://lambda-curry.github.io/anvil/guides/first-user-proof-packet",
-      canonicalSavedReportPath,
       exactVersionPackageToken,
-      plainRepoRootExactVersionAuditCommand,
     ],
   },
   {
@@ -104,25 +97,12 @@ const DOC_CONTRACTS: DocContract[] = [
   },
 ];
 
-const PROOF_PACKET_SECTION_MARKER =
-  "Send this three-line note, then paste the exact command below it:";
-const PROOF_PACKET_SECTION_END_MARKER = "## Operator checklist";
-const FIRST_USER_PROOF_SECTION_MARKER = "## Exact command to send";
-const FIRST_USER_PROOF_SECTION_END_MARKER =
-  "## Public docs to share with the tester";
 const HOMEPAGE_SECTION_MARKER = "## Start with one real audit";
 const HOMEPAGE_SECTION_END_MARKER = "<CardGrid stagger>";
 const HOMEPAGE_FIRST_AUDIT_BLOCK = [
   "bunx @lambdacurry/anvil audit \\",
   "  --target . \\",
   "  --ci",
-] as const;
-const PROOF_PACKET_BLOCKS = [
-  [plainPinnedRepoRootAuditCommand],
-  wrappedPinnedVersionCommand,
-] as const;
-const FIRST_USER_PROOF_BLOCKS = [
-  [plainRepoRootExactVersionAuditCommand],
 ] as const;
 
 const CODE_BLOCK_CONTRACTS: CodeBlockContract[] = [
@@ -132,38 +112,6 @@ const CODE_BLOCK_CONTRACTS: CodeBlockContract[] = [
     sectionMarker: HOMEPAGE_SECTION_MARKER,
     endMarker: HOMEPAGE_SECTION_END_MARKER,
     expectedBlocks: [HOMEPAGE_FIRST_AUDIT_BLOCK],
-    style: "wrapped",
-  },
-  {
-    label: "first-user-proof guide",
-    path: resolve(DOCS_ROOT, "guides", "first-user-proof.md"),
-    sectionMarker: FIRST_USER_PROOF_SECTION_MARKER,
-    endMarker: FIRST_USER_PROOF_SECTION_END_MARKER,
-    expectedBlocks: [...FIRST_USER_PROOF_BLOCKS],
-    style: "wrapped",
-  },
-  {
-    label: "llms-full first-user-proof handoff",
-    path: resolve(PUBLIC_DOCS_ROOT, "llms-full.txt"),
-    sectionMarker: FIRST_USER_PROOF_SECTION_MARKER,
-    endMarker: FIRST_USER_PROOF_SECTION_END_MARKER,
-    expectedBlocks: [...FIRST_USER_PROOF_BLOCKS],
-    style: "wrapped",
-  },
-  {
-    label: "first-user-proof-packet guide",
-    path: resolve(DOCS_ROOT, "guides", "first-user-proof-packet.md"),
-    sectionMarker: PROOF_PACKET_SECTION_MARKER,
-    endMarker: PROOF_PACKET_SECTION_END_MARKER,
-    expectedBlocks: [...PROOF_PACKET_BLOCKS],
-    style: "wrapped",
-  },
-  {
-    label: "llms-full proof-packet handoff",
-    path: resolve(PUBLIC_DOCS_ROOT, "llms-full.txt"),
-    sectionMarker: PROOF_PACKET_SECTION_MARKER,
-    endMarker: PROOF_PACKET_SECTION_END_MARKER,
-    expectedBlocks: [...PROOF_PACKET_BLOCKS],
     style: "wrapped",
   },
   {
