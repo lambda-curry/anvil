@@ -162,6 +162,26 @@ test("CLI help spells out the supported launcher paths", () => {
   expect(stdout).not.toContain("&& anvil");
 });
 
+test("subcommand help uses published CLI form and never leaks internal script paths", () => {
+  for (const subcommand of ["audit", "drift", "bootstrap", "mine-pr"]) {
+    const run = Bun.spawnSync(
+      ["bun", "run", resolve(REPO_ROOT, "bin/anvil.ts"), subcommand, "--help"],
+      {
+        cwd: REPO_ROOT,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
+
+    expect(run.exitCode).toBe(0);
+
+    const helpOut = new TextDecoder().decode(run.stdout);
+    expect(helpOut).toContain(`anvil ${subcommand}`);
+    expect(helpOut).not.toContain("scripts/");
+    expect(helpOut).not.toContain("bun run");
+  }
+});
+
 test("repo README and public installation guide match the published launcher contract", () => {
   const readme = readRepoFile("README.md");
   const installation = readRepoFile(

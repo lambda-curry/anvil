@@ -22,6 +22,33 @@ function getVersion(repoRoot: string): string {
   }
 }
 
+const SUBCOMMAND_HELP: Record<string, string> = {
+  audit:
+    "Usage: anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]\n\n" +
+    "Options:\n" +
+    "  --target <path>         Path to project to audit (required)\n" +
+    "  --output <file>         Write report to this path (default: docs/audits/<name>-<date>.md)\n" +
+    "  --artifacts-dir <dir>   Write drift/bootstrap artifacts here (default: docs/audits/artifacts/<name>-<date>)\n" +
+    "  --skip-bootstrap        Skip bootstrap stack detection\n" +
+    "  --json                  Output JSON instead of markdown report\n" +
+    "  --ci                    Run deterministic structural lint mode (local-only heuristic suggestions)\n" +
+    "  --ai-provider <name>    AI provider: auto | openai | codex-cli | claude-code | gemini-cli | opencode | heuristic\n" +
+    "  --ai-model <name>       Override provider model\n" +
+    "  --ai-timeout-ms <ms>    Timeout for AI synthesis calls in milliseconds\n" +
+    "  --force-stage-b         Run Stage B scoring even when Stage A fails",
+  drift:
+    "Usage: anvil drift --target <path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
+    "       anvil drift <path> [--skip-dirs dir1,dir2,...] [--output <file>]\n\n" +
+    "Default output: docs/audits/artifacts/<project>-<date>/drift-report.md",
+  bootstrap:
+    "Usage: anvil bootstrap --target <path> [--output <file>]\n" +
+    "       anvil bootstrap <path> [--output <file>]",
+  "mine-pr":
+    "Usage: anvil mine-pr <owner/repo> [--limit <N>] [--output <dir>] [--dry-run]\n\n" +
+    "Example:\n" +
+    "  anvil mine-pr block/ai-rules --limit 100",
+};
+
 function printHelp(version: string): void {
   console.log(`anvil v${version}`);
   console.log(
@@ -82,6 +109,14 @@ function main(argv: string[]): void {
     console.error("");
     printHelp(version);
     process.exit(1);
+  }
+
+  // Intercept --help/-h for known subcommands so the published CLI never leaks
+  // internal script paths from the underlying script usage strings.
+  const rest = args.slice(1);
+  if (rest.includes("--help") || rest.includes("-h")) {
+    console.log(SUBCOMMAND_HELP[first] ?? `No help available for '${first}'.`);
+    process.exit(0);
   }
 
   const proc = Bun.spawnSync(

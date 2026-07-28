@@ -654,8 +654,8 @@ export function parseArgs(argv: string[]) {
 
   if (!projectPath) {
     console.error(
-      "Usage: bun run scripts/bootstrap-generate.ts --target <project-path> [--output <file>]\n" +
-        "       bun run scripts/bootstrap-generate.ts <project-path> [--output <file>]",
+      "Usage: anvil bootstrap --target <project-path> [--output <file>]\n" +
+        "       anvil bootstrap <project-path> [--output <file>]",
     );
     process.exit(1);
   }

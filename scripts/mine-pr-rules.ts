@@ -264,7 +264,7 @@ export function parseArgs(argv: string[]): CliArgs {
 
 export function printUsageAndExit(code: number): never {
   console.log(
-    "Usage:\n  bun run scripts/mine-pr-rules.ts <owner/repo> [--limit <N>] [--output <dir>] [--dry-run]\n\nExample:\n  bun run scripts/mine-pr-rules.ts block/ai-rules --limit 100",
+    "Usage:\n  anvil mine-pr <owner/repo> [--limit <N>] [--output <dir>] [--dry-run]\n\nExample:\n  anvil mine-pr block/ai-rules --limit 100",
   );
   process.exit(code);
 }

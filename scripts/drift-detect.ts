@@ -101,8 +101,8 @@ function defaultReportOutputPath(projectRoot: string): string {
 
 export function usageAndExit(): never {
   console.error(
-    "Usage: bun run scripts/drift-detect.ts --target <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
-      "       bun run scripts/drift-detect.ts <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
+    "Usage: anvil drift --target <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
+      "       anvil drift <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
       "Default output: docs/audits/artifacts/<project>-<date>/drift-report.md",
   );
   process.exit(1);
