@@ -83,7 +83,7 @@ The generator reads signals from these sources:
 
 ## Output Format
 
-The generator produces a **draft additions file** at `data/bootstrap-draft-<date>.md`, not directly modifying existing files. Format:
+The generator produces a **draft additions file** at `docs/audits/<project-name>-bootstrap-<date>.md`, not directly modifying existing files. Format:
 
 ```markdown
 # Bootstrap Draft — <project-name>

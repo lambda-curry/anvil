@@ -686,12 +686,15 @@ export async function main() {
   const draft = buildDraft(signals, matched);
 
   // Determine output path
+  // Consistent with audit (docs/audits/<name>-audit-<date>.md) and drift
+  // (docs/audits/artifacts/<name>-<date>/drift-report.md) — all Anvil outputs
+  // share the docs/audits/ base directory so users can find them in one place.
   const date = new Date().toISOString().slice(0, 10);
   const defaultOut = join(
     process.cwd(),
-    "data",
-    "bootstrap-drafts",
-    `${signals.projectName.replace(/[^a-z0-9-]/gi, "-")}-${date}.md`,
+    "docs",
+    "audits",
+    `${signals.projectName.replace(/[^a-z0-9-]/gi, "-")}-bootstrap-${date}.md`,
   );
   const outPath = args.outputFile ? resolve(args.outputFile) : defaultOut;
 
