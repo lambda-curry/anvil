@@ -167,7 +167,7 @@ export function validateCheckedInReportDatePath(
   return null;
 }
 
-function buildDiff(checkedInPath: string, freshPath: string): string {
+export function buildDiff(checkedInPath: string, freshPath: string): string {
   const diff = Bun.spawnSync({
     cmd: ["diff", "-u", checkedInPath, freshPath],
     cwd: REPO_ROOT,
@@ -225,7 +225,7 @@ export function formatVerificationSummary(result: VerificationResult): string {
   return lines.join("\n").trimEnd() + "\n";
 }
 
-function retainVerificationBundle(
+export function retainVerificationBundle(
   retainDir: string,
   checkedInPath: string,
   freshPath: string,

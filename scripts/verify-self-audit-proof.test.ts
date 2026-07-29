@@ -1,12 +1,21 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, join, resolve } from "node:path";
 
 import {
+  buildDiff,
   compareSelfAuditReports,
   defaultCheckedInReport,
   formatVerificationSummary,
   parseCliOptions,
+  retainVerificationBundle,
   validateCheckedInReportDatePath,
 } from "./verify-self-audit-proof.ts";
 
@@ -268,4 +277,229 @@ test("self-audit proof docs do not point at the stale projects/anvil mirror", ()
       "/home/node/.openclaw/workspace/projects/anvil",
     );
   }
+});
+
+// --- buildDiff tests ---
+
+test("buildDiff returns unified diff for differing files", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-diff-test-"));
+  const fileA = join(tmp, "a.md");
+  const fileB = join(tmp, "b.md");
+  try {
+    writeFileSync(fileA, "line one\nline two\n");
+    writeFileSync(fileB, "line one\nline CHANGED\n");
+
+    const diff = buildDiff(fileA, fileB);
+
+    expect(diff).toContain("-line two");
+    expect(diff).toContain("+line CHANGED");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("buildDiff returns empty string for identical files", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-diff-test-"));
+  const fileA = join(tmp, "a.md");
+  const fileB = join(tmp, "b.md");
+  try {
+    writeFileSync(fileA, "same content\n");
+    writeFileSync(fileB, "same content\n");
+
+    const diff = buildDiff(fileA, fileB);
+
+    expect(diff).toBe("");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// --- retainVerificationBundle tests ---
+
+test("retainVerificationBundle creates all expected files", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-retain-test-"));
+  const checkedIn = join(tmp, "input-checked-in.md");
+  const fresh = join(tmp, "input-fresh.md");
+  const retainDir = join(tmp, "bundle");
+
+  try {
+    writeFileSync(checkedIn, "# Checked-in\n");
+    writeFileSync(fresh, "# Fresh\n");
+
+    retainVerificationBundle(
+      retainDir,
+      checkedIn,
+      fresh,
+      {
+        checks: ["check-a", "check-b"],
+        failures: ["fail-a"],
+      },
+      "--- diff content ---",
+    );
+
+    expect(existsSync(join(retainDir, "checked-in-self-audit.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "fresh-self-audit.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "verification-summary.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "diff.txt"))).toBe(true);
+
+    const summary = readFileSync(
+      join(retainDir, "verification-summary.md"),
+      "utf8",
+    );
+    expect(summary).toContain("- check-a");
+    expect(summary).toContain("- fail-a");
+
+    const copiedCheckedIn = readFileSync(
+      join(retainDir, "checked-in-self-audit.md"),
+      "utf8",
+    );
+    expect(copiedCheckedIn).toBe("# Checked-in\n");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("retainVerificationBundle skips diff.txt when diff is empty", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-retain-test-"));
+  const checkedIn = join(tmp, "checked.md");
+  const fresh = join(tmp, "fresh.md");
+  const retainDir = join(tmp, "bundle");
+
+  try {
+    writeFileSync(checkedIn, "identical\n");
+    writeFileSync(fresh, "identical\n");
+
+    retainVerificationBundle(
+      retainDir,
+      checkedIn,
+      fresh,
+      { checks: ["ok"], failures: [] },
+      "",
+    );
+
+    expect(existsSync(join(retainDir, "diff.txt"))).toBe(false);
+    expect(existsSync(join(retainDir, "verification-summary.md"))).toBe(true);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("retainVerificationBundle creates nested retainDir", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-retain-test-"));
+  const checkedIn = join(tmp, "c.md");
+  const fresh = join(tmp, "f.md");
+  const retainDir = join(tmp, "deep", "nested", "bundle");
+
+  try {
+    writeFileSync(checkedIn, "c\n");
+    writeFileSync(fresh, "f\n");
+
+    retainVerificationBundle(
+      retainDir,
+      checkedIn,
+      fresh,
+      { checks: [], failures: [] },
+      "",
+    );
+
+    expect(existsSync(join(retainDir, "checked-in-self-audit.md"))).toBe(true);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("retainVerificationBundle summary with only failures", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-retain-test-"));
+  const checkedIn = join(tmp, "c.md");
+  const fresh = join(tmp, "f.md");
+  const retainDir = join(tmp, "bundle");
+
+  try {
+    writeFileSync(checkedIn, "c\n");
+    writeFileSync(fresh, "f\n");
+
+    retainVerificationBundle(
+      retainDir,
+      checkedIn,
+      fresh,
+      { checks: [], failures: ["only failure"] },
+      "diff",
+    );
+
+    const summary = readFileSync(
+      join(retainDir, "verification-summary.md"),
+      "utf8",
+    );
+    expect(summary).not.toContain("## Checks");
+    expect(summary).toContain("## Failures");
+    expect(summary).toContain("- only failure");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// --- firstDifferingLine edge case via compareSelfAuditReports ---
+
+test("compareSelfAuditReports divergence message includes line number when texts differ in length", () => {
+  const base = CLEAN_REPORT;
+  const longer = base + "\n## Extra trailing content\n";
+
+  const result = compareSelfAuditReports(base, longer);
+
+  expect(result.failures).toContain(
+    "fresh deterministic rerun diverges from the checked-in self-audit packet",
+  );
+  expect(
+    result.failures.some((f) => f.startsWith("first differing line")),
+  ).toBe(true);
+});
+
+test("compareSelfAuditReports detects multiple missing trust markers at once", () => {
+  const brokenReport = CLEAN_REPORT.replace(
+    "### ✅ Verdict: PASS",
+    "### Verdict unavailable",
+  )
+    .replace("| Issues found | none |", "| Issues found | 2 |")
+    .replace("| Remediation tasks | none |", "| Remediation tasks | 5 |");
+
+  const result = compareSelfAuditReports(brokenReport, brokenReport);
+
+  expect(result.failures).toContain(
+    "checked-in report is missing required trust marker: verdict",
+  );
+  expect(result.failures).toContain(
+    "checked-in report is missing required trust marker: issues found",
+  );
+  expect(result.failures).toContain(
+    "checked-in report is missing required trust marker: remediation tasks",
+  );
+});
+
+test("compareSelfAuditReports passes when PR mining counts vary in both directions", () => {
+  const base = `# Anvil Audit — anvil
+
+*Why this matters:* This run analyzed 50 PRs and surfaced 8 recurring rule candidates.
+
+PRs analyzed: 50 · Comments reviewed: 100 · Substantive comments: 80 · Candidates: 8
+
+### ✅ Verdict: PASS
+
+| What | Value |
+|------|-------|
+| Issues found | none |
+| Remediation tasks | none |
+
+- Action path: none generated for this run; use the supporting diagnostics below if you need the evidence behind the pass verdict.
+`;
+  const fresh = base
+    .replace("50 PRs", "48 PRs")
+    .replace("8 recurring", "7 recurring")
+    .replace("PRs analyzed: 50", "PRs analyzed: 48")
+    .replace("Comments reviewed: 100", "Comments reviewed: 95")
+    .replace("Substantive comments: 80", "Substantive comments: 72")
+    .replace("Candidates: 8", "Candidates: 7");
+
+  const result = compareSelfAuditReports(base, fresh);
+
+  expect(result.failures).toEqual([]);
 });
