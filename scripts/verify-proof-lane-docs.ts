@@ -129,7 +129,7 @@ const CODE_BLOCK_CONTRACTS: CodeBlockContract[] = [
   },
 ];
 
-function getSectionText(
+export function getSectionText(
   text: string,
   sectionMarker: string,
   endMarker: string,
@@ -147,7 +147,7 @@ function getSectionText(
   return text.slice(start, end);
 }
 
-function extractBashBlocks(
+export function extractBashBlocks(
   sectionText: string,
   style: CodeBlockContract["style"],
 ): string[][] {
@@ -159,6 +159,78 @@ function extractBashBlocks(
   return [...sectionText.matchAll(pattern)].map((match) =>
     match[1].split("\n"),
   );
+}
+
+export function validateCodeBlock(
+  text: string,
+  contract: CodeBlockContract,
+): ValidationResult {
+  const checks: string[] = [];
+  const failures: string[] = [];
+
+  const sectionText = getSectionText(
+    text,
+    contract.sectionMarker,
+    contract.endMarker,
+  );
+
+  if (!sectionText) {
+    failures.push(
+      `${contract.path} is missing the proof-packet section markers`,
+    );
+    return { checks, failures };
+  }
+
+  const bashBlocks = extractBashBlocks(sectionText, contract.style);
+
+  if (bashBlocks.length < contract.expectedBlocks.length) {
+    failures.push(
+      `${contract.path} is missing expected ${contract.style} proof-lane bash blocks`,
+    );
+    return { checks, failures };
+  }
+
+  for (const [index, expectedBlock] of contract.expectedBlocks.entries()) {
+    const actualBlock = bashBlocks[index];
+
+    if (!actualBlock) {
+      failures.push(
+        `${contract.path} is missing proof-packet block ${index + 1}`,
+      );
+      continue;
+    }
+
+    if (actualBlock.join("\n") !== expectedBlock.join("\n")) {
+      failures.push(
+        `${contract.path} ${contract.label} block ${index + 1} drifted from the narrow-screen command layout`,
+      );
+      continue;
+    }
+
+    checks.push(
+      `${contract.path} keeps ${contract.label} block ${index + 1} on the expected ${contract.style} command lines`,
+    );
+
+    if (contract.maxLineLength) {
+      let exceeded = false;
+      for (const line of actualBlock) {
+        if (line.length > contract.maxLineLength) {
+          failures.push(
+            `${contract.path} proof-packet block ${index + 1} exceeds ${contract.maxLineLength} chars on one line`,
+          );
+          exceeded = true;
+        }
+      }
+
+      if (!exceeded) {
+        checks.push(
+          `${contract.path} keeps ${contract.label} block ${index + 1} within ${contract.maxLineLength} chars per line`,
+        );
+      }
+    }
+  }
+
+  return { checks, failures };
 }
 
 export function validateProofLaneDocs(): ValidationResult {
@@ -189,63 +261,9 @@ export function validateProofLaneDocs(): ValidationResult {
 
   for (const contract of CODE_BLOCK_CONTRACTS) {
     const text = readFileSync(contract.path, "utf8");
-    const sectionText = getSectionText(
-      text,
-      contract.sectionMarker,
-      contract.endMarker,
-    );
-
-    if (!sectionText) {
-      failures.push(
-        `${contract.path} is missing the proof-packet section markers`,
-      );
-      continue;
-    }
-
-    const bashBlocks = extractBashBlocks(sectionText, contract.style);
-
-    if (bashBlocks.length < contract.expectedBlocks.length) {
-      failures.push(
-        `${contract.path} is missing expected ${contract.style} proof-lane bash blocks`,
-      );
-      continue;
-    }
-
-    for (const [index, expectedBlock] of contract.expectedBlocks.entries()) {
-      const actualBlock = bashBlocks[index];
-
-      if (!actualBlock) {
-        failures.push(
-          `${contract.path} is missing proof-packet block ${index + 1}`,
-        );
-        continue;
-      }
-
-      if (actualBlock.join("\n") !== expectedBlock.join("\n")) {
-        failures.push(
-          `${contract.path} ${contract.label} block ${index + 1} drifted from the narrow-screen command layout`,
-        );
-        continue;
-      }
-
-      checks.push(
-        `${contract.path} keeps ${contract.label} block ${index + 1} on the expected ${contract.style} command lines`,
-      );
-
-      if (contract.maxLineLength) {
-        for (const line of actualBlock) {
-          if (line.length > contract.maxLineLength) {
-            failures.push(
-              `${contract.path} proof-packet block ${index + 1} exceeds ${contract.maxLineLength} chars on one line`,
-            );
-          }
-        }
-
-        checks.push(
-          `${contract.path} keeps ${contract.label} block ${index + 1} within ${contract.maxLineLength} chars per line`,
-        );
-      }
-    }
+    const result = validateCodeBlock(text, contract);
+    checks.push(...result.checks);
+    failures.push(...result.failures);
   }
 
   return { checks, failures };
