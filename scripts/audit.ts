@@ -33,7 +33,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import {
   type AiProvider,
   heuristicTopImprovements,
@@ -46,6 +46,7 @@ import {
   type AuditConfigLoadResult,
   loadAuditConfig,
 } from "./lib/audit-config.ts";
+import { resolveProjectName } from "./lib/project-name.ts";
 import { type CliSignals, detectCliSignals } from "./lib/cli-detectors.ts";
 import {
   type GuardrailScoreResult,
@@ -590,11 +591,12 @@ export type ParsedArgs = {
   aiModel: string | null;
   aiTimeoutMs: number | null;
   forceStageB: boolean;
+  projectName: string | null;
 };
 
 function usageAndExit(): never {
   console.error(
-    "Usage: anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]",
+    "Usage: anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b] [--project-name <name>]",
   );
   console.error("");
   console.error("Options:");
@@ -613,6 +615,7 @@ function usageAndExit(): never {
   );
   console.error(
     "  --ci                    Run deterministic structural lint mode (local-only heuristic suggestions)",
+    "  --project-name <name>   Override the project name used in report title and artifact paths",
   );
   console.error(
     "  --ai-provider <name>    AI provider: auto | openai | codex-cli | claude-code | gemini-cli | opencode | heuristic",
@@ -640,6 +643,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
   let aiModel: string | null = null;
   let aiTimeoutMs: number | null = null;
   let forceStageB = false;
+  let projectName: string | null = null;
 
   for (let i = 2; i < argv.length; i++) {
     const arg = argv[i];
@@ -691,6 +695,8 @@ export function parseArgs(argv: string[]): ParsedArgs {
       aiTimeoutMs = parsed;
     } else if (arg === "--force-stage-b") {
       forceStageB = true;
+    } else if (arg === "--project-name") {
+      projectName = (argv[++i] ?? null)?.trim() || null;
     } else if (arg === "--help" || arg === "-h") {
       usageAndExit();
     } else {
@@ -721,6 +727,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     aiModel,
     aiTimeoutMs,
     forceStageB,
+    projectName,
   };
 }
 
@@ -5580,7 +5587,7 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
     throw new Error(`target must be a directory: ${projectRoot}`);
   }
 
-  const projectName = basename(projectRoot);
+  const projectName = resolveProjectName(projectRoot, args.projectName);
   const auditDate = new Date().toISOString().split("T")[0];
 
   let auditConfig: AuditConfigLoadResult;

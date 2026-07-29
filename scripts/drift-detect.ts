@@ -20,6 +20,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { discoverRuleSurfaceFiles } from "./lib/rule-surface.ts";
+import { resolveProjectName } from "./lib/project-name.ts";
 
 export interface DriftIssue {
   type: "path" | "glob" | "command" | "date" | "coverage-gap";
@@ -88,7 +89,7 @@ let SKIP_DIRS = DEFAULT_SKIP_DIRS;
 
 function defaultReportOutputPath(projectRoot: string): string {
   const date = new Date().toISOString().split("T")[0];
-  const projectName = basename(projectRoot);
+  const projectName = resolveProjectName(projectRoot);
   return join(
     process.cwd(),
     "docs",
@@ -917,7 +918,7 @@ export function buildReport(
   ignoreMatchers: IgnoreMatcher[] = [],
   scopeCount?: number,
 ): string {
-  const projectName = basename(projectRoot);
+  const projectName = resolveProjectName(projectRoot);
   const today = new Date().toISOString().slice(0, 10);
   const counts = countByType(issues);
   const brokenSymlinkCount = countBrokenSymlinkIssues(issues);
