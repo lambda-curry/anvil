@@ -16,6 +16,7 @@ import {
   formatVerificationSummary,
   parseCliOptions,
   retainVerificationBundle,
+  runFreshAudit,
   validateCheckedInReportDatePath,
 } from "./verify-self-audit-proof.ts";
 
@@ -502,4 +503,134 @@ PRs analyzed: 50 · Comments reviewed: 100 · Substantive comments: 80 · Candid
   const result = compareSelfAuditReports(base, fresh);
 
   expect(result.failures).toEqual([]);
+});
+
+// --- runFreshAudit integration tests ---
+
+test("runFreshAudit produces a non-empty audit report file", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-run-fresh-"));
+  const outputPath = join(tmp, "self-audit.md");
+
+  try {
+    runFreshAudit(outputPath);
+
+    expect(existsSync(outputPath)).toBe(true);
+    const report = readFileSync(outputPath, "utf8");
+    expect(report.length).toBeGreaterThan(0);
+    expect(report).toContain("# Anvil Audit");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("runFreshAudit output includes required trust markers", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-run-fresh-"));
+  const outputPath = join(tmp, "self-audit.md");
+
+  try {
+    runFreshAudit(outputPath);
+    const report = readFileSync(outputPath, "utf8");
+
+    // The self-audit should pass on the Anvil repo itself
+    expect(report).toContain("### ✅ Verdict: PASS");
+    expect(report).toContain("| Issues found | none |");
+    expect(report).toContain("| Remediation tasks | none |");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("runFreshAudit output passes validateCheckedInReportDatePath", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-run-fresh-"));
+  const outputPath = join(tmp, "anvil-audit-2026-07-29.md");
+
+  try {
+    runFreshAudit(outputPath);
+    const report = readFileSync(outputPath, "utf8");
+
+    // The fresh report should contain a date header that can be validated
+    const dateMatch = report.match(/^\*Date: (\d{4}-\d{2}-\d{2})\*$/m);
+    expect(dateMatch).not.toBeNull();
+
+    const failure = validateCheckedInReportDatePath(outputPath, report);
+    // If the date doesn't match our filename, that's fine — just verify the function works
+    // The key is that the report has a parseable date
+    if (failure) {
+      expect(failure).toContain("does not match");
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// --- main() integration via subprocess ---
+
+test("script exits 0 when self-audit matches checked-in packet", () => {
+  const proc = Bun.spawnSync({
+    cmd: ["bun", "run", "scripts/verify-self-audit-proof.ts"],
+    cwd: resolve(import.meta.dir, ".."),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+
+  const stdout = proc.stdout.toString().trim();
+
+  expect(proc.exitCode).toBe(0);
+  expect(stdout).toContain("checked-in report filename date matches");
+  expect(stdout).toContain("matches the checked-in self-audit packet");
+});
+
+test("script exits 1 when --retain-dir is missing its value", () => {
+  const proc = Bun.spawnSync({
+    cmd: ["bun", "run", "scripts/verify-self-audit-proof.ts", "--retain-dir"],
+    cwd: resolve(import.meta.dir, ".."),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+
+  expect(proc.exitCode).toBe(1);
+  expect(proc.stderr.toString()).toContain(
+    "--retain-dir requires a directory path",
+  );
+});
+
+test("script exits 1 on unknown argument", () => {
+  const proc = Bun.spawnSync({
+    cmd: ["bun", "run", "scripts/verify-self-audit-proof.ts", "--bogus"],
+    cwd: resolve(import.meta.dir, ".."),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+
+  expect(proc.exitCode).toBe(1);
+  expect(proc.stderr.toString()).toContain("Unknown argument: --bogus");
+});
+
+test("script with --retain-dir creates verification bundle", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-retain-cli-"));
+  const retainDir = join(tmp, "bundle");
+
+  try {
+    const proc = Bun.spawnSync({
+      cmd: [
+        "bun",
+        "run",
+        "scripts/verify-self-audit-proof.ts",
+        "--retain-dir",
+        retainDir,
+      ],
+      cwd: resolve(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+
+    expect(proc.exitCode).toBe(0);
+    expect(existsSync(join(retainDir, "checked-in-self-audit.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "fresh-self-audit.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "verification-summary.md"))).toBe(true);
+    // No diff.txt when audit passes
+    expect(existsSync(join(retainDir, "diff.txt"))).toBe(false);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 });

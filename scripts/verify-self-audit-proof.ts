@@ -18,7 +18,7 @@ export const defaultCheckedInReport = resolve(
   REPO_ROOT,
   "docs",
   "audits",
-  "anvil-audit-2026-07-09.md",
+  "anvil-audit-2026-07-29.md",
 );
 
 const REPORT_DATE_PATTERN = /^\*Date: (\d{4}-\d{2}-\d{2})\*$/m;
@@ -244,7 +244,7 @@ export function retainVerificationBundle(
   }
 }
 
-function runFreshAudit(outputPath: string): void {
+export function runFreshAudit(outputPath: string): void {
   const audit = Bun.spawnSync({
     cmd: [
       "bun",
