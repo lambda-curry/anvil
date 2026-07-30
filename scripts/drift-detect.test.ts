@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test, describe } from "bun:test";
@@ -18,6 +18,7 @@ import {
   type DriftIssue,
   parseArgs,
   normalizePath,
+  collectFiles,
   compileIgnorePattern,
   loadAnvilIgnore,
   isIgnored,
@@ -28,6 +29,7 @@ import {
   dateCadenceForFile,
   shouldSkipDateDrift,
   detectDateDrift,
+  detectPathDrift,
   countByType,
   countBrokenSymlinkIssues,
   severitySymbol,
@@ -731,5 +733,171 @@ describe("buildReport", () => {
     ];
     const report = buildReport("/my/project", [], notes);
     expect(report).toContain("docs/guide.md:5 — URL-like reference");
+  });
+});
+
+// ─── collectFiles ──────────────────────────────────────────────────────────
+
+describe("collectFiles", () => {
+  test("collects files from a flat directory", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-collect-"));
+    writeFileSync(join(dir, "a.md"), "hello");
+    writeFileSync(join(dir, "b.txt"), "world");
+
+    const files = collectFiles(dir).sort();
+    expect(files).toEqual([join(dir, "a.md"), join(dir, "b.txt")].sort());
+  });
+
+  test("recurses into subdirectories", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-collect-"));
+    writeFileSync(join(dir, "top.md"), "top");
+    mkdirSync(join(dir, "sub"), { recursive: true });
+    writeFileSync(join(dir, "sub", "deep.md"), "deep");
+
+    const files = collectFiles(dir);
+    expect(files.some((f) => f.endsWith("top.md"))).toBe(true);
+    expect(files.some((f) => f.endsWith(join("sub", "deep.md")))).toBe(true);
+  });
+
+  test("skips default skip directories", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-collect-"));
+    writeFileSync(join(dir, "real.md"), "real");
+    mkdirSync(join(dir, "node_modules"), { recursive: true });
+    mkdirSync(join(dir, ".git"), { recursive: true });
+    mkdirSync(join(dir, "dist"), { recursive: true });
+    writeFileSync(join(dir, "node_modules", "pkg.json"), "{}");
+    writeFileSync(join(dir, ".git", "config"), "cfg");
+    writeFileSync(join(dir, "dist", "out.js"), "js");
+
+    const files = collectFiles(dir);
+    expect(files.some((f) => f.endsWith("real.md"))).toBe(true);
+    expect(files.some((f) => f.includes("node_modules"))).toBe(false);
+    expect(files.some((f) => f.includes(".git"))).toBe(false);
+    expect(files.some((f) => f.includes("dist"))).toBe(false);
+  });
+
+  test("returns empty array for nonexistent directory", () => {
+    const files = collectFiles(join(tmpdir(), "anvil-nonexistent-xyz"));
+    expect(files).toEqual([]);
+  });
+});
+
+// ─── detectPathDrift ───────────────────────────────────────────────────────
+
+describe("detectPathDrift", () => {
+  test("reports high-severity issue for missing path reference", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "See `src/utils/config.ts` for details.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    expect(result.issues.length).toBeGreaterThan(0);
+    const issue = result.issues.find((i) => i.type === "path");
+    expect(issue).toBeDefined();
+    expect(issue?.severity).toBe("high");
+    expect(issue?.detail).toContain("src/utils/config.ts");
+  });
+
+  test("does not report when path reference exists", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-"));
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "src", "config.ts"), "export default {};");
+    writeFileSync(join(dir, "AGENTS.md"), "See `src/config.ts` for details.\n");
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter((i) => i.type === "path");
+    expect(pathIssues).toEqual([]);
+  });
+
+  test("skips glob patterns in backtick paths", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "Rules match `src/**/*.rules.md` patterns.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter((i) => i.type === "path");
+    expect(pathIssues).toEqual([]);
+  });
+
+  test("skips URL-like references", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "See https://example.com/guide for docs.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter((i) => i.type === "path");
+    expect(pathIssues).toEqual([]);
+  });
+
+  test("skips relative paths (./ and ../)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "See `./config.ts` and `../shared/utils.ts` for details.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter((i) => i.type === "path");
+    expect(pathIssues).toEqual([]);
+  });
+
+  test("notes workspace-root resolution for existing parent paths", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-"));
+    mkdirSync(join(dir, "..", "shared-docs"), { recursive: true });
+    // Create a file at the parent level
+    writeFileSync(join(dir, "..", "shared-docs", "shared-file.md"), "shared");
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "Reference: `shared-docs/shared-file.md`\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    // Should produce a note about workspace-root resolution, not a high-severity issue
+    const highIssues = result.issues.filter(
+      (i) => i.type === "path" && i.severity === "high",
+    );
+    expect(highIssues).toEqual([]);
+    expect(result.notes.length).toBeGreaterThan(0);
+  });
+
+  test("processes multiple files", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-"));
+    writeFileSync(join(dir, "AGENTS.md"), "Missing: `src/missing1.ts`\n");
+    writeFileSync(join(dir, "README.md"), "Missing: `src/missing2.ts`\n");
+
+    const result = detectPathDrift(dir, [
+      join(dir, "AGENTS.md"),
+      join(dir, "README.md"),
+    ]);
+    expect(result.issues.filter((i) => i.type === "path").length).toBe(2);
+  });
+
+  test("skips drift-report.md files", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-"));
+    writeFileSync(
+      join(dir, "drift-report.md"),
+      "Missing: `src/nonexistent.ts`\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "drift-report.md")]);
+    expect(result.issues).toEqual([]);
+  });
+});
+
+// ─── normalizePath ─────────────────────────────────────────────────────────
+
+describe("normalizePath", () => {
+  test("converts backslashes to forward slashes", () => {
+    expect(normalizePath("src\\\\utils\\\\file.ts")).toBe("src/utils/file.ts");
+  });
+
+  test("leaves forward slashes unchanged", () => {
+    expect(normalizePath("src/utils/file.ts")).toBe("src/utils/file.ts");
   });
 });
