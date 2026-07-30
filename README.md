@@ -10,7 +10,7 @@ Rules and guardrails in AI-assisted codebases accumulate organically. Contradict
 - **Score engineering guardrails** — measure readiness across CI, type safety, test depth, code quality, review ownership, security, and drift resilience
 - **Bootstrap from scratch** — generate starter rule sets from tech stack analysis (package.json, tsconfig, framework config)
 - **Mine PR history** — surface recurring review feedback that should become rules
-- **Drift detection** — flag rules whose globs no longer match, patterns with no rule or guardrail coverage
+- **Drift detection (basic)** — flag stale path references and rules with outdated validation dates; glob drift and coverage gap detection are planned
 - **Shape report-quality outputs** — make audit results easier to act on and safer for downstream consumers
 - **Community intelligence** — track public ai-rules repos and relevant upstream findings
 
@@ -186,7 +186,7 @@ Anvil is not primarily a UI project. Its real proof surface is whether downstrea
 # Audit a repo's rules
 bun run scripts/audit.ts --target /path/to/repo
 
-# Detect drift (stale globs, uncovered patterns)
+# Detect drift (stale paths, outdated validation dates; full drift detection is planned)
 bun run scripts/drift-detect.ts --target /path/to/repo
 
 # Bootstrap starter rules from tech stack

@@ -1,6 +1,6 @@
 ---
 title: Drift Detection
-description: Detect stale globs, broken paths, and uncovered patterns in your AI rules
+description: Detect stale paths, broken references, and outdated validation dates in your AI rules
 ---
 
 ## What is rules drift?
@@ -27,25 +27,31 @@ bunx @lambdacurry/anvil drift ./my-repo
 bunx @lambdacurry/anvil audit --target ./my-repo
 ```
 
-## What Anvil checks
+## Current capabilities
 
-1. **Glob resolution** — every glob pattern in `.mdc` files is resolved against the actual file tree
-2. **Path existence** — referenced file paths are checked for existence
-3. **Validation dates** — rules with `Last validated` headers are checked against their cadence
-4. **Coverage analysis** — codebase patterns are checked for matching rule coverage
+**Implemented today:**
+
+1. **Path existence** — referenced file paths are checked for existence
+2. **Validation dates** — rules with `Last validated` headers are checked against their cadence
+
+**Planned (not yet implemented):**
+
+3. **Glob resolution** — resolving glob patterns in `.mdc` files against the actual file tree
+4. **Coverage analysis** — detecting codebase patterns with no matching rule
+5. **Command drift** — verifying that referenced commands still work
 
 ## Interpreting drift output
 
 Each drift issue includes:
 
 - **File and line** — where in the rule file the drifted reference lives
-- **Type** — path, glob, command, coverage, or date
+- **Type** — path or date (glob, command, and coverage types are planned)
 - **Severity** — low, medium, or high based on impact
 - **Suggestion** — what to fix or remove
 
 ## Fixing drift
 
-- **Stale globs** — update the glob pattern or remove the rule section
 - **Missing paths** — update the path reference or confirm the file was intentionally removed
 - **Date drift** — re-validate the rule and update the `Last validated` header
-- **Coverage gaps** — add a new rule or confirm the pattern is out of scope
+
+Glob drift, command drift, and coverage gap remediation will apply once those checks are implemented.

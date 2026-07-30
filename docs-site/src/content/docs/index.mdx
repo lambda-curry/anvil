@@ -32,8 +32,8 @@ This local-only lane gives new users a real report on the first try with just Bu
 	<Card title="Audit rules" icon="pencil">
 		Score existing rules for coverage gaps, conflicts, drift, and format compliance.
 	</Card>
-	<Card title="Detect drift" icon="warning">
-		Flag stale globs, broken path references, and uncovered patterns.
+	<Card title="Detect drift (basic)" icon="warning">
+		Flag stale path references and outdated validation dates. Full drift detection planned.
 	</Card>
 	<Card title="Bootstrap rules" icon="add-document">
 		Generate starter rule sets from your tech stack analysis.
@@ -45,8 +45,8 @@ This local-only lane gives new users a real report on the first try with just Bu
 
 ## What Anvil checks
 
-- **Coverage gaps** — patterns with no rule protection
-- **Drift** — stale globs, missing paths, outdated references
+- **Coverage gaps** — patterns with no rule protection (audit only; drift-side coverage detection is planned)
+- **Drift (basic)** — stale path references and outdated validation dates; glob drift and coverage drift detection are planned
 - **Conflicts** — contradictory instructions across rule files
 - **Sizing** — rules that bloat context without earning their place
 - **Format** — compliance with rule-writing best practices
