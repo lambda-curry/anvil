@@ -278,7 +278,7 @@ export function runFreshAudit(outputPath: string): void {
   throw new Error(`self-audit rerun failed with exit code ${audit.exitCode}`);
 }
 
-function main(): void {
+export function main(): void {
   const options = parseCliOptions(process.argv.slice(2));
   const tempDirectory = mkdtempSync(join(tmpdir(), "anvil-self-audit-"));
   const freshPath = join(tempDirectory, "self-audit.md");

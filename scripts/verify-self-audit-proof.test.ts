@@ -14,6 +14,7 @@ import {
   compareSelfAuditReports,
   defaultCheckedInReport,
   formatVerificationSummary,
+  main,
   parseCliOptions,
   retainVerificationBundle,
   runFreshAudit,
@@ -631,6 +632,236 @@ test("script with --retain-dir creates verification bundle", () => {
     // No diff.txt when audit passes
     expect(existsSync(join(retainDir, "diff.txt"))).toBe(false);
   } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// --- main() direct-call tests (in-process for coverage tracking) ---
+//
+// These tests mock Bun.spawnSync to intercept the audit subprocess and diff
+// command, allowing main() to execute in-process where the coverage tool can
+// track line execution. They complement the subprocess integration tests above.
+
+const originalSpawnSync = Bun.spawnSync;
+const originalArgv = process.argv;
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+type SpawnResult = {
+  exitCode: number;
+  stdout: Buffer;
+  stderr: Buffer;
+};
+
+/**
+ * Creates a mock Bun.spawnSync that intercepts the audit subprocess call,
+ * writing a controlled report to the output path. Diff calls pass through
+ * to the real implementation so we get authentic diff output.
+ */
+function mockSpawnSyncForAudit(reportContent: string, auditExitCode = 0) {
+  const realSpawnSync = Bun.spawnSync;
+  Bun.spawnSync = ((options: any): SpawnResult => {
+    const cmd = options?.cmd;
+    if (Array.isArray(cmd) && cmd[2] === "scripts/audit.ts") {
+      // Intercepted audit subprocess: write controlled report
+      const outputPath = cmd[cmd.length - 1];
+      writeFileSync(outputPath, reportContent);
+      return {
+        exitCode: auditExitCode,
+        stdout: Buffer.from(""),
+        stderr: Buffer.from(auditExitCode !== 0 ? "audit error output" : ""),
+      };
+    }
+    // Pass through diff and other commands
+    return realSpawnSync(options);
+  }) as typeof Bun.spawnSync;
+}
+
+test("main() succeeds and logs checks when fresh audit matches checked-in packet", () => {
+  const checkedInText = readFileSync(defaultCheckedInReport, "utf8");
+  const logs: string[] = [];
+  const errors: string[] = [];
+
+  mockSpawnSyncForAudit(checkedInText);
+  process.argv = ["node", "verify-self-audit-proof.ts"];
+  console.log = (...args: unknown[]) => {
+    logs.push(args.map(String).join(" "));
+  };
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    main();
+
+    expect(errors.length).toBe(0);
+    expect(
+      logs.some((l) => l.includes("matches the checked-in self-audit packet")),
+    ).toBe(true);
+    expect(logs.some((l) => l.includes("filename date matches"))).toBe(true);
+  } finally {
+    Bun.spawnSync = originalSpawnSync;
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+    process.argv = originalArgv;
+  }
+});
+
+test("main() sets exitCode 1 and logs failures when fresh audit diverges", () => {
+  const checkedInText = readFileSync(defaultCheckedInReport, "utf8");
+  const divergingReport = checkedInText.replace(
+    "| Issues found | none |",
+    "| Issues found | 1 |",
+  );
+  const logs: string[] = [];
+  const errors: string[] = [];
+
+  mockSpawnSyncForAudit(divergingReport);
+  process.argv = ["node", "verify-self-audit-proof.ts"];
+  process.exitCode = 0;
+  console.log = (...args: unknown[]) => {
+    logs.push(args.map(String).join(" "));
+  };
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    main();
+
+    expect(process.exitCode).toBe(1);
+    expect(
+      errors.some((e) =>
+        e.includes("diverges from the checked-in self-audit packet"),
+      ),
+    ).toBe(true);
+    expect(errors.some((e) => e.includes("first differing line"))).toBe(true);
+
+    process.exitCode = 0;
+  } finally {
+    Bun.spawnSync = originalSpawnSync;
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+    process.argv = originalArgv;
+    process.exitCode = 0;
+  }
+});
+
+test("main() with --retain-dir creates verification bundle in-process", () => {
+  const checkedInText = readFileSync(defaultCheckedInReport, "utf8");
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-main-retain-"));
+  const retainDir = join(tmp, "bundle");
+  const logs: string[] = [];
+  const errors: string[] = [];
+
+  mockSpawnSyncForAudit(checkedInText);
+  process.argv = [
+    "node",
+    "verify-self-audit-proof.ts",
+    "--retain-dir",
+    retainDir,
+  ];
+  console.log = (...args: unknown[]) => {
+    logs.push(args.map(String).join(" "));
+  };
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    main();
+
+    expect(errors.length).toBe(0);
+    expect(existsSync(join(retainDir, "checked-in-self-audit.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "fresh-self-audit.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "verification-summary.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "diff.txt"))).toBe(false);
+    expect(logs.some((l) => l.includes("retained verification bundle"))).toBe(
+      true,
+    );
+  } finally {
+    Bun.spawnSync = originalSpawnSync;
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+    process.argv = originalArgv;
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("main() propagates error when audit subprocess fails", () => {
+  const checkedInText = readFileSync(defaultCheckedInReport, "utf8");
+  const errors: string[] = [];
+
+  mockSpawnSyncForAudit(checkedInText, 1);
+  process.argv = ["node", "verify-self-audit-proof.ts"];
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    expect(() => main()).toThrow("self-audit rerun failed with exit code 1");
+    expect(errors.some((e) => e.includes("audit error output"))).toBe(true);
+  } finally {
+    Bun.spawnSync = originalSpawnSync;
+    console.error = originalConsoleError;
+    process.argv = originalArgv;
+  }
+});
+
+test("main() propagates error on unknown argument", () => {
+  const errors: string[] = [];
+
+  Bun.spawnSync = originalSpawnSync; // No audit mock needed
+  process.argv = ["node", "verify-self-audit-proof.ts", "--bogus"];
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    expect(() => main()).toThrow("Unknown argument: --bogus");
+  } finally {
+    console.error = originalConsoleError;
+    process.argv = originalArgv;
+  }
+});
+
+test("main() creates diff.txt in retain bundle when reports diverge", () => {
+  const checkedInText = readFileSync(defaultCheckedInReport, "utf8");
+  const divergingReport = checkedInText.replace(
+    "| Issues found | none |",
+    "| Issues found | 3 |",
+  );
+  const tmp = mkdtempSync(join(tmpdir(), "anvil-main-diff-retain-"));
+  const retainDir = join(tmp, "bundle");
+  const errors: string[] = [];
+
+  mockSpawnSyncForAudit(divergingReport);
+  process.argv = [
+    "node",
+    "verify-self-audit-proof.ts",
+    "--retain-dir",
+    retainDir,
+  ];
+  process.exitCode = 0;
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    main();
+
+    expect(process.exitCode).toBe(1);
+    expect(existsSync(join(retainDir, "checked-in-self-audit.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "fresh-self-audit.md"))).toBe(true);
+    expect(existsSync(join(retainDir, "diff.txt"))).toBe(true);
+    expect(existsSync(join(retainDir, "verification-summary.md"))).toBe(true);
+
+    process.exitCode = 0;
+  } finally {
+    Bun.spawnSync = originalSpawnSync;
+    console.error = originalConsoleError;
+    process.argv = originalArgv;
+    process.exitCode = 0;
     rmSync(tmp, { recursive: true, force: true });
   }
 });
