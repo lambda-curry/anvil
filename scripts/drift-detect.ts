@@ -322,10 +322,21 @@ export function scanBrokenSymlinks(
  * Returns true if the reference looks like a GitHub org/repo slug (e.g. "lambda-curry/anvil", "block/ai-rules").
  * These are exactly two-segment path-like strings where neither segment has a file extension.
  */
-function isGithubOrgRepoRef(reference: string): boolean {
+export function isGithubOrgRepoRef(
+  reference: string,
+  ...localRoots: string[]
+): boolean {
   const parts = reference.split("/");
   if (parts.length !== 2) return false;
   const [owner, repo] = parts;
+  // If the first segment exists as a local top-level directory, this is a
+  // local file path (e.g. "src/config.ts"), not a GitHub org/repo slug.
+  if (
+    localRoots.length > 0 &&
+    localTopLevelSegmentExists(owner, ...localRoots)
+  ) {
+    return false;
+  }
   return /^[a-zA-Z0-9_.-]+$/.test(owner) && /^[a-zA-Z0-9_.-]+$/.test(repo);
 }
 
@@ -677,7 +688,9 @@ export function detectPathDrift(
       seen.add(key);
 
       // Skip GitHub org/repo references (e.g. "lambda-curry/anvil", "block/ai-rules")
-      if (isGithubOrgRepoRef(reference)) {
+      if (
+        isGithubOrgRepoRef(reference, projectRoot, parentRoot, workspaceRoot)
+      ) {
         continue;
       }
       const referenceKind = classifyReference(

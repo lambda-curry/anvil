@@ -37,6 +37,7 @@ import {
   formatIssue,
   capitalize,
   buildReport,
+  isGithubOrgRepoRef,
 } from "./drift-detect.ts";
 
 // ─── parseArgs ──────────────────────────────────────────────────────────────
@@ -899,5 +900,55 @@ describe("normalizePath", () => {
 
   test("leaves forward slashes unchanged", () => {
     expect(normalizePath("src/utils/file.ts")).toBe("src/utils/file.ts");
+  });
+});
+
+// ─── isGithubOrgRepoRef ─────────────────────────────────────────────────────
+
+describe("isGithubOrgRepoRef", () => {
+  test("returns true for valid org/repo slugs", () => {
+    expect(isGithubOrgRepoRef("lambda-curry/anvil")).toBe(true);
+    expect(isGithubOrgRepoRef("block/ai-rules")).toBe(true);
+    expect(isGithubOrgRepoRef("microsoft/vscode")).toBe(true);
+    expect(isGithubOrgRepoRef("vercel/next.js")).toBe(true);
+  });
+
+  test("returns false for file-like two-segment paths when local root is provided", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-github-ref-"));
+    mkdirSync(join(dir, "src"), { recursive: true });
+    mkdirSync(join(dir, "lib"), { recursive: true });
+    mkdirSync(join(dir, "docs"), { recursive: true });
+    writeFileSync(join(dir, "src", "config.ts"), "", "utf8");
+
+    expect(isGithubOrgRepoRef("src/config.ts", dir)).toBe(false);
+    expect(isGithubOrgRepoRef("lib/utils.js", dir)).toBe(false);
+    expect(isGithubOrgRepoRef("docs/readme.md", dir)).toBe(false);
+  });
+
+  test("returns true for org/repo slugs even when local root is provided (no local match)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-github-ref-"));
+    expect(isGithubOrgRepoRef("lambda-curry/anvil", dir)).toBe(true);
+    expect(isGithubOrgRepoRef("vercel/next.js", dir)).toBe(true);
+  });
+
+  test("returns false for paths with more than two segments", () => {
+    expect(isGithubOrgRepoRef("a/b/c")).toBe(false);
+    expect(isGithubOrgRepoRef("src/lib/utils.ts")).toBe(false);
+  });
+
+  test("returns false for single segments", () => {
+    expect(isGithubOrgRepoRef("standalone")).toBe(false);
+    expect(isGithubOrgRepoRef("config.ts")).toBe(false);
+  });
+
+  test("returns false for empty or whitespace", () => {
+    expect(isGithubOrgRepoRef("")).toBe(false);
+    expect(isGithubOrgRepoRef("/")).toBe(false);
+  });
+
+  test("handles edge cases with underscores and hyphens", () => {
+    // Org/repo names can have underscores and hyphens
+    expect(isGithubOrgRepoRef("user_name/repo-name")).toBe(true);
+    expect(isGithubOrgRepoRef("some-org/repo_name")).toBe(true);
   });
 });
