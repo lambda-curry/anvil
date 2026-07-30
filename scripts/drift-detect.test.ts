@@ -38,7 +38,9 @@ import {
   capitalize,
   buildReport,
   isGithubOrgRepoRef,
+  main,
 } from "./drift-detect.ts";
+import { readFileSync, rmSync } from "node:fs";
 
 // ─── parseArgs ──────────────────────────────────────────────────────────────
 
@@ -950,5 +952,261 @@ describe("isGithubOrgRepoRef", () => {
     // Org/repo names can have underscores and hyphens
     expect(isGithubOrgRepoRef("user_name/repo-name")).toBe(true);
     expect(isGithubOrgRepoRef("some-org/repo_name")).toBe(true);
+  });
+});
+
+// ─── main() integration ───────────────────────────────────────────────────
+
+describe("main", () => {
+  const originalArgv = process.argv;
+  const originalConsoleLog = console.log;
+  const originalConsoleError = console.error;
+  const logs: string[] = [];
+
+  function captureConsole() {
+    logs.length = 0;
+    console.log = (...args: unknown[]) => {
+      logs.push(args.map(String).join(" "));
+    };
+    console.error = (...args: unknown[]) => {
+      logs.push(args.map(String).join(" "));
+    };
+  }
+
+  function restoreConsole() {
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+  }
+
+  function restoreArgv() {
+    process.argv = originalArgv;
+  }
+
+  test("exits with code 1 when no arguments provided", () => {
+    mockExit();
+    process.argv = ["node", "drift-detect.ts"];
+    captureConsole();
+
+    try {
+      main();
+      expect(true).toBe(false); // Should not reach here
+    } catch (e) {
+      expect((e as Error).message).toBe("__EXIT_1__");
+    } finally {
+      restoreExit();
+      restoreArgv();
+      restoreConsole();
+    }
+  });
+
+  test("exits with code 1 for non-existent project path", () => {
+    mockExit();
+    process.argv = [
+      "node",
+      "drift-detect.ts",
+      "--target",
+      "/nonexistent/path/that/does/not/exist",
+    ];
+    captureConsole();
+
+    try {
+      main();
+      expect(true).toBe(false);
+    } catch (e) {
+      expect((e as Error).message).toBe("__EXIT_1__");
+      expect(logs.some((l) => l.includes("Project path not found"))).toBe(true);
+    } finally {
+      restoreExit();
+      restoreArgv();
+      restoreConsole();
+    }
+  });
+
+  test("exits with code 1 when target is a file, not a directory", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-main-"));
+    const filePath = join(dir, "not-a-dir.txt");
+    writeFileSync(filePath, "hello");
+
+    mockExit();
+    process.argv = ["node", "drift-detect.ts", "--target", filePath];
+    captureConsole();
+
+    try {
+      main();
+      expect(true).toBe(false);
+    } catch (e) {
+      expect((e as Error).message).toBe("__EXIT_1__");
+      expect(logs.some((l) => l.includes("not a directory"))).toBe(true);
+    } finally {
+      restoreExit();
+      restoreArgv();
+      restoreConsole();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("runs full pipeline and writes report for valid project", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-main-"));
+    const output = join(dir, "report.md");
+
+    // Minimal project structure with a rule file
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "# Agent Guide\n\nSee `src/utils/config.ts` for details.\n",
+    );
+
+    process.argv = [
+      "node",
+      "drift-detect.ts",
+      "--target",
+      dir,
+      "--output",
+      output,
+    ];
+    captureConsole();
+
+    try {
+      main();
+
+      // Report file should be written
+      const reportContent = readFileSync(output, "utf8");
+      expect(reportContent.length).toBeGreaterThan(0);
+
+      // Console summary should mention completion
+      expect(logs.some((l) => l.includes("Drift detection complete"))).toBe(
+        true,
+      );
+      expect(logs.some((l) => l.includes("Report written to"))).toBe(true);
+
+      // The missing path src/utils/config.ts should surface as path drift
+      expect(logs.some((l) => l.includes("Path drift: 1"))).toBe(true);
+    } finally {
+      restoreArgv();
+      restoreConsole();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("runs with positional path argument and --output", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-main-"));
+    const output = join(dir, "out.md");
+
+    writeFileSync(join(dir, "CLAUDE.md"), "# Claude Rules\n");
+
+    process.argv = ["node", "drift-detect.ts", dir, "--output", output];
+    captureConsole();
+
+    try {
+      main();
+      const reportContent = readFileSync(output, "utf8");
+      expect(reportContent.length).toBeGreaterThan(0);
+      expect(logs.some((l) => l.includes("Drift detection complete"))).toBe(
+        true,
+      );
+    } finally {
+      restoreArgv();
+      restoreConsole();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("respects --skip-dirs argument", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-main-"));
+    const output = join(dir, "report.md");
+
+    mkdirSync(join(dir, "node_modules"), { recursive: true });
+    writeFileSync(
+      join(dir, "node_modules", "AGENTS.md"),
+      "Missing: `src/no.ts`\n",
+    );
+    writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
+
+    process.argv = [
+      "node",
+      "drift-detect.ts",
+      "--target",
+      dir,
+      "--skip-dirs",
+      "node_modules",
+      "--output",
+      output,
+    ];
+    captureConsole();
+
+    try {
+      main();
+      // node_modules/AGENTS.md should be skipped, so no path drift issues
+      expect(logs.some((l) => l.includes("Path drift: 0"))).toBe(true);
+      expect(logs.some((l) => l.includes("Skip dirs"))).toBe(true);
+    } finally {
+      restoreArgv();
+      restoreConsole();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("handles .anvilignore file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-main-"));
+    const output = join(dir, "report.md");
+
+    // Create a docs directory with a file referencing a missing path
+    mkdirSync(join(dir, "docs"), { recursive: true });
+    writeFileSync(join(dir, "docs", "guide.md"), "See `src/missing.ts`\n");
+    writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
+    // Ignore the docs directory
+    writeFileSync(join(dir, ".anvilignore"), "docs/\n");
+
+    process.argv = [
+      "node",
+      "drift-detect.ts",
+      "--target",
+      dir,
+      "--output",
+      output,
+    ];
+    captureConsole();
+
+    try {
+      main();
+      // docs/guide.md is ignored, so the missing path should not be flagged
+      expect(logs.some((l) => l.includes("Path drift: 0"))).toBe(true);
+      expect(logs.some((l) => l.includes("Anvil ignore"))).toBe(true);
+    } finally {
+      restoreArgv();
+      restoreConsole();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("detects date drift for stale validation dates", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-main-"));
+    const output = join(dir, "report.md");
+
+    // AGENTS.md with a stale last-validated date (>365 days ago)
+    const staleDate = "2023-01-01";
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      `# Rules\nLast validated: ${staleDate}\n`,
+    );
+
+    process.argv = [
+      "node",
+      "drift-detect.ts",
+      "--target",
+      dir,
+      "--output",
+      output,
+    ];
+    captureConsole();
+
+    try {
+      main();
+      // Should detect date drift for the stale date
+      expect(logs.some((l) => l.includes("Date drift: 1"))).toBe(true);
+    } finally {
+      restoreArgv();
+      restoreConsole();
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
