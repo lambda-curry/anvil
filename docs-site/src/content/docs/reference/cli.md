@@ -42,7 +42,7 @@ Detect drift in rule surfaces.
 anvil drift --target ./my-repo
 ```
 
-Checks path existence and validation dates. Glob resolution, command verification, and coverage gap analysis are planned.
+Checks path existence, glob pattern resolution, broken symlinks, and validation dates. Command verification and coverage gap analysis are planned.
 The positional form `anvil drift ./my-repo` remains supported for compatibility.
 
 ## `anvil bootstrap`

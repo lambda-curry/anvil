@@ -29,6 +29,7 @@ import {
   dateCadenceForFile,
   shouldSkipDateDrift,
   detectDateDrift,
+  detectGlobDrift,
   detectPathDrift,
   countByType,
   countBrokenSymlinkIssues,
@@ -713,8 +714,9 @@ describe("buildReport", () => {
   test("generates report with no issues", () => {
     const report = buildReport("/my/project", [], []);
     expect(report).toContain(
-      "No drift issues detected for Phase 1b checks (path + date).",
+      "No drift issues detected (path, glob, symlink, and date checks).",
     );
+    expect(report).toContain("- Glob drift: 0 issues");
   });
 
   test("includes scope count when provided", () => {
@@ -890,6 +892,131 @@ describe("detectPathDrift", () => {
 
     const result = detectPathDrift(dir, [join(dir, "drift-report.md")]);
     expect(result.issues).toEqual([]);
+  });
+});
+
+// ─── detectGlobDrift ───────────────────────────────────────────────────────
+
+describe("detectGlobDrift", () => {
+  test("reports glob drift when pattern matches zero files", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "See `src/**/*.config.ts` for details.",
+    );
+
+    const result = detectGlobDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe("glob");
+    expect(result[0].severity).toBe("medium");
+    expect(result[0].detail).toContain("src/**/*.config.ts");
+    expect(result[0].detail).toContain("matches no files");
+  });
+
+  test("does not report glob drift when pattern matches files", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "src", "app.config.ts"), "export default {};");
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "See `src/**/*.config.ts` for details.",
+    );
+
+    const result = detectGlobDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("handles single-star globs", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    mkdirSync(join(dir, "docs"), { recursive: true });
+    writeFileSync(join(dir, "docs", "guide.md"), "# Guide");
+    writeFileSync(join(dir, "AGENTS.md"), "Docs at `docs/*.md`");
+
+    const result = detectGlobDrift(dir, [join(dir, "AGENTS.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("reports drift for single-star glob with no matches", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    writeFileSync(join(dir, "AGENTS.md"), "Docs at `docs/*.md`");
+
+    const result = detectGlobDrift(dir, [join(dir, "AGENTS.md")]);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe("glob");
+  });
+
+  test("skips non-glob backtick paths", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    writeFileSync(join(dir, "CLAUDE.md"), "See `src/config.ts` for details.");
+
+    const result = detectGlobDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("skips glob patterns inside code fences", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "Example:\n```\nfiles: `src/**/*.ts`\n```\n",
+    );
+
+    const result = detectGlobDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("skips drift-report.md files", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    writeFileSync(join(dir, "drift-report.md"), "Report with `*.ts`");
+
+    const result = detectGlobDrift(dir, [join(dir, "drift-report.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("deduplicates repeated glob patterns in same file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "See `src/**/*.config.ts` and also `src/**/*.config.ts`.",
+    );
+
+    const result = detectGlobDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toHaveLength(1);
+  });
+
+  test("handles glob patterns with leading ./", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    writeFileSync(join(dir, "CLAUDE.md"), "See `./*.config.ts` for details.");
+
+    const result = detectGlobDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe("glob");
+  });
+
+  test("reports multiple distinct glob drifts from one file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "See `src/**/*.ts` and `docs/**/*.md`.",
+    );
+
+    const result = detectGlobDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toHaveLength(2);
+  });
+
+  test("handles glob with trailing slash directory pattern", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    mkdirSync(join(dir, "test"), { recursive: true });
+    writeFileSync(join(dir, "test", "a.test.ts"), "test");
+    writeFileSync(join(dir, "AGENTS.md"), "Tests in `test/*.test.ts`");
+
+    const result = detectGlobDrift(dir, [join(dir, "AGENTS.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("returns empty for empty files list", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
+    const result = detectGlobDrift(dir, []);
+    expect(result).toEqual([]);
   });
 });
 

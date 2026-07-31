@@ -3,7 +3,7 @@
 ## Summary
 - Path drift: 1 issues
 - Missing symlink targets: 0 issues
-- Glob drift: 0 issues (not implemented in Phase 1b)
+- Glob drift: 0 issues
 - Command drift: 0 issues (not implemented in Phase 1b)
 - Date drift: 1 issues
 - Coverage gap: 0 issues (not implemented in Phase 2)

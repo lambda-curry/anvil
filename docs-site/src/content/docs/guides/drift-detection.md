@@ -32,26 +32,28 @@ bunx @lambdacurry/anvil audit --target ./my-repo
 **Implemented today:**
 
 1. **Path existence** — referenced file paths are checked for existence
-2. **Validation dates** — rules with `Last validated` headers are checked against their cadence
+2. **Glob patterns** — glob references (e.g., `src/**/*.ts`) are resolved against the file tree; patterns matching zero files are reported as drift
+3. **Validation dates** — rules with `Last validated` headers are checked against their cadence
+4. **Broken symlinks** — symlinked rule files pointing at missing targets are flagged
 
 **Planned (not yet implemented):**
 
-3. **Glob resolution** — resolving glob patterns in `.mdc` files against the actual file tree
-4. **Coverage analysis** — detecting codebase patterns with no matching rule
-5. **Command drift** — verifying that referenced commands still work
+5. **Coverage analysis** — detecting codebase patterns with no matching rule
+6. **Command drift** — verifying that referenced commands still work
 
 ## Interpreting drift output
 
 Each drift issue includes:
 
 - **File and line** — where in the rule file the drifted reference lives
-- **Type** — path or date (glob, command, and coverage types are planned)
+- **Type** — path, glob, date (command and coverage types are planned)
 - **Severity** — low, medium, or high based on impact
 - **Suggestion** — what to fix or remove
 
 ## Fixing drift
 
 - **Missing paths** — update the path reference or confirm the file was intentionally removed
+- **Glob drift** — update the glob pattern to match existing files, or remove the stale reference
 - **Date drift** — re-validate the rule and update the `Last validated` header
 
-Glob drift, command drift, and coverage gap remediation will apply once those checks are implemented.
+Command drift and coverage gap remediation will apply once those checks are implemented.

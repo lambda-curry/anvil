@@ -139,12 +139,9 @@ test("drift-detect console summary labels unimplemented checks honestly", () => 
   }
 
   const summary = lines.join("\n");
-  expect(summary).toContain("- Glob drift: not implemented (Phase 1b)");
+  expect(summary).toContain("- Glob drift: 0");
   expect(summary).toContain("- Command drift: not implemented (Phase 1b)");
   expect(summary).toContain("- Coverage gap: not implemented (Phase 2)");
-  expect(summary).not.toContain("- Glob drift: 0");
-  expect(summary).not.toContain("- Command drift: 0");
-  expect(summary).not.toContain("- Coverage gap: 0");
 });
 
 test("detectDateDrift accepts markdown metadata Last validated format", () => {
@@ -397,7 +394,7 @@ test("anvil wrapper preserves caller cwd for drift and bootstrap", () => {
   expect(drift.stderr).toBe("");
   expect(existsSync(driftReport)).toBe(true);
   expect(readFileSync(driftReport, "utf8")).toContain(
-    "No drift issues detected for Phase 1b checks (path + date).",
+    "No drift issues detected (path, glob, symlink, and date checks).",
   );
 
   expect(bootstrap.status).toBe(0);

@@ -539,6 +539,111 @@ function classifyMissingReferenceContext(
   return null;
 }
 
+/**
+ * Detect glob-pattern references in rule files that match zero files.
+ * Phase 1b glob drift: a backtick path containing `*` should resolve to at
+ * least one real file.  An empty glob is a stale or broken reference.
+ */
+export function detectGlobDrift(
+  projectRoot: string,
+  files: string[],
+): DriftIssue[] {
+  const issues: DriftIssue[] = [];
+  const projectFiles = collectFiles(projectRoot);
+  const relativeProjectFiles = projectFiles.map((f) =>
+    normalizePath(relative(projectRoot, f) || f),
+  );
+
+  for (const filePath of files) {
+    if (basename(filePath) === "drift-report.md") {
+      continue;
+    }
+
+    const content = readFileSync(filePath, "utf8");
+    const relativeFile = normalizePath(
+      relative(projectRoot, filePath) || basename(filePath),
+    );
+
+    const seen = new Set<string>();
+
+    for (const btMatch of content.matchAll(BACKTICK_PATH_PATTERN)) {
+      const btPath = btMatch[1];
+      if (!btPath.includes("*")) {
+        continue;
+      }
+
+      const btIndex = btMatch.index ?? 0;
+      const btLine = findLineNumber(content, btIndex);
+      const key = `${btPath}:${btLine}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+
+      // Skip if inside a code fence (documentation example, not a real reference)
+      if (isCodeFenceRange(content, btIndex)) {
+        continue;
+      }
+
+      const regex = globToRegex(btPath);
+      if (!regex) {
+        continue; // not a recognisable glob — leave to path drift
+      }
+
+      const hasMatch = relativeProjectFiles.some((rf) => regex.test(rf));
+      if (!hasMatch) {
+        issues.push({
+          type: "glob",
+          file: relativeFile,
+          line: btLine,
+          detail: `Glob pattern matches no files: \`${btPath}\``,
+          severity: "medium",
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
+/**
+ * Convert a glob pattern (containing `*` and `**`) into a RegExp.
+ * Returns null if the pattern doesn't look like a path glob.
+ */
+function globToRegex(pattern: string): RegExp | null {
+  let normalized = normalizePath(pattern.trim());
+  if (normalized.startsWith("./")) {
+    normalized = normalized.slice(2);
+  }
+  if (normalized.startsWith("/")) {
+    normalized = normalized.slice(1);
+  }
+
+  // Must contain at least one * to be a glob
+  if (!normalized.includes("*")) {
+    return null;
+  }
+
+  // Escape regex special characters (except * which we handle below)
+  const escaped = normalized.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+
+  // Replace globstar patterns so ** matches zero or more path segments
+  // First handle /**/ as a unit: it should match zero or more intermediate dirs
+  // Then handle any remaining ** as .*
+  // Finally, * matches within a single path segment
+  const regexSource = escaped
+    .replace(/\*\*\/(?=[^/\n])/g, "__ANVIL_GLOBSTAR_SLASH__")
+    .replace(/\*\*/g, ".*")
+    .replace(/__ANVIL_GLOBSTAR_SLASH__/g, "(?:.*/)?")
+    .replace(/\*/g, "[^/]*");
+
+  try {
+    return new RegExp(`^${regexSource}$`);
+  } catch {
+    return null;
+  }
+}
+
 export function detectPathDrift(
   projectRoot: string,
   files: string[],
@@ -938,7 +1043,7 @@ export function buildReport(
 
   const issueSection =
     issues.length === 0
-      ? "No drift issues detected for Phase 1b checks (path + date)."
+      ? "No drift issues detected (path, glob, symlink, and date checks)."
       : issues.map((issue) => formatIssue(issue)).join("\n\n");
   const notesSection =
     notes.length === 0
@@ -966,7 +1071,7 @@ export function buildReport(
       : []),
     `- Path drift: ${counts.path} issues`,
     `- Missing symlink targets: ${brokenSymlinkCount} issues`,
-    "- Glob drift: 0 issues (not implemented in Phase 1b)",
+    `- Glob drift: ${counts.glob} issues`,
     "- Command drift: 0 issues (not implemented in Phase 1b)",
     `- Date drift: ${counts.date} issues`,
     "- Coverage gap: 0 issues (not implemented in Phase 2)",
@@ -999,7 +1104,7 @@ export function printConsoleSummary(
   console.log(`- Missing symlink targets: ${brokenSymlinkCount}`);
   console.log(`- Date drift: ${counts.date}`);
   console.log(`- Non-drift path notes: ${notes.length}`);
-  console.log("- Glob drift: not implemented (Phase 1b)");
+  console.log(`- Glob drift: ${counts.glob}`);
   console.log("- Command drift: not implemented (Phase 1b)");
   console.log("- Coverage gap: not implemented (Phase 2)");
   console.log(`Report written to: ${outputPath}`);
@@ -1055,10 +1160,12 @@ export function main(): void {
     (filePath) => !brokenFiles.has(filePath),
   );
   const pathResults = detectPathDrift(projectRoot, readableRuleFiles);
+  const globIssues = detectGlobDrift(projectRoot, readableRuleFiles);
 
   const issues = [
     ...brokenSymlinkIssues,
     ...pathResults.issues,
+    ...globIssues,
     ...detectDateDrift(projectRoot, readableRuleFiles),
   ];
 
