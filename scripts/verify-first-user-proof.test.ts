@@ -564,6 +564,462 @@ test("validator rejects global-install packets that omit the pinned install line
   }
 });
 
+// --- additional validation failure-path tests ---
+
+test("validator rejects packets with an invalid install path", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({ "Install path": "docker" }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Install path must be one of `bunx`, `npx`, or `global install`",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects packets whose exact command is missing the audit subcommand", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Exact command": `bunx @lambdacurry/anvil@${expectedVersion} --target . --ci --output ./report.md`,
+      "Saved report path or screenshot link": "./report.md",
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Exact command must include the `audit` subcommand",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects packets whose exact command is missing --target and whose repo-root shell layout disagrees", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Exact command": `bunx @lambdacurry/anvil@${expectedVersion} audit --ci --output ./anvil-audit.md`,
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Exact command must include an explicit --target",
+    );
+    expect(result.failures).toContain(
+      "Shell layout says `target repo root with --target .`, but the saved audit command does not use `--target .`",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects packets whose repo-root shell layout disagrees with a parent-directory audit command", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Shell layout": "target repo root with `--target .`",
+      "Exact command": `bunx @lambdacurry/anvil@${expectedVersion} audit --target ./my-repo --ci --output ./my-repo/anvil-audit.md`,
+      "Saved report path or screenshot link": "./my-repo/anvil-audit.md",
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Shell layout says `target repo root with --target .`, but the saved audit command does not use `--target .`",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects packets whose pinned CLI version is malformed", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Pinned CLI version": "latest",
+      "Exact command": `bunx @lambdacurry/anvil@latest audit --target . --ci --output ./anvil-audit.md`,
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Pinned CLI version must be one exact published package version like 0.1.0-alpha.4",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects packets whose observed --version output disagrees with pinned version", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Observed `--version` output, if captured": "0.0.0-fake",
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      `Observed --version output, when captured, must include ${expectedVersion}`,
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects packets whose shell layout is bare 'other'", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({ "Shell layout": "other" }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Shell layout cannot be bare `other`; describe the actual layout",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects packets that report success but also list a first failure", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({ "First failure, if any": "It crashed on the first run." }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "First failure, if any must stay empty when the first-try result is success",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects packets whose filename does not match the naming contract", () => {
+  const packet = writeTempPacket("test-proof.md", buildPacket());
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "packet filename must match YYYY-MM-DD-<tester>-first-user-proof.md",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator reports missing required field content when a required-for-counts field is empty", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({ "First useful next action named by tester": "" }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "missing required field content: First useful next action named by tester",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator falls back to repo version when pinned CLI version is empty but flags the missing field", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({ "Pinned CLI version": "" }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "missing required field content: Pinned CLI version",
+    );
+    // getPinnedVersion still resolved the fallback version for downstream checks
+    expect(result.expectedVersion).toBe(expectedVersion);
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator falls back to repo version when pinned CLI version is the placeholder token but flags the missing field", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({ "Pinned CLI version": "<exact-version>" }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "missing required field content: Pinned CLI version",
+    );
+    // getPinnedVersion resolved the fallback via the placeholder path
+    expect(result.expectedVersion).toBe(expectedVersion);
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator counts packets with angle-bracket artifact references", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Saved report path or screenshot link": "<./anvil-audit.md>",
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("counts");
+    expect(result.failures).toEqual([]);
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator counts packets with backtick-wrapped artifact references", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Saved report path or screenshot link": "`./anvil-audit.md`",
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("counts");
+    expect(result.failures).toEqual([]);
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects global-install packets missing the anvil audit run line", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Install path": "global install",
+      "Exact command": `bun add -g @lambdacurry/anvil@${expectedVersion}`,
+      "Observed `--version` output, if captured": `anvil ${expectedVersion}`,
+      "Shell layout": "parent directory with `--target ./repo`",
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Exact command must include the `anvil audit` run line for global install packets",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects global-install packets that mix in bunx launcher lines", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Install path": "global install",
+      "Exact command": `bun add -g @lambdacurry/anvil@${expectedVersion}\nbunx @lambdacurry/anvil@${expectedVersion} audit --target . --ci --output ./anvil-audit.md`,
+      "Observed `--version` output, if captured": `anvil ${expectedVersion}`,
+      "Shell layout": "target repo root with `--target .`",
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Exact command must not mix `bunx` or `npx` lines into a `global install` proof packet; keep every saved launcher line on the declared install path",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator rejects bunx packets that do not use the bunx launcher", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Install path": "bunx",
+      "Exact command": `npx @lambdacurry/anvil@${expectedVersion} audit --target . --ci --output ./anvil-audit.md`,
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    expect(result.failures).toContain(
+      "Exact command must use the `bunx @lambdacurry/anvil@...` launcher when Install path is `bunx`",
+    );
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator handles blank lines inside shell-continued commands without crashing", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Exact command": `bunx @lambdacurry/anvil@${expectedVersion} audit \\
+
+--target . --ci --output ./anvil-audit.md`,
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("does-not-count");
+    // The blank line splits the continuation, so the audit command loses --target/--ci/--output
+    expect(result.failures.length).toBeGreaterThan(0);
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator handles trailing backslash at end of command text", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Exact command": `bunx @lambdacurry/anvil@${expectedVersion} audit --target . --ci --output ./anvil-audit.md \\`,
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    // The trailing backslash leaves one pending logical line that still matches
+    expect(result).toBeDefined();
+  } finally {
+    packet.cleanup();
+  }
+});
+
+test("validator counts packets with screenshot artifact references instead of local report paths", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Saved report path or screenshot link": "screenshot.png",
+    }),
+  );
+
+  try {
+    const result = validatePacketText(
+      readFileSync(packet.path, "utf8"),
+      packet.path,
+    );
+
+    expect(result.result).toBe("counts");
+    expect(result.failures).toEqual([]);
+  } finally {
+    packet.cleanup();
+  }
+});
+
 // --- main() direct-call tests ---
 
 const originalArgv = process.argv;
