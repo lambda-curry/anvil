@@ -30,6 +30,7 @@ import {
   shouldSkipDateDrift,
   detectDateDrift,
   detectGlobDrift,
+  detectCommandDrift,
   detectPathDrift,
   countByType,
   countBrokenSymlinkIssues,
@@ -1016,6 +1017,131 @@ describe("detectGlobDrift", () => {
   test("returns empty for empty files list", () => {
     const dir = mkdtempSync(join(tmpdir(), "anvil-glob-"));
     const result = detectGlobDrift(dir, []);
+    expect(result).toEqual([]);
+  });
+});
+
+// ─── detectCommandDrift ───────────────────────────────────────────────────
+
+describe("detectCommandDrift", () => {
+  test("reports drift when npm run script does not exist in package.json", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "test", scripts: { lint: "eslint ." } }),
+    );
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "Run `npm run lint` for linting. Use `npm run typecheck` for types.",
+    );
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe("command");
+    expect(result[0].severity).toBe("medium");
+    expect(result[0].detail).toContain("typecheck");
+    expect(result[0].detail).toContain("package.json");
+  });
+
+  test("does not report drift when npm script exists", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({
+        name: "test",
+        scripts: { lint: "eslint .", test: "bun test" },
+      }),
+    );
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "Run `npm run lint` then `npm run test`.",
+    );
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("reports drift for bare CLI tool not in node_modules/.bin", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(join(dir, "CLAUDE.md"), "Lint with `eslint` after changes.");
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe("command");
+    expect(result[0].detail).toContain("eslint");
+    expect(result[0].detail).toContain("not found");
+  });
+
+  test("does not report drift when bare CLI tool is in node_modules/.bin", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    mkdirSync(join(dir, "node_modules", ".bin"), { recursive: true });
+    writeFileSync(join(dir, "node_modules", ".bin", "eslint"), "#!/bin/sh");
+    writeFileSync(join(dir, "CLAUDE.md"), "Lint with `eslint` after changes.");
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("skips command references inside code fences", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "Example:\n```bash\nnpm run nonexistent\n```\n",
+    );
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("skips drift-report.md", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(join(dir, "drift-report.md"), "Run `npm run nope`");
+
+    const result = detectCommandDrift(dir, [join(dir, "drift-report.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("reports multiple missing scripts from one file", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "test", scripts: {} }),
+    );
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "Run `npm run build` and `npm run deploy`.",
+    );
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toHaveLength(2);
+    expect(result[0].detail).toContain("build");
+    expect(result[1].detail).toContain("deploy");
+  });
+
+  test("ignores unknown bare words that are not CLI tools", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(join(dir, "CLAUDE.md"), "Use `lodash` for utilities.");
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("handles pnpm shorthand without 'run'", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "test", scripts: { lint: "eslint ." } }),
+    );
+    writeFileSync(join(dir, "CLAUDE.md"), "Run `pnpm lint` for linting.");
+
+    // pnpm shorthand: `pnpm lint` → script "lint" — should not drift since it exists
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("returns empty for empty file list", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    const result = detectCommandDrift(dir, []);
     expect(result).toEqual([]);
   });
 });

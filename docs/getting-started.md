@@ -97,7 +97,7 @@ Relative `--target` paths resolve from your current shell cwd. If you are alread
 What happens:
 
 1. Anvil discovers the rule surface files the repo actually uses (CLAUDE.md, AGENTS.md, `.cursor/rules/`, `ai-rules/`, etc.)
-2. Runs drift detection — stale globs, missing path references, date-stale entries
+2. Runs drift detection — stale globs, missing path references, unavailable commands, date-stale entries
 3. Checks coverage against a community baseline of common rule categories
 4. Produces a scored report to stdout
 

@@ -152,13 +152,13 @@ interface DriftIssue {
 }
 ```
 
-**Phase 1 implementation (types 1, 2, 5):**
+**Phase 1 implementation (types 1, 2, 3, 5):**
 - Path drift: regex + `fs.existsSync`
-- Glob drift: frontmatter parse + `glob.sync`
+- Glob drift: glob-to-regex matching against project file tree
+- Command drift: package.json script checks + binary availability (node_modules/.bin + PATH)
 - Date drift: regex + date arithmetic
 
-**Phase 2 implementation (types 3, 4):**
-- Command drift: binary existence check
+**Phase 2 implementation (type 4):**
 - Coverage gaps: LLM-powered (requires separate prompt + token budget)
 
 ### Output Format
@@ -241,7 +241,7 @@ When running `scripts/drift-detect.ts` against the Anvil project itself on 2026-
 |---|---|---|
 | Phase 1a | Path drift + date drift | ~2 hours (Codex) |
 | Phase 1b | Glob drift | ~1 hour (Codex) |
-| Phase 2a | Command drift | ~1 hour (Codex) |
-| Phase 2b | Coverage gaps (PR mining) | ~4-6 hours (research + Codex) |
+| Phase 1c | Command drift | ~1 hour |
+| Phase 2 | Coverage gaps (PR mining) | ~4-6 hours (research + Codex) |
 
 **Recommendation:** Phase 1a is the highest-value, lowest-effort start. Path drift and date drift catch the most dangerous issues with straightforward implementation.

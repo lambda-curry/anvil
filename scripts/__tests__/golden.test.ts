@@ -140,7 +140,7 @@ test("drift-detect console summary labels unimplemented checks honestly", () => 
 
   const summary = lines.join("\n");
   expect(summary).toContain("- Glob drift: 0");
-  expect(summary).toContain("- Command drift: not implemented (Phase 1b)");
+  expect(summary).toContain("- Command drift: 0");
   expect(summary).toContain("- Coverage gap: not implemented (Phase 2)");
 });
 

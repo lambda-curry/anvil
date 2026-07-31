@@ -18,6 +18,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
+import { execSync } from "node:child_process";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { discoverRuleSurfaceFiles } from "./lib/rule-surface.ts";
 import { resolveProjectName } from "./lib/project-name.ts";
@@ -54,6 +55,45 @@ const PATH_PATTERN =
 // Matches paths inside backtick spans — preserves leading dots (.project/, .cursor/) and scoped imports (@pkg/name)
 const BACKTICK_PATH_PATTERN =
   /`([@.~/]?[a-zA-Z0-9._/-]+(?:\/[@a-zA-Z0-9._*-]+)+)`/g;
+// Matches backtick-quoted shell commands: `npm run lint`, `eslint .`, `bun test`, etc.
+const COMMAND_PATTERN =
+  /`((?:npm|bun|yarn|pnpm|npx|bunx)\s+[\w.-]+(?:\s+[^`]+)?)`/g;
+// Matches bare CLI tool references in backticks: `eslint`, `prettier`, `tsc`
+const BARE_TOOL_PATTERN = /`([a-z][a-z0-9-]{1,30})`/g;
+// Known package managers and runners that prefix script commands
+const PACKAGE_MANAGERS = new Set(["npm", "bun", "yarn", "pnpm"]);
+const RUNNER_TOOLS = new Set(["npx", "bunx"]);
+// Well-known CLI tools that are commonly referenced in rule files
+const KNOWN_CLI_TOOLS = new Set([
+  "eslint",
+  "prettier",
+  "tsc",
+  "vitest",
+  "jest",
+  "mocha",
+  "ava",
+  "webpack",
+  "vite",
+  "rollup",
+  "esbuild",
+  "turbo",
+  "nx",
+  "stylelint",
+  "oxlint",
+  "oxfmt",
+  "biome",
+  "babel",
+  "swc",
+  "postcss",
+  "tailwindcss",
+  "prisma",
+  "drizzle-kit",
+  "knex",
+  "playwright",
+  "cypress",
+  "puppeteer",
+]);
+
 const URL_SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:\/\//i;
 const DOMAIN_LIKE_HOST_PATTERN =
   /^(?:www\.)?[a-z0-9](?:[a-z0-9-]{0,62}\.)+[a-z]{2,24}$/i;
@@ -913,6 +953,163 @@ export function shouldSkipDateDrift(filePath: string): boolean {
   return false;
 }
 
+/**
+ * Detect command drift: rule files reference CLI commands/scripts that
+ * don't exist in the project. Checks:
+ * 1. `npm/bun/yarn/pnpm run <script>` or `<pm> <script>` → package.json scripts
+ * 2. Bare CLI tool names (eslint, prettier, etc.) → node_modules/.bin or PATH
+ */
+export function detectCommandDrift(
+  projectRoot: string,
+  files: string[],
+): DriftIssue[] {
+  const issues: DriftIssue[] = [];
+  const packageJsonPath = join(projectRoot, "package.json");
+  let packageScripts: Record<string, string> = {};
+  if (existsSync(packageJsonPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+      packageScripts = pkg.scripts ?? {};
+    } catch {
+      // Malformed package.json — skip script checks
+    }
+  }
+  const binDir = join(projectRoot, "node_modules", ".bin");
+  const availableBins = existsSync(binDir)
+    ? new Set(readdirSync(binDir).map((f) => f.toString()))
+    : new Set<string>();
+  const toolCheckCache = new Map<string, boolean>();
+
+  function isToolAvailable(tool: string): boolean {
+    if (toolCheckCache.has(tool)) {
+      return toolCheckCache.get(tool)!;
+    }
+    // Check node_modules/.bin first
+    if (availableBins.has(tool)) {
+      toolCheckCache.set(tool, true);
+      return true;
+    }
+    // Check PATH via which
+    try {
+      execSync(`which ${tool} 2>/dev/null`, {
+        stdio: "ignore",
+        timeout: 3000,
+      });
+      toolCheckCache.set(tool, true);
+      return true;
+    } catch {
+      toolCheckCache.set(tool, false);
+      return false;
+    }
+  }
+
+  for (const filePath of files) {
+    if (basename(filePath) === "drift-report.md") {
+      continue;
+    }
+
+    const content = readFileSync(filePath, "utf8");
+    const relativeFile = normalizePath(
+      relative(projectRoot, filePath) || basename(filePath),
+    );
+    const seen = new Set<string>();
+
+    // Check package-manager script references
+    for (const cmdMatch of content.matchAll(COMMAND_PATTERN)) {
+      const fullCmd = cmdMatch[1].trim();
+      const cmdIndex = cmdMatch.index ?? 0;
+      const cmdLine = findLineNumber(content, cmdIndex);
+
+      // Skip inside code fences (documentation examples)
+      if (isCodeFenceRange(content, cmdIndex)) {
+        continue;
+      }
+
+      const parts = fullCmd.split(/\s+/);
+      const pm = parts[0];
+      // Extract script name: `npm run lint` → "lint"; `bun test` → "test";
+      // `yarn dev` → "dev"; `npx eslint` → handled as bare tool below
+      let scriptName: string | null = null;
+      let isRunForm = false;
+
+      if (PACKAGE_MANAGERS.has(pm)) {
+        if (parts[1] === "run") {
+          scriptName = parts[2] ?? null;
+          isRunForm = true;
+        } else if (RUNNER_TOOLS.has(pm)) {
+          // npx/bunx <tool> — check if tool exists
+          const tool = parts[1];
+          if (tool && !isToolAvailable(tool)) {
+            const key = `runner:${tool}:${cmdLine}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            issues.push({
+              type: "command",
+              file: relativeFile,
+              line: cmdLine,
+              detail: `Runner command references unavailable tool: \`${fullCmd}\` — \`${tool}\` not found in node_modules/.bin or PATH`,
+              severity: "medium",
+            });
+          }
+          continue;
+        } else if (parts.length >= 2) {
+          // `bun test`, `yarn build`, `pnpm lint` — shorthand without "run"
+          scriptName = parts[1];
+        }
+      }
+
+      if (scriptName && isRunForm) {
+        // Only check `pm run <script>` form against package.json
+        const key = `script:${scriptName}:${cmdLine}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (!(scriptName in packageScripts)) {
+          issues.push({
+            type: "command",
+            file: relativeFile,
+            line: cmdLine,
+            detail: `Command references undefined npm script: \`${fullCmd}\` — \`${scriptName}\` not found in package.json scripts`,
+            severity: "medium",
+          });
+        }
+      }
+    }
+
+    // Check bare CLI tool references
+    for (const toolMatch of content.matchAll(BARE_TOOL_PATTERN)) {
+      const tool = toolMatch[1];
+      const toolIndex = toolMatch.index ?? 0;
+      const toolLine = findLineNumber(content, toolIndex);
+
+      // Skip inside code fences
+      if (isCodeFenceRange(content, toolIndex)) {
+        continue;
+      }
+
+      // Only check known CLI tools to avoid false positives
+      if (!KNOWN_CLI_TOOLS.has(tool)) {
+        continue;
+      }
+
+      const key = `tool:${tool}:${toolLine}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      if (!isToolAvailable(tool)) {
+        issues.push({
+          type: "command",
+          file: relativeFile,
+          line: toolLine,
+          detail: `Rule references unavailable CLI tool: \`${tool}\` — not found in node_modules/.bin or PATH`,
+          severity: "medium",
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
 export function detectDateDrift(
   projectRoot: string,
   markdownFiles: string[],
@@ -1072,7 +1269,7 @@ export function buildReport(
     `- Path drift: ${counts.path} issues`,
     `- Missing symlink targets: ${brokenSymlinkCount} issues`,
     `- Glob drift: ${counts.glob} issues`,
-    "- Command drift: 0 issues (not implemented in Phase 1b)",
+    `- Command drift: ${counts.command} issues`,
     `- Date drift: ${counts.date} issues`,
     "- Coverage gap: 0 issues (not implemented in Phase 2)",
     `- **Skip dirs:** ${skipDirList}`,
@@ -1105,7 +1302,7 @@ export function printConsoleSummary(
   console.log(`- Date drift: ${counts.date}`);
   console.log(`- Non-drift path notes: ${notes.length}`);
   console.log(`- Glob drift: ${counts.glob}`);
-  console.log("- Command drift: not implemented (Phase 1b)");
+  console.log(`- Command drift: ${counts.command}`);
   console.log("- Coverage gap: not implemented (Phase 2)");
   console.log(`Report written to: ${outputPath}`);
 }
@@ -1166,6 +1363,7 @@ export function main(): void {
     ...brokenSymlinkIssues,
     ...pathResults.issues,
     ...globIssues,
+    ...detectCommandDrift(projectRoot, readableRuleFiles),
     ...detectDateDrift(projectRoot, readableRuleFiles),
   ];
 
