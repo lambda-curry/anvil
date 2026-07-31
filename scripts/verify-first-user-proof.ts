@@ -535,6 +535,7 @@ if (import.meta.main) {
 
 export {
   expectedVersion,
+  main,
   parsePacket,
   validatePacketText,
   type FieldName,

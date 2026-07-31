@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   expectedVersion,
+  main,
   validatePacketText,
 } from "./verify-first-user-proof.ts";
 
@@ -560,5 +561,174 @@ test("validator rejects global-install packets that omit the pinned install line
     );
   } finally {
     packet.cleanup();
+  }
+});
+
+// --- main() direct-call tests ---
+
+const originalArgv = process.argv;
+const originalExit = process.exit;
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+test("main() logs counts result and exits 0 for a valid packet", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket(),
+  );
+  const outputs: string[] = [];
+  let exitCode = -1;
+
+  process.argv = ["node", "verify-first-user-proof.ts", packet.path];
+  process.exit = ((code?: number) => {
+    exitCode = code ?? 0;
+  }) as typeof process.exit;
+  console.log = (...args: unknown[]) => {
+    outputs.push(args.map(String).join(" "));
+  };
+  console.error = (..._args: unknown[]) => {};
+
+  try {
+    main();
+
+    expect(exitCode).toBe(0);
+    const json = JSON.parse(outputs.join("\n"));
+    expect(json.result).toBe("counts");
+    expect(json.failures).toEqual([]);
+    expect(json.packetPath).toBe(packet.path);
+  } finally {
+    process.argv = originalArgv;
+    process.exit = originalExit;
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+    packet.cleanup();
+  }
+});
+
+test("main() logs does-not-count result and exits 2 for an invalid packet", () => {
+  const packet = writeTempPacket(
+    "2026-05-30-redacted-first-user-proof.md",
+    buildPacket({
+      "Outside Lambda Curry": "no",
+    }),
+  );
+  const outputs: string[] = [];
+  let exitCode = -1;
+
+  process.argv = ["node", "verify-first-user-proof.ts", packet.path];
+  process.exit = ((code?: number) => {
+    exitCode = code ?? 0;
+  }) as typeof process.exit;
+  console.log = (...args: unknown[]) => {
+    outputs.push(args.map(String).join(" "));
+  };
+  console.error = (..._args: unknown[]) => {};
+
+  try {
+    main();
+
+    expect(exitCode).toBe(2);
+    const json = JSON.parse(outputs.join("\n"));
+    expect(json.result).toBe("does-not-count");
+    expect(json.failures.length).toBeGreaterThan(0);
+  } finally {
+    process.argv = originalArgv;
+    process.exit = originalExit;
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+    packet.cleanup();
+  }
+});
+
+test("main() exits 1 with usage when no arguments provided", () => {
+  let exitCode = -1;
+  const errors: string[] = [];
+
+  process.argv = ["node", "verify-first-user-proof.ts"];
+  process.exit = ((code?: number) => {
+    exitCode = code ?? 0;
+    throw new Error("process.exit");
+  }) as typeof process.exit;
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    expect(() => main()).toThrow("process.exit");
+    expect(exitCode).toBe(1);
+    expect(errors.some((e) => e.includes("Usage:"))).toBe(true);
+  } finally {
+    process.argv = originalArgv;
+    process.exit = originalExit;
+    console.error = originalConsoleError;
+  }
+});
+
+test("main() exits 1 with usage when --help is passed", () => {
+  let exitCode = -1;
+  const errors: string[] = [];
+
+  process.argv = ["node", "verify-first-user-proof.ts", "--help"];
+  process.exit = ((code?: number) => {
+    exitCode = code ?? 0;
+    throw new Error("process.exit");
+  }) as typeof process.exit;
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    expect(() => main()).toThrow("process.exit");
+    expect(exitCode).toBe(1);
+    expect(errors.some((e) => e.includes("Usage:"))).toBe(true);
+  } finally {
+    process.argv = originalArgv;
+    process.exit = originalExit;
+    console.error = originalConsoleError;
+  }
+});
+
+test("main() exits 1 with usage when -h is passed", () => {
+  let exitCode = -1;
+
+  process.argv = ["node", "verify-first-user-proof.ts", "-h"];
+  process.exit = ((code?: number) => {
+    exitCode = code ?? 0;
+    throw new Error("process.exit");
+  }) as typeof process.exit;
+  console.error = (..._args: unknown[]) => {};
+
+  try {
+    expect(() => main()).toThrow("process.exit");
+    expect(exitCode).toBe(1);
+  } finally {
+    process.argv = originalArgv;
+    process.exit = originalExit;
+    console.error = originalConsoleError;
+  }
+});
+
+test("main() exits 1 with usage when too many arguments are provided", () => {
+  let exitCode = -1;
+
+  process.argv = [
+    "node",
+    "verify-first-user-proof.ts",
+    "packet1.md",
+    "packet2.md",
+  ];
+  process.exit = ((code?: number) => {
+    exitCode = code ?? 0;
+    throw new Error("process.exit");
+  }) as typeof process.exit;
+  console.error = (..._args: unknown[]) => {};
+
+  try {
+    expect(() => main()).toThrow("process.exit");
+    expect(exitCode).toBe(1);
+  } finally {
+    process.argv = originalArgv;
+    process.exit = originalExit;
+    console.error = originalConsoleError;
   }
 });
