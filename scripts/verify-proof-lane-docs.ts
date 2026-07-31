@@ -269,7 +269,7 @@ export function validateProofLaneDocs(): ValidationResult {
   return { checks, failures };
 }
 
-function main(): void {
+export function main(): void {
   const result = validateProofLaneDocs();
 
   if (result.failures.length > 0) {

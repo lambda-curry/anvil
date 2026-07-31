@@ -4,6 +4,7 @@ import {
   expectedVersion,
   extractBashBlocks,
   getSectionText,
+  main,
   validateCodeBlock,
   validateProofLaneDocs,
 } from "./verify-proof-lane-docs.ts";
@@ -296,4 +297,42 @@ test("validateCodeBlock reports per-block gap when block count passes but specif
   expect(result.failures).toEqual([
     "/fake/pair.md pair block 2 drifted from the narrow-screen command layout",
   ]);
+});
+
+// ---------------------------------------------------------------------------
+// main() direct-call tests (in-process for coverage tracking)
+// ---------------------------------------------------------------------------
+
+const originalExit = process.exit;
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+test("main() logs all checks and exits normally when docs are valid", () => {
+  const logs: string[] = [];
+  const errors: string[] = [];
+  let exitCalled = false;
+
+  process.exit = ((_code?: number) => {
+    exitCalled = true;
+  }) as typeof process.exit;
+  console.log = (...args: unknown[]) => {
+    logs.push(args.map(String).join(" "));
+  };
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
+
+  try {
+    main();
+
+    // Real docs are valid — no failures, no exit
+    expect(exitCalled).toBe(false);
+    expect(errors).toEqual([]);
+    // Should have logged multiple check lines
+    expect(logs.length).toBeGreaterThan(10);
+  } finally {
+    process.exit = originalExit;
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+  }
 });
