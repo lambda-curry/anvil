@@ -1144,6 +1144,32 @@ describe("detectCommandDrift", () => {
     const result = detectCommandDrift(dir, []);
     expect(result).toEqual([]);
   });
+
+  test("skips template placeholder script names like <script>", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "test", scripts: { lint: "eslint ." } }),
+    );
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "Run `bun run <script>` or `pnpm run <script>` for tasks.",
+    );
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
+
+  test("skips template placeholder runner tools like <tool>", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-cmd-"));
+    writeFileSync(
+      join(dir, "CLAUDE.md"),
+      "Use `npx <tool>` or `bunx <tool>` to run tools.",
+    );
+
+    const result = detectCommandDrift(dir, [join(dir, "CLAUDE.md")]);
+    expect(result).toEqual([]);
+  });
 });
 
 // ─── normalizePath ─────────────────────────────────────────────────────────

@@ -60,6 +60,8 @@ const COMMAND_PATTERN =
   /`((?:npm|bun|yarn|pnpm|npx|bunx)\s+[\w.-]+(?:\s+[^`]+)?)`/g;
 // Matches bare CLI tool references in backticks: `eslint`, `prettier`, `tsc`
 const BARE_TOOL_PATTERN = /`([a-z][a-z0-9-]{1,30})`/g;
+// Matches template placeholders in documentation: <script>, <package>, <tool>, etc.
+const TEMPLATE_PLACEHOLDER = /^<[a-z][a-z0-9-]*>$/;
 // Known package managers and runners that prefix script commands
 const PACKAGE_MANAGERS = new Set(["npm", "bun", "yarn", "pnpm"]);
 const RUNNER_TOOLS = new Set(["npx", "bunx"]);
@@ -1039,7 +1041,12 @@ export function detectCommandDrift(
         } else if (RUNNER_TOOLS.has(pm)) {
           // npx/bunx <tool> — check if tool exists
           const tool = parts[1];
-          if (tool && !isToolAvailable(tool)) {
+          // Skip template placeholders (e.g. <tool>, <script>)
+          if (
+            tool &&
+            !TEMPLATE_PLACEHOLDER.test(tool) &&
+            !isToolAvailable(tool)
+          ) {
             const key = `runner:${tool}:${cmdLine}`;
             if (seen.has(key)) continue;
             seen.add(key);
@@ -1058,8 +1065,8 @@ export function detectCommandDrift(
         }
       }
 
-      if (scriptName && isRunForm) {
-        // Only check `pm run <script>` form against package.json
+      if (scriptName && isRunForm && !TEMPLATE_PLACEHOLDER.test(scriptName)) {
+        // Only check `pm run <script>` form against package.json (skip placeholders)
         const key = `script:${scriptName}:${cmdLine}`;
         if (seen.has(key)) continue;
         seen.add(key);
