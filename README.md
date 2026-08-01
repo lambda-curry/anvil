@@ -10,7 +10,7 @@ Rules and guardrails in AI-assisted codebases accumulate organically. Contradict
 - **Score engineering guardrails** — measure readiness across CI, type safety, test depth, code quality, review ownership, security, and drift resilience
 - **Bootstrap from scratch** — generate starter rule sets from tech stack analysis (package.json, tsconfig, framework config)
 - **Mine PR history** — surface recurring review feedback that should become rules
-- **Drift detection (basic)** — flag stale path references and rules with outdated validation dates; glob drift and coverage gap detection are planned
+- **Drift detection** — flag stale path references, broken glob patterns, and rules with outdated validation dates; command drift and coverage gap analysis are planned
 - **Shape report-quality outputs** — make audit results easier to act on and safer for downstream consumers
 - **Community intelligence** — track public ai-rules repos and relevant upstream findings
 
@@ -41,7 +41,7 @@ If you are here because someone sent you the external proof lane, keep using the
 ```
 scripts/
   audit.ts                # run a rules audit against a target repo
-  drift-detect.ts         # flag stale globs and uncovered patterns
+  drift-detect.ts         # flag stale paths, globs, and validation dates
   bootstrap-generate.ts   # generate starter rule sets from tech stack
   mine-pr-rules.ts        # mine GitHub PR review comments for rule candidates
   bootstrap-detect.ts     # tech stack detection for bootstrap

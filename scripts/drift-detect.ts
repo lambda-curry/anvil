@@ -1278,7 +1278,7 @@ export function buildReport(
     `- Glob drift: ${counts.glob} issues`,
     `- Command drift: ${counts.command} issues`,
     `- Date drift: ${counts.date} issues`,
-    "- Coverage gap: 0 issues (not implemented in Phase 2)",
+    "- Coverage gap: not implemented (Phase 2)",
     `- **Skip dirs:** ${skipDirList}`,
     ...(ignoreMatchers.length > 0
       ? [`- **Anvil ignore patterns:** ${ignorePatternList}`]

@@ -285,6 +285,8 @@ export type AuditResult = {
   processIssues: ProcessIssue[];
   remediationPack: RemediationPack;
   auditConfig: AuditConfigLoadResult;
+  verdict: Verdict;
+  summary: string;
 };
 
 export type StageStatus = "pass" | "fail" | "skipped";
@@ -3943,6 +3945,23 @@ function assessHighRiskStaleAlwaysOnRules(
 
 type Verdict = "PASS" | "NEEDS WORK" | "CRITICAL";
 
+function buildAuditSummary(result: AuditResult): string {
+  const parts: string[] = [
+    `${scoreHeadlineLabel(result.auditMode)}: ${result.ruleScore100}/100`,
+    `Guardrail Score: ${result.guardrail.total}/35 (${result.guardrail.maturity})`,
+  ];
+
+  const highRiskStaleAlwaysOn = assessHighRiskStaleAlwaysOnRules(
+    result.scoringRuleFiles,
+  );
+  const fixFirst = deriveFixFirst(result, highRiskStaleAlwaysOn);
+  if (fixFirst) {
+    parts.push(fixFirst);
+  }
+
+  return parts.join(" · ");
+}
+
 function deriveVerdict(result: AuditResult): Verdict {
   if (result.stageA.status === "fail") return "CRITICAL";
   const anyFail = [result.stageB, result.stageC, result.stageD].some(
@@ -6055,7 +6074,12 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
     processIssues,
     remediationPack,
     auditConfig,
+    verdict: "PASS",
+    summary: "",
   };
+
+  result.verdict = deriveVerdict(result);
+  result.summary = buildAuditSummary(result);
 
   return result;
 }
