@@ -894,6 +894,123 @@ describe("detectPathDrift", () => {
     const result = detectPathDrift(dir, [join(dir, "drift-report.md")]);
     expect(result.issues).toEqual([]);
   });
+
+  // ─── PATH_PATTERN (bare, non-backtick) reference tests ──────────────────
+
+  test("flags bare (non-backtick) path reference that does not exist", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-bare-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "The config is at src/utils/config.ts for reference.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter((i) => i.type === "path");
+    expect(pathIssues.length).toBe(1);
+    expect(pathIssues[0].severity).toBe("high");
+    expect(pathIssues[0].detail).toContain("src/utils/config.ts");
+  });
+
+  test("does not flag bare path reference when file exists at project root", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-bare-"));
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "src", "config.ts"), "export default {}");
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "The config is at src/config.ts for reference.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter((i) => i.type === "path");
+    expect(pathIssues).toEqual([]);
+  });
+
+  test("skips bare path reference inside fenced code block", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-bare-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      ["Example:", "```", "import x from src/utils/config.ts", "```", ""].join(
+        "\n",
+      ),
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter(
+      (i) => i.type === "path" && i.severity === "high",
+    );
+    expect(pathIssues).toEqual([]);
+  });
+
+  test("notes bare path that resolves at parent root", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-parent-"));
+    // Create a file at the parent level
+    mkdirSync(join(dir, "..", "shared-docs"), { recursive: true });
+    writeFileSync(join(dir, "..", "shared-docs", "guide.md"), "guide");
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "Read shared-docs/guide.md before starting.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const highIssues = result.issues.filter(
+      (i) => i.type === "path" && i.severity === "high",
+    );
+    expect(highIssues).toEqual([]);
+    // Should produce a note about workspace-root resolution
+    const wsNotes = result.notes.filter((n) =>
+      n.detail.includes("workspace root"),
+    );
+    expect(wsNotes.length).toBeGreaterThan(0);
+  });
+
+  test("reports bare path on each separate line (line-keyed dedup)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-dedup-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "Missing file at src/missing/deep.ts is referenced.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter(
+      (i) => i.type === "path" && i.detail.includes("src/missing/deep.ts"),
+    );
+    // One issue per line — same path on the same line would be deduped by `seen`
+    expect(pathIssues.length).toBe(1);
+  });
+
+  test("classifies bare 3-segment path without extension as package-import note", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-pkg-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "Look at docs/rules/something for info.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    // 3-segment path with no file extension and no local top-level dir → classified as package-import (note, not issue)
+    const highIssues = result.issues.filter(
+      (i) => i.type === "path" && i.severity === "high",
+    );
+    expect(highIssues).toEqual([]);
+    const pkgNotes = result.notes.filter((n) =>
+      n.detail.includes("Import-like"),
+    );
+    expect(pkgNotes.length).toBe(1);
+  });
+
+  test("does not double-report bare path already handled in backticks", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-bt-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "Missing: `src/utils/config.ts` and also src/utils/config.ts bare.\n",
+    );
+
+    const result = detectPathDrift(dir, [join(dir, "AGENTS.md")]);
+    const pathIssues = result.issues.filter(
+      (i) => i.type === "path" && i.detail.includes("src/utils/config.ts"),
+    );
+    // Should only report once (from backtick path), not twice
+    expect(pathIssues.length).toBe(1);
+  });
 });
 
 // ─── detectGlobDrift ───────────────────────────────────────────────────────
