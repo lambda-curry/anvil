@@ -1,6 +1,6 @@
 # Drift Detection — Design Document
 
-*Written: 2026-02-20 · Author: Scout/Anvil · Status: Design only — not yet implemented*
+*Written: 2026-02-20 · Updated: 2026-08-01 · Author: Scout/Anvil · Status: Phase 1a–1c shipped; Phase 2 (coverage gaps) planned*
 
 ---
 
@@ -239,9 +239,9 @@ When running `scripts/drift-detect.ts` against the Anvil project itself on 2026-
 
 | Phase | What | Effort |
 |---|---|---|
-| Phase 1a | Path drift + date drift | ~2 hours (Codex) |
-| Phase 1b | Glob drift | ~1 hour (Codex) |
-| Phase 1c | Command drift | ~1 hour |
-| Phase 2 | Coverage gaps (PR mining) | ~4-6 hours (research + Codex) |
+| Phase 1a | Path drift + date drift | ✅ Shipped |
+| Phase 1b | Glob drift | ✅ Shipped |
+| Phase 1c | Command drift | ✅ Shipped |
+| Phase 2 | Coverage gaps (PR mining) | Planned (~4-6 hours) |
 
 **Recommendation:** Phase 1a is the highest-value, lowest-effort start. Path drift and date drift catch the most dangerous issues with straightforward implementation.
