@@ -1011,6 +1011,79 @@ describe("detectPathDrift", () => {
     // Should only report once (from backtick path), not twice
     expect(pathIssues.length).toBe(1);
   });
+
+  test("notes backtick path resolving at separate workspace root", () => {
+    // Build a structure where parent dir is named "projects" so workspaceRoot differs from parentRoot
+    // Structure: <tmp>/workspace/projects/<proj>/AGENTS.md
+    //            <tmp>/workspace/shared/guide.md
+    const base = mkdtempSync(join(tmpdir(), "anvil-drift-ws-"));
+    const workspaceRoot = join(base, "workspace");
+    const projectsDir = join(workspaceRoot, "projects");
+    const projDir = join(projectsDir, "my-proj");
+    mkdirSync(projDir, { recursive: true });
+    mkdirSync(join(workspaceRoot, "shared"), { recursive: true });
+    writeFileSync(join(workspaceRoot, "shared", "guide.md"), "guide");
+    writeFileSync(
+      join(projDir, "AGENTS.md"),
+      "Read `shared/guide.md` for setup instructions.\n",
+    );
+
+    const result = detectPathDrift(projDir, [join(projDir, "AGENTS.md")]);
+    const highIssues = result.issues.filter(
+      (i) => i.type === "path" && i.severity === "high",
+    );
+    expect(highIssues).toEqual([]);
+    const wsNotes = result.notes.filter((n) =>
+      n.detail.includes("workspace root"),
+    );
+    expect(wsNotes.length).toBeGreaterThan(0);
+  });
+
+  test("notes bare path resolving at separate workspace root", () => {
+    const base = mkdtempSync(join(tmpdir(), "anvil-drift-wsbare-"));
+    const workspaceRoot = join(base, "workspace");
+    const projectsDir = join(workspaceRoot, "projects");
+    const projDir = join(projectsDir, "my-proj");
+    mkdirSync(projDir, { recursive: true });
+    mkdirSync(join(workspaceRoot, "shared"), { recursive: true });
+    writeFileSync(join(workspaceRoot, "shared", "guide.md"), "guide");
+    writeFileSync(
+      join(projDir, "AGENTS.md"),
+      "The shared/guide.md file has details.\n",
+    );
+
+    const result = detectPathDrift(projDir, [join(projDir, "AGENTS.md")]);
+    const highIssues = result.issues.filter(
+      (i) => i.type === "path" && i.severity === "high",
+    );
+    expect(highIssues).toEqual([]);
+    const wsNotes = result.notes.filter((n) =>
+      n.detail.includes("workspace root"),
+    );
+    expect(wsNotes.length).toBeGreaterThan(0);
+  });
+
+  test("classifies bare placeholder path in cross-project doc surface as context note", () => {
+    const dir = mkdtempSync(join(tmpdir(), "anvil-drift-xp-"));
+    mkdirSync(join(dir, "docs", "patterns"), { recursive: true });
+    writeFileSync(
+      join(dir, "docs", "patterns", "template.md"),
+      "Reference: reports/YYYY-MM-DD/summary.md for the audit.\n",
+    );
+
+    const result = detectPathDrift(dir, [
+      join(dir, "docs", "patterns", "template.md"),
+    ]);
+    // Placeholder path should be noted, not flagged as a high-severity issue
+    const highIssues = result.issues.filter(
+      (i) => i.type === "path" && i.severity === "high",
+    );
+    expect(highIssues).toEqual([]);
+    const placeholderNotes = result.notes.filter((n) =>
+      n.detail.includes("placeholder"),
+    );
+    expect(placeholderNotes.length).toBeGreaterThan(0);
+  });
 });
 
 // ─── detectGlobDrift ───────────────────────────────────────────────────────
