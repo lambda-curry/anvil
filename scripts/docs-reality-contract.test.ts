@@ -1,10 +1,30 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "bun:test";
 import { findDocsRealityDriftFailures } from "./docs-reality-contract.ts";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
+
+test("public drift guide lists shipped checks before planned coverage analysis", () => {
+  const guide = readFileSync(
+    resolve(REPO_ROOT, "docs-site/src/content/docs/guides/drift-detection.md"),
+    "utf8",
+  );
+
+  expect(guide).toContain(
+    "5. **Command drift** — referenced commands are checked against package scripts and available binaries",
+  );
+  expect(guide).toContain(
+    "6. **Coverage analysis** — detecting codebase patterns with no matching rule",
+  );
+});
 
 test("shipped drift phases are not described as planned in current docs", () => {
   expect(findDocsRealityDriftFailures(REPO_ROOT)).toEqual([]);

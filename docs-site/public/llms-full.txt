@@ -604,10 +604,11 @@ bunx @lambdacurry/anvil audit --target ./my-repo
 2. **Glob patterns** — glob references (e.g., `src/**/*.ts`) are resolved against the file tree; patterns matching zero files are reported as drift
 3. **Validation dates** — rules with `Last validated` headers are checked against their cadence
 4. **Broken symlinks** — symlinked rule files pointing at missing targets are flagged
+5. **Command drift** — referenced commands are checked against package scripts and available binaries
 
 **Planned:**
 
-5. **Coverage analysis** — detecting codebase patterns with no matching rule
+6. **Coverage analysis** — detecting codebase patterns with no matching rule
 
 ## Interpreting drift output
 
