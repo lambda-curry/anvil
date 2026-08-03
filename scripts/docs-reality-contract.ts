@@ -34,6 +34,25 @@ const STALE_SHIPPED_CLAIM_PATTERNS: ClaimPattern[] = [
     file: "docs/drift-detection-design.md",
     pattern: /\bStatus:\s*Design only\s*[—-]\s*not yet implemented\b/i,
   },
+  {
+    file: "docs-site/src/content/docs/index.mdx",
+    pattern: /\bDetect drift \(basic\)/i,
+  },
+  {
+    file: "docs-site/src/content/docs/index.mdx",
+    pattern:
+      /\b(?:full drift detection|(?:glob|command) drift(?: detection)?)\b[^;|.\n]{0,80}\b(?:planned|not yet implemented)\b/i,
+  },
+  {
+    file: "docs-site/src/content/docs/guides/drift-detection.md",
+    pattern:
+      /\b(?:path|paths|glob|globs|command|commands|date|dates|broken[- ]symlink|broken[- ]symlinks|command availability)(?: drift)?(?: detection)?\b[^;|.\n]{0,90}\b(?:planned|not yet implemented|once those checks are implemented)\b/i,
+  },
+  {
+    file: "docs-site/src/content/docs/reference/cli.md",
+    pattern:
+      /\bcommand (?:verification|availability|drift)\b[^;|.\n]{0,80}\b(?:planned|not yet implemented)\b/i,
+  },
 ];
 
 function lineNumberAt(lines: string[], index: number): number {
