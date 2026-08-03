@@ -11,6 +11,16 @@ import { expect, test } from "bun:test";
 import { findDocsRealityDriftFailures } from "./docs-reality-contract.ts";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
+const PUBLIC_GUIDE_PATH =
+  "docs-site/src/content/docs/guides/drift-detection.md";
+const PUBLIC_STALE_VARIANTS = [
+  ["Globs are planned.", 2],
+  ["Commands are planned.", 3],
+  ["Dates are planned.", 4],
+  ["Broken symlinks are planned.", 5],
+  ["Broken-symlink checks are planned.", 6],
+  ["Command availability is planned.", 7],
+] as const;
 
 test("public drift guide lists shipped checks before planned coverage analysis", () => {
   const guide = readFileSync(
@@ -117,48 +127,18 @@ test("catches plural and hyphenated public stale claim variants", () => {
     join(publicDocsRoot, "drift-detection.md"),
     [
       "# Drift Detection",
-      "Globs are planned.",
-      "Commands are planned.",
-      "Dates are planned.",
-      "Broken symlinks are planned.",
-      "Broken-symlink checks are planned.",
-      "Command availability is planned.",
+      ...PUBLIC_STALE_VARIANTS.map(([claim]) => claim),
     ].join("\n"),
   );
 
   try {
-    expect(findDocsRealityDriftFailures(fixtureRoot)).toEqual([
-      {
-        file: "docs-site/src/content/docs/guides/drift-detection.md",
-        line: 2,
-        claim: "Globs are planned.",
-      },
-      {
-        file: "docs-site/src/content/docs/guides/drift-detection.md",
-        line: 3,
-        claim: "Commands are planned.",
-      },
-      {
-        file: "docs-site/src/content/docs/guides/drift-detection.md",
-        line: 4,
-        claim: "Dates are planned.",
-      },
-      {
-        file: "docs-site/src/content/docs/guides/drift-detection.md",
-        line: 5,
-        claim: "Broken symlinks are planned.",
-      },
-      {
-        file: "docs-site/src/content/docs/guides/drift-detection.md",
-        line: 6,
-        claim: "Broken-symlink checks are planned.",
-      },
-      {
-        file: "docs-site/src/content/docs/guides/drift-detection.md",
-        line: 7,
-        claim: "Command availability is planned.",
-      },
-    ]);
+    expect(findDocsRealityDriftFailures(fixtureRoot)).toEqual(
+      PUBLIC_STALE_VARIANTS.map(([claim, line]) => ({
+        file: PUBLIC_GUIDE_PATH,
+        line,
+        claim,
+      })),
+    );
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
