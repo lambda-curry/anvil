@@ -36,17 +36,16 @@ bunx @lambdacurry/anvil audit --target ./my-repo
 3. **Validation dates** — rules with `Last validated` headers are checked against their cadence
 4. **Broken symlinks** — symlinked rule files pointing at missing targets are flagged
 
-**Planned (not yet implemented):**
+**Planned:**
 
 5. **Coverage analysis** — detecting codebase patterns with no matching rule
-6. **Command drift** — verifying that referenced commands still work
 
 ## Interpreting drift output
 
 Each drift issue includes:
 
 - **File and line** — where in the rule file the drifted reference lives
-- **Type** — path, glob, date (command and coverage types are planned)
+- **Type** — path, glob, date, broken-symlink, or command
 - **Severity** — low, medium, or high based on impact
 - **Suggestion** — what to fix or remove
 
@@ -55,5 +54,7 @@ Each drift issue includes:
 - **Missing paths** — update the path reference or confirm the file was intentionally removed
 - **Glob drift** — update the glob pattern to match existing files, or remove the stale reference
 - **Date drift** — re-validate the rule and update the `Last validated` header
+- **Broken symlinks** — restore the target or remove the link if it is no longer needed
+- **Command drift** — update the referenced command, script, or binary so it is available to the target repo
 
-Command drift and coverage gap remediation will apply once those checks are implemented.
+Coverage analysis and its remediation guidance remain planned for a future phase.

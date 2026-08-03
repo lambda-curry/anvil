@@ -66,3 +66,25 @@ test("catches a stale shipped phase table entry", () => {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
 });
+
+test("scans public docs and reports the exact source line", () => {
+  const fixtureRoot = mkdtempSync(join(tmpdir(), "anvil-doc-reality-"));
+  const publicDocsRoot = join(fixtureRoot, "docs-site/src/content/docs");
+  mkdirSync(publicDocsRoot, { recursive: true });
+  writeFileSync(
+    join(publicDocsRoot, "index.mdx"),
+    "Detect drift (basic) still appears in public docs.\n",
+  );
+
+  try {
+    expect(findDocsRealityDriftFailures(fixtureRoot)).toEqual([
+      {
+        file: "docs-site/src/content/docs/index.mdx",
+        line: 1,
+        claim: "Detect drift (basic) still appears in public docs.",
+      },
+    ]);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});

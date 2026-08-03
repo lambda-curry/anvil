@@ -9,7 +9,7 @@ Anvil audits CLAUDE.md, .cursor/rules, AGENTS.md, and other AI rule files for co
 - [First Audit](https://lambda-curry.github.io/anvil/getting-started/first-audit): Run your first Anvil audit and understand the output
 - [Configuration](https://lambda-curry.github.io/anvil/guides/configuration): Configure Anvil audit profiles and hard gates via .anvil/config.yml
 - [BYOK & Trust Model](https://lambda-curry.github.io/anvil/guides/byok-trust-model): What stays local and what is sent when using Anvil's optional AI synthesis
-- [Drift Detection](https://lambda-curry.github.io/anvil/guides/drift-detection): Detect stale globs, broken paths, and uncovered patterns in your AI rules
+- [Drift Detection](https://lambda-curry.github.io/anvil/guides/drift-detection): Detect stale paths, broken references, and outdated validation dates in your AI rules
 - [Bootstrap Rules](https://lambda-curry.github.io/anvil/guides/bootstrap): Generate starter AI rule sets from your tech stack
 - [Mine PR History](https://lambda-curry.github.io/anvil/guides/mine-pr): Surface recurring review feedback that should become AI rules
 - [CLI Reference](https://lambda-curry.github.io/anvil/reference/cli): Complete Anvil CLI command reference

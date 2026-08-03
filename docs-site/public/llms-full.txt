@@ -3,7 +3,7 @@
 > AI rules audit engine — score, detect drift, and improve rules in any AI-assisted codebase.
 
 > Source: https://lambda-curry.github.io/anvil/
-> Generated: 2026-07-24
+> Generated: 2026-08-03
 
 ## Installation
 
@@ -314,7 +314,7 @@ If no provider is available, rerun the recommended first run above.
 
 ```text wrap
 ✅ Structural Lint Score: 78/100 (3.9/5)
-✅ Guardrail Readiness Score: 22/35 (Established)
+✅ Guardrail Readiness Score: 22/35 (Reliable)
 ✅ Audit report written: /path/to/my-repo/docs/audits/my-repo-audit-2026-07-19.md
 ```
 
@@ -596,28 +596,37 @@ bunx @lambdacurry/anvil drift ./my-repo
 bunx @lambdacurry/anvil audit --target ./my-repo
 ```
 
-## What Anvil checks
+## Current capabilities
 
-1. **Glob resolution** — every glob pattern in `.mdc` files is resolved against the actual file tree
-2. **Path existence** — referenced file paths are checked for existence
+**Implemented today:**
+
+1. **Path existence** — referenced file paths are checked for existence
+2. **Glob patterns** — glob references (e.g., `src/**/*.ts`) are resolved against the file tree; patterns matching zero files are reported as drift
 3. **Validation dates** — rules with `Last validated` headers are checked against their cadence
-4. **Coverage analysis** — codebase patterns are checked for matching rule coverage
+4. **Broken symlinks** — symlinked rule files pointing at missing targets are flagged
+
+**Planned:**
+
+5. **Coverage analysis** — detecting codebase patterns with no matching rule
 
 ## Interpreting drift output
 
 Each drift issue includes:
 
 - **File and line** — where in the rule file the drifted reference lives
-- **Type** — path, glob, command, coverage, or date
+- **Type** — path, glob, date, broken-symlink, or command
 - **Severity** — low, medium, or high based on impact
 - **Suggestion** — what to fix or remove
 
 ## Fixing drift
 
-- **Stale globs** — update the glob pattern or remove the rule section
 - **Missing paths** — update the path reference or confirm the file was intentionally removed
+- **Glob drift** — update the glob pattern to match existing files, or remove the stale reference
 - **Date drift** — re-validate the rule and update the `Last validated` header
-- **Coverage gaps** — add a new rule or confirm the pattern is out of scope
+- **Broken symlinks** — restore the target or remove the link if it is no longer needed
+- **Command drift** — update the referenced command, script, or binary so it is available to the target repo
+
+Coverage analysis and its remediation guidance remain planned for a future phase.
 
 ## Bootstrap Rules
 
@@ -745,7 +754,7 @@ Detect drift in rule surfaces.
 anvil drift --target ./my-repo
 ```
 
-Checks glob resolution, path existence, validation dates, and coverage gaps.
+Checks path existence, glob pattern resolution, broken symlinks, validation dates, and command availability. Coverage gap analysis is planned.
 The positional form `anvil drift ./my-repo` remains supported for compatibility.
 
 ## `anvil bootstrap`
