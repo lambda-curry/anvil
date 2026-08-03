@@ -22,7 +22,7 @@ test("public drift guide lists shipped checks before planned coverage analysis",
     "5. **Command drift** — referenced commands are checked against package scripts and available binaries",
   );
   expect(guide).toContain(
-    "6. **Coverage analysis** — detecting codebase patterns with no matching rule",
+    "1. **Coverage analysis** — detecting codebase patterns with no matching rule",
   );
 });
 
@@ -35,14 +35,14 @@ test("reports the exact stale claim and source line", () => {
   mkdirSync(join(fixtureRoot, "docs"), { recursive: true });
   writeFileSync(
     join(fixtureRoot, "README.md"),
-    "Drift detection: command drift detection is planned.\n",
+    "# README\n\nDrift detection: command drift detection is planned.\n",
   );
 
   try {
     expect(findDocsRealityDriftFailures(fixtureRoot)).toEqual([
       {
         file: "README.md",
-        line: 1,
+        line: 3,
         claim: "Drift detection: command drift detection is planned.",
       },
     ]);
@@ -102,6 +102,61 @@ test("scans public docs and reports the exact source line", () => {
         file: "docs-site/src/content/docs/index.mdx",
         line: 1,
         claim: "Detect drift (basic) still appears in public docs.",
+      },
+    ]);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+});
+
+test("catches plural and hyphenated public stale claim variants", () => {
+  const fixtureRoot = mkdtempSync(join(tmpdir(), "anvil-doc-reality-"));
+  const publicDocsRoot = join(fixtureRoot, "docs-site/src/content/docs/guides");
+  mkdirSync(publicDocsRoot, { recursive: true });
+  writeFileSync(
+    join(publicDocsRoot, "drift-detection.md"),
+    [
+      "# Drift Detection",
+      "Globs are planned.",
+      "Commands are planned.",
+      "Dates are planned.",
+      "Broken symlinks are planned.",
+      "Broken-symlink checks are planned.",
+      "Command availability is planned.",
+    ].join("\n"),
+  );
+
+  try {
+    expect(findDocsRealityDriftFailures(fixtureRoot)).toEqual([
+      {
+        file: "docs-site/src/content/docs/guides/drift-detection.md",
+        line: 2,
+        claim: "Globs are planned.",
+      },
+      {
+        file: "docs-site/src/content/docs/guides/drift-detection.md",
+        line: 3,
+        claim: "Commands are planned.",
+      },
+      {
+        file: "docs-site/src/content/docs/guides/drift-detection.md",
+        line: 4,
+        claim: "Dates are planned.",
+      },
+      {
+        file: "docs-site/src/content/docs/guides/drift-detection.md",
+        line: 5,
+        claim: "Broken symlinks are planned.",
+      },
+      {
+        file: "docs-site/src/content/docs/guides/drift-detection.md",
+        line: 6,
+        claim: "Broken-symlink checks are planned.",
+      },
+      {
+        file: "docs-site/src/content/docs/guides/drift-detection.md",
+        line: 7,
+        claim: "Command availability is planned.",
       },
     ]);
   } finally {

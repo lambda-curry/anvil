@@ -608,7 +608,7 @@ bunx @lambdacurry/anvil audit --target ./my-repo
 
 **Planned:**
 
-6. **Coverage analysis** — detecting codebase patterns with no matching rule
+1. **Coverage analysis** — detecting codebase patterns with no matching rule
 
 ## Interpreting drift output
 

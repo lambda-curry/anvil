@@ -46,12 +46,12 @@ const STALE_SHIPPED_CLAIM_PATTERNS: ClaimPattern[] = [
   {
     file: "docs-site/src/content/docs/guides/drift-detection.md",
     pattern:
-      /\b(?:path|glob|command|date|broken symlink)(?: drift)?(?: detection)?\b[^;|.\n]{0,90}\b(?:planned|not yet implemented|once those checks are implemented)\b/i,
+      /\b(?:path|paths|glob|globs|command|commands|date|dates|broken[- ]symlink|broken[- ]symlinks|command availability)(?: drift)?(?: detection)?\b[^;|.\n]{0,90}\b(?:planned|not yet implemented|once those checks are implemented)\b/i,
   },
   {
     file: "docs-site/src/content/docs/reference/cli.md",
     pattern:
-      /\bcommand (?:verification|drift)\b[^;|.\n]{0,80}\b(?:planned|not yet implemented)\b/i,
+      /\bcommand (?:verification|availability|drift)\b[^;|.\n]{0,80}\b(?:planned|not yet implemented)\b/i,
   },
 ];
 
