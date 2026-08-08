@@ -1157,24 +1157,32 @@ type MirrorDescriptor = {
   role: MirrorRole;
 };
 
+/**
+ * An `AGENTS.md` + `CLAUDE.md` pair in the SAME directory is one instruction surface, at any
+ * depth — not just the repo root. Claude Code reads only CLAUDE.md and Codex reads only
+ * AGENTS.md, so carrying both is the cross-tool contract, and the pair is very often a symlink
+ * (physically one file, incapable of drifting).
+ *
+ * Matching only the root path made every nested pair an "accidental duplicate" to be deleted,
+ * which is the opposite of the correct action: removing one side makes the repo invisible to
+ * one of the two tools. On a repo-of-clones that alone failed Stage A.
+ */
 function rootMirrorDescriptor(
   ruleFile: RuleFile,
-  rootFiles: Set<string>,
+  instructionFiles: Set<string>,
 ): MirrorDescriptor | null {
-  const path = ruleFile.relativePath;
+  const match = ruleFile.relativePath.match(/^(?:(.*)\/)?(AGENTS|CLAUDE)\.md$/);
+  if (!match) return null;
 
-  if (path === "AGENTS.md") {
-    return { key: "agent-instructions/root", role: "source" };
-  }
+  const dir = match[1] ?? "";
+  const key = `agent-instructions/${dir || "root"}`;
+  if (match[2] === "AGENTS") return { key, role: "source" };
 
-  if (path === "CLAUDE.md") {
-    return {
-      key: "agent-instructions/root",
-      role: rootFiles.has("AGENTS.md") ? "projection" : "source",
-    };
-  }
-
-  return null;
+  const siblingAgents = dir ? `${dir}/AGENTS.md` : "AGENTS.md";
+  return {
+    key,
+    role: instructionFiles.has(siblingAgents) ? "projection" : "source",
+  };
 }
 
 function mirrorDescriptor(
@@ -1255,7 +1263,7 @@ function buildMirrorGroups(ruleFiles: RuleFile[]): {
   const rootFiles = new Set(
     ruleFiles
       .map((file) => file.relativePath)
-      .filter((path) => path === "AGENTS.md" || path === "CLAUDE.md"),
+      .filter((path) => /(?:^|\/)(?:AGENTS|CLAUDE)\.md$/.test(path)),
   );
 
   for (const file of ruleFiles) {
