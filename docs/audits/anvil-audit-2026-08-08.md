@@ -333,10 +333,10 @@ Coverage against community baseline (PromptHub 130+ rule sets). Conditional cate
 ## Observed Failure Modes (PR Review Mining)
 
 *What this means:* This section mines past PR comments to find repeated review pain that should become rules.
-*Why this matters:* This run analyzed 23 PRs and surfaced 4 recurring rule candidates.
+*Why this matters:* This run analyzed 25 PRs and surfaced 4 recurring rule candidates.
 
 Repo: `lambda-curry/anvil`
-PRs analyzed: 23 · Comments reviewed: 29 · Substantive comments: 29 · Candidates: 4
+PRs analyzed: 25 · Comments reviewed: 29 · Substantive comments: 29 · Candidates: 4
 *Note: Signal match is heuristic keyword overlap with canonical rule text. It does not prove code-level implementation or enforcement.*
 
 | Theme | Frequency | PR Spread | Severity | Rule Signal Match | Comment Alignment |
