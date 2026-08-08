@@ -74,8 +74,8 @@ function normalizeVolatileReportFields(reportText: string): string {
       // a PR here and the packet needs a hand refresh: 20->22, then 22->24 days later.
       // Normalizing them ends the chore.
       .replaceAll(
-        /^\| (.+?) \| \d+ comments \| \d+ PRs \((.+?)\) \|/gm,
-        "| $1 | <normalized> comments | <normalized> PRs ($2) |",
+        /^\| (.+?) \| \d+ comments \| \d+ PRs \([a-z]+\) \| [a-z]+ \|/gm,
+        "| $1 | <normalized> comments | <normalized> PRs (<normalized>) | <normalized> |",
       )
   );
 }

@@ -3,7 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { discoverRuleFiles, isVendoredPath, parseArgs } from "./audit.ts";
+import {
+  buildRuleInventory,
+  discoverRuleFiles,
+  isVendoredPath,
+  parseArgs,
+} from "./audit.ts";
 
 describe("audit --skip-dirs", () => {
   test("parses a comma-separated list", () => {
@@ -72,5 +77,36 @@ describe("isVendoredPath", () => {
   test("matches whole path segments, not substrings", () => {
     expect(isVendoredPath("vendored-utils/AGENTS.md")).toBe(false);
     expect(isVendoredPath("deployment-notes/AGENTS.md")).toBe(false);
+  });
+});
+
+describe("nested AGENTS.md/CLAUDE.md mirror families", () => {
+  test("a pair in the same directory is one family at any depth", () => {
+    // Regression: the descriptor matched only the exact root paths, so every nested pair fell
+    // through to "accidental duplicate" and the report recommended deleting one side — which
+    // makes that directory invisible to whichever tool reads the deleted name.
+    const root = mkdtempSync(join(tmpdir(), "anvil-mirror-depth-"));
+    // Each directory has its own content; the pair inside a directory is identical, which is
+    // what a symlinked AGENTS.md/CLAUDE.md looks like on disk.
+    const rootBody = "# Root rules\n\nProse for the repository root surface.\n";
+    const pkgBody =
+      "# Core package rules\n\nProse specific to the core package.\n";
+    writeFileSync(join(root, "AGENTS.md"), rootBody);
+    writeFileSync(join(root, "CLAUDE.md"), rootBody);
+    mkdirSync(join(root, "packages/core"), { recursive: true });
+    writeFileSync(join(root, "packages/core/AGENTS.md"), pkgBody);
+    writeFileSync(join(root, "packages/core/CLAUDE.md"), pkgBody);
+
+    const files = discoverRuleFiles(root);
+    const inventory = buildRuleInventory(files, {
+      present: false,
+      sources: [],
+    });
+
+    const accidentalPaths = inventory.accidentalDuplicateGroups.flatMap(
+      (g) => g.memberPaths,
+    );
+    expect(accidentalPaths).not.toContain("packages/core/CLAUDE.md");
+    expect(accidentalPaths).not.toContain("CLAUDE.md");
   });
 });
