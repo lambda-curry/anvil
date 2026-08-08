@@ -81,7 +81,7 @@ npm view @lambdacurry/anvil version    # or: curl -s https://registry.npmjs.org/
 
 # Test zero-install against a sample repo:
 mkdir /tmp/anvil-zero-install && cd /tmp/anvil-zero-install
-bunx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --ci
+bunx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --no-ai
 ```
 
 Confirm:
