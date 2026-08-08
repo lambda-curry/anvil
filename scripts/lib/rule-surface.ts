@@ -18,6 +18,8 @@ export type RuleSurfaceFile = {
   relativePath: string;
   tool: string;
   format: string;
+  /** True when this file is a symlink to another discovered file (CLAUDE.md -> AGENTS.md). */
+  isSymlinkAlias?: boolean;
 };
 
 export const RULE_SURFACE_LOCATIONS: RuleSurfaceLocation[] = [
@@ -206,9 +208,45 @@ export function discoverRuleSurfaceFiles(
     }
   }
 
-  if (!skipDirs?.size) return discovered;
-  return discovered.filter(
-    (file) =>
-      !file.relativePath.split("/").some((segment) => skipDirs.has(segment)),
-  );
+  const scoped = skipDirs?.size
+    ? discovered.filter(
+        (file) =>
+          !file.relativePath
+            .split("/")
+            .some((segment) => skipDirs.has(segment)),
+      )
+    : discovered;
+
+  return markSymlinkAliases(scoped);
+}
+
+/**
+ * Mark a discovered file that is a symlink to another discovered file. `CLAUDE.md -> AGENTS.md`
+ * is the cross-tool contract and is physically ONE file, so scanning both counts the same
+ * content twice — inflating the file count and every per-file metric derived from it. Saffron's
+ * drift backlog rose from 205 to 230 purely by pairing nine packages that already existed.
+ *
+ * It is marked rather than dropped because consumers need it differently: mirror-family
+ * detection must still SEE both names to know the pair exists, while per-file scanning (drift)
+ * must skip the alias so one file is not scanned twice.
+ */
+function markSymlinkAliases(files: RuleSurfaceFile[]): RuleSurfaceFile[] {
+  const realPaths = new Set<string>();
+  for (const file of files) {
+    try {
+      if (!lstatSync(file.path).isSymbolicLink()) realPaths.add(file.path);
+    } catch {
+      // unreadable; treat as a normal file below
+    }
+  }
+
+  return files.map((file) => {
+    try {
+      if (!lstatSync(file.path).isSymbolicLink()) return file;
+      const target = resolve(dirname(file.path), readlinkSync(file.path));
+      return realPaths.has(target) ? { ...file, isSymlinkAlias: true } : file;
+    } catch {
+      return file;
+    }
+  });
 }
