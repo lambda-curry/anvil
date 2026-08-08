@@ -5,7 +5,7 @@ import {
   readdirSync,
   type Dirent,
 } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 export type RuleSurfaceLocation = {
   glob: string;
@@ -208,14 +208,17 @@ export function discoverRuleSurfaceFiles(
     }
   }
 
+  const withoutWorkspaces = discovered.filter(
+    (file) => !isAgentWorkspaceFile(file.path),
+  );
   const scoped = skipDirs?.size
-    ? discovered.filter(
+    ? withoutWorkspaces.filter(
         (file) =>
           !file.relativePath
             .split("/")
             .some((segment) => skipDirs.has(segment)),
       )
-    : discovered;
+    : withoutWorkspaces;
 
   return markSymlinkAliases(scoped);
 }
@@ -230,6 +233,38 @@ export function discoverRuleSurfaceFiles(
  * detection must still SEE both names to know the pair exists, while per-file scanning (drift)
  * must skip the alias so one file is not scanned twice.
  */
+
+/**
+ * Files that mark a directory as an OpenClaw agent workspace rather than a code surface. Such a
+ * directory's AGENTS.md is a persona — "You are Scout, working on the Atlas project" — not
+ * coding instructions, and its CLAUDE.md is usually unrelated. Scoring the two against each
+ * other reports permanent, unfixable drift, and "repairing" it would push an agent identity
+ * into every coding session.
+ *
+ * Checked with lstat, because these markers are typically symlinks into a mounted workspace and
+ * are often dangling in a plain checkout — existsSync would miss every one of them.
+ */
+const AGENT_WORKSPACE_MARKERS = [
+  "IDENTITY.md",
+  "SOUL.md",
+  "USER.md",
+  "SCRATCHPAD.md",
+];
+
+export function isAgentWorkspaceFile(fullPath: string): boolean {
+  const dir = dirname(fullPath);
+  const base = basename(fullPath);
+  if (base !== "AGENTS.md" && base !== "CLAUDE.md") return false;
+  return AGENT_WORKSPACE_MARKERS.some((marker) => {
+    try {
+      lstatSync(join(dir, marker));
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
 function markSymlinkAliases(files: RuleSurfaceFile[]): RuleSurfaceFile[] {
   const realPaths = new Set<string>();
   for (const file of files) {
