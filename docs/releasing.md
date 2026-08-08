@@ -24,17 +24,30 @@ jq '.version = "0.1.0-alpha.4"' package.json > /tmp/p.json && mv /tmp/p.json pac
 #   npm version prerelease --preid=alpha    # bumps alpha.N
 #   npm version patch                       # bumps patch (stable)
 
-git add package.json
+# Repin the proof-lane docs to the new version. The exact version is quoted inline across
+# the README and seven docs; this rewrites them from package.json so you don't sweep by hand.
+bun run release:pin
+
+git add package.json README.md docs docs-site
 git commit -m "chore: bump alpha.4"
 
 # Open PR, merge as usual
 ```
 
+CI runs `bun run release:pin --check`, so a missed pin fails on the PR rather than after the
+merge. That check was added because the alpha.7 release left `docs-site/public/llms-full.txt`
+on alpha.6 — the sweep updated `reference/cli.md` but not its generated mirror.
+
+**Do not hand-refresh the self-audit packet.** The comparison normalizes date-stamped metadata
+and the PR-mined counts, including the per-theme table rows — Anvil mines its own PR history, so
+those move whenever anyone opens a PR here. If the packet diverges now, it is a real change in
+audit behavior, not PR churn.
+
 When the PR merges to `main`, the workflow fires automatically (push trigger on `src/**`, `scripts/**`, `bin/**`, or `package.json` paths). It then:
 
 1. Reads `package.json` version and checks npm to see if it's already published
 2. If yes → exits cleanly. Safe to fire on any PR touching publish-relevant paths.
-3. If no → runs lint → typecheck → tests → publishes to npm with `--tag alpha` for pre-release versions, otherwise `latest`
+3. If no → runs lint → typecheck → tests → publishes to npm with `--tag latest`
 
 So if a PR touches `src/` but doesn't bump the version (most PRs), the workflow fires but skips publish. Only PRs that bump version actually publish.
 
@@ -64,11 +77,11 @@ Useful when a previous run failed for transient reasons (npm registry hiccup, ru
 
 ```sh
 # Check what's on npm under the alpha tag:
-npm view @lambdacurry/anvil version
+npm view @lambdacurry/anvil version    # or: curl -s https://registry.npmjs.org/@lambdacurry/anvil | jq .'dist-tags'
 
 # Test zero-install against a sample repo:
 mkdir /tmp/anvil-zero-install && cd /tmp/anvil-zero-install
-bunx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --no-ai
+bunx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --ci
 ```
 
 Confirm:
@@ -85,7 +98,12 @@ This is the zero-install proof that `SFD-6` and related blockers track. If it do
 - `0.x.0-beta.N` — beta (`--tag alpha` by convention, or `--tag beta`)
 - `0.x.y` — stable patch release (`--tag latest`)
 
-The workflow auto-detects pre-release versions (anything matching `*-alpha.*`, `*-beta.*`, or `*-rc.*`) and publishes with `--tag alpha`. Stable versions publish under the default `latest` tag.
+**Every release is tagged `latest`, including pre-releases.** The floating `@alpha` tag was
+retired in #6 because npm's `latest` had drifted to alpha.1 for months, handing a bare
+`bunx @lambdacurry/anvil` an ancient build. Trusted publishing cannot run `npm dist-tag add`
+(the OIDC credential only covers publish), so the tag set at publish time *is* the policy —
+which is why `publish.yml` passes `--tag latest` explicitly. `npm` otherwise refuses to tag a
+prerelease as latest.
 
 ## Who can trigger this
 
