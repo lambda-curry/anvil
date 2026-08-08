@@ -57,7 +57,7 @@ function normalizeVolatileReportFields(reportText: string): string {
   return (
     reportText
       .replace(/^\*Date: .+\*$/m, "*Date: <normalized>*")
-      .replace(
+      .replaceAll(
         /\.\/artifacts\/anvil-\d{4}-\d{2}-\d{2}/g,
         "./artifacts/anvil-<normalized>",
       )
@@ -74,7 +74,7 @@ function normalizeVolatileReportFields(reportText: string): string {
       // a PR against this repo — the counts move, the comparison fails, and someone hand-
       // refreshes the packet. That chore has already been paid twice (20→22, then 22→24 when
       // the PRs adding this normalizer were themselves mined).
-      .replace(
+      .replaceAll(
         /^\| (.+?) \| \d+ comments \| \d+ PRs \((.+?)\) \|/gm,
         "| $1 | <normalized> comments | <normalized> PRs ($2) |",
       )
