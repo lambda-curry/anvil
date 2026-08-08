@@ -101,7 +101,7 @@ for (const relPath of PINNED_DOCS) {
 }
 
 if (check) {
-  if (stale.length) {
+  if (stale.length > 0) {
     console.error(
       `Stale version pins for ${version} in:\n${stale.map((f) => `  ${f}`).join("\n")}\n\nRun: bun run release:pin`,
     );
