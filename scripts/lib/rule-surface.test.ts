@@ -87,3 +87,41 @@ describe("symlink aliases", () => {
     }
   });
 });
+
+describe("agent workspace exclusion", () => {
+  test("skips a directory whose AGENTS.md is an OpenClaw persona", () => {
+    // forge/docs-site carries a persona AGENTS.md ("You are Scout…") beside a CLAUDE.md of
+    // coding rules. Scored against each other they report permanent, unfixable drift, and
+    // "repairing" it would push an agent identity into every coding session.
+    const root = mkdtempSync(join(tmpdir(), "anvil-ws-"));
+    mkdirSync(join(root, "docs-site"), { recursive: true });
+    writeFileSync(join(root, "AGENTS.md"), "# real rules\n");
+    writeFileSync(join(root, "docs-site/AGENTS.md"), "You are Scout.\n");
+    writeFileSync(join(root, "docs-site/CLAUDE.md"), "# unrelated rules\n");
+    writeFileSync(join(root, "docs-site/SCRATCHPAD.md"), "cycle state\n");
+
+    const found = discoverRuleSurfaceFiles(root).map((f) => f.relativePath);
+    expect(found).toContain("AGENTS.md");
+    expect(found).not.toContain("docs-site/AGENTS.md");
+    expect(found).not.toContain("docs-site/CLAUDE.md");
+  });
+
+  test("detects markers that are dangling symlinks", () => {
+    // Workspace markers are usually symlinks into a mounted workspace and dangle in a plain
+    // checkout, so existsSync would miss every one of them.
+    const root = mkdtempSync(join(tmpdir(), "anvil-ws-dangle-"));
+    writeFileSync(join(root, "AGENTS.md"), "You are an agent.\n");
+    symlinkSync("../../IDENTITY.md", join(root, "IDENTITY.md"));
+
+    expect(discoverRuleSurfaceFiles(root)).toHaveLength(0);
+  });
+
+  test("an ordinary repo with no markers is untouched", () => {
+    const root = mkdtempSync(join(tmpdir(), "anvil-ws-plain-"));
+    writeFileSync(join(root, "AGENTS.md"), "# rules\n");
+    writeFileSync(join(root, "README.md"), "# readme\n");
+    expect(discoverRuleSurfaceFiles(root).map((f) => f.relativePath)).toContain(
+      "AGENTS.md",
+    );
+  });
+});
