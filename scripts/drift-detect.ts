@@ -569,6 +569,10 @@ export function expandTilde(reference: string): string {
 
 export function isForeignRuntimePath(reference: string): boolean {
   if (!reference.startsWith("/")) return false;
+  // The running user's own home is never foreign, even inside a container
+  // whose path appears in FOREIGN_RUNTIME_ROOTS (e.g. /home/node).
+  const home = homedir();
+  if (reference === home || reference.startsWith(home + "/")) return false;
   if (FOREIGN_RUNTIME_ROOTS.some((root) => reference.startsWith(root)))
     return true;
   // /Users/<someone>/… where <someone> is not the user running the audit.

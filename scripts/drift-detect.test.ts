@@ -1701,7 +1701,11 @@ describe("isForeignRuntimePath", () => {
   test("recognizes container and other-host runtime roots", () => {
     // A rule saying "the workspace mounts at /home/node/.openclaw/workspace" is true of the
     // container and unresolvable on the host — absence is not drift.
-    expect(isForeignRuntimePath("/home/node/.openclaw/workspace")).toBe(true);
+    // When the audit itself runs inside that container, the path is the running
+    // user's home and is not foreign; the assertion holds on host-side runs.
+    const containerWorkspace = "/home/node/.openclaw/workspace";
+    const expectedForeign = !homedir().startsWith("/home/node");
+    expect(isForeignRuntimePath(containerWorkspace)).toBe(expectedForeign);
     expect(isForeignRuntimePath("/data/currybot-skills")).toBe(true);
     expect(isForeignRuntimePath("/app/dist/index.js")).toBe(true);
   });
