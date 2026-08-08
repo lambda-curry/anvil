@@ -54,20 +54,31 @@ type CliOptions = {
 };
 
 function normalizeVolatileReportFields(reportText: string): string {
-  return reportText
-    .replace(/^\*Date: .+\*$/m, "*Date: <normalized>*")
-    .replace(
-      /\.\/artifacts\/anvil-\d{4}-\d{2}-\d{2}/g,
-      "./artifacts/anvil-<normalized>",
-    )
-    .replace(
-      /^\*Why this matters:\* This run analyzed \d+ PRs and surfaced \d+ recurring rule candidates\.$/m,
-      "*Why this matters:* This run analyzed <normalized> PRs and surfaced <normalized> recurring rule candidates.",
-    )
-    .replace(
-      /^PRs analyzed: \d+ · Comments reviewed: \d+ · Substantive comments: \d+ · Candidates: \d+$/m,
-      "PRs analyzed: <normalized> · Comments reviewed: <normalized> · Substantive comments: <normalized> · Candidates: <normalized>",
-    );
+  return (
+    reportText
+      .replace(/^\*Date: .+\*$/m, "*Date: <normalized>*")
+      .replace(
+        /\.\/artifacts\/anvil-\d{4}-\d{2}-\d{2}/g,
+        "./artifacts/anvil-<normalized>",
+      )
+      .replace(
+        /^\*Why this matters:\* This run analyzed \d+ PRs and surfaced \d+ recurring rule candidates\.$/m,
+        "*Why this matters:* This run analyzed <normalized> PRs and surfaced <normalized> recurring rule candidates.",
+      )
+      .replace(
+        /^PRs analyzed: \d+ · Comments reviewed: \d+ · Substantive comments: \d+ · Candidates: \d+$/m,
+        "PRs analyzed: <normalized> · Comments reviewed: <normalized> · Substantive comments: <normalized> · Candidates: <normalized>",
+      )
+      // Per-theme rows carry the same PR-mined counts as the summary line above, which is
+      // already normalized. Without this, the checked-in packet drifts every time anyone opens
+      // a PR against this repo — the counts move, the comparison fails, and someone hand-
+      // refreshes the packet. That chore has already been paid twice (20→22, then 22→24 when
+      // the PRs adding this normalizer were themselves mined).
+      .replace(
+        /^\| (.+?) \| \d+ comments \| \d+ PRs \((.+?)\) \|/gm,
+        "| $1 | <normalized> comments | <normalized> PRs ($2) |",
+      )
+  );
 }
 
 function firstDifferingLine(

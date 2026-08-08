@@ -34,6 +34,9 @@ jobs:
       - name: Check formatting
         run: bun run format:check
 
+      - name: Check proof-lane version pins match package.json
+        run: bun run release:pin --check
+
       - name: Run typecheck
         run: bun run typecheck
 

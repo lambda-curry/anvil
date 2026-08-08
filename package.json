@@ -48,6 +48,7 @@
   "scripts": {
     "audit": "bun run scripts/audit.ts",
     "format": "oxfmt --write bin scripts package.json tsconfig.json .github/workflows",
+    "release:pin": "bun run scripts/release-pin.ts",
     "lint": "oxlint --quiet bin scripts",
     "lint:advisory": "oxlint bin scripts",
     "format:check": "oxfmt --check bin scripts package.json tsconfig.json .github/workflows",
