@@ -19,6 +19,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { execSync } from "node:child_process";
+import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { discoverRuleSurfaceFiles } from "./lib/rule-surface.ts";
 import { resolveProjectName } from "./lib/project-name.ts";
@@ -543,6 +544,38 @@ function isInExamplesSection(content: string, index: number): boolean {
   return currentH2 === "examples";
 }
 
+/**
+ * Absolute roots that belong to a different machine or container than the one running the
+ * audit. A rule file legitimately documents these — "the workspace is mounted at
+ * /home/node/.openclaw/workspace" is true of the container and unresolvable on the host —
+ * so their absence is not drift and no edit to the rule would fix it.
+ */
+const FOREIGN_RUNTIME_ROOTS = [
+  "/home/node/", // OpenClaw agent containers
+  "/data/", // Railway persistent volumes
+  "/app/", // container app roots
+  "/workspace/",
+  "/var/",
+  "/etc/",
+  "/opt/",
+  "/tmp/",
+];
+
+export function expandTilde(reference: string): string {
+  return reference.startsWith("~/")
+    ? join(homedir(), reference.slice(2))
+    : reference;
+}
+
+export function isForeignRuntimePath(reference: string): boolean {
+  if (!reference.startsWith("/")) return false;
+  if (FOREIGN_RUNTIME_ROOTS.some((root) => reference.startsWith(root)))
+    return true;
+  // /Users/<someone>/… where <someone> is not the user running the audit.
+  const otherUser = reference.match(/^\/Users\/([^/]+)\//);
+  return otherUser !== null && !homedir().endsWith(`/${otherUser[1]}`);
+}
+
 function classifyMissingReferenceContext(
   reference: string,
   relativeFile: string,
@@ -554,6 +587,10 @@ function classifyMissingReferenceContext(
 ): string | null {
   if (isPlaceholderReference(reference)) {
     return noteForExampleReference(reference, "uses placeholder segments");
+  }
+
+  if (isForeignRuntimePath(reference)) {
+    return `Path reference \`${reference}\` names a container or other-host runtime path; not resolvable here and not treated as drift`;
   }
 
   if (!isCrossProjectDocSurface(relativeFile)) {
@@ -881,6 +918,12 @@ export function detectPathDrift(
           line,
           detail: `Path reference \`${reference}\` resolves at workspace root; not treated as drift`,
         });
+        continue;
+      }
+
+      // `~/path` is a real reference the reader can follow, but `resolve()` treats `~` as a
+      // literal directory name and always misses. Expand it before calling the path missing.
+      if (reference.startsWith("~/") && existsSync(expandTilde(reference))) {
         continue;
       }
 
@@ -1350,9 +1393,10 @@ export function main(): void {
     );
   }
 
-  const discoveredRuleFiles = discoverRuleSurfaceFiles(projectRoot).map(
-    (file) => file.path,
-  );
+  const discoveredRuleFiles = discoverRuleSurfaceFiles(
+    projectRoot,
+    SKIP_DIRS,
+  ).map((file) => file.path);
   const includedRuleFiles = discoveredRuleFiles.filter(
     (filePath) => !isIgnored(filePath, projectRoot, ignoreMatchers),
   );

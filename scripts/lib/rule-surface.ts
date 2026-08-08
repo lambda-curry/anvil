@@ -156,8 +156,14 @@ function discoverRecursiveRootRuleFiles(
   return discovered;
 }
 
+/**
+ * @param skipDirs Directory names to exclude anywhere in a file's path. Callers that expose a
+ *   `--skip-dirs` flag must pass it here: this function is the only discovery path for the
+ *   scanned rule set, so a skip list applied anywhere else silently does nothing.
+ */
 export function discoverRuleSurfaceFiles(
   projectRoot: string,
+  skipDirs?: ReadonlySet<string>,
 ): RuleSurfaceFile[] {
   const discovered: RuleSurfaceFile[] = [];
 
@@ -200,5 +206,9 @@ export function discoverRuleSurfaceFiles(
     }
   }
 
-  return discovered;
+  if (!skipDirs?.size) return discovered;
+  return discovered.filter(
+    (file) =>
+      !file.relativePath.split("/").some((segment) => skipDirs.has(segment)),
+  );
 }
