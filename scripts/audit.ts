@@ -1271,6 +1271,20 @@ function classifyMirrorStatus(
   return fingerprintCount === 1 ? "healthy" : "drifted";
 }
 
+/**
+ * A CLAUDE.md whose body is an `@AGENTS.md` import is the sanctioned alternative to a symlink:
+ * it exists so Claude can carry extras (a .claude/rules pointer, repo-specific notes) that Codex
+ * must not receive. The two files therefore differ ON PURPOSE, and reporting that as drift asks
+ * the maintainer to "repair" a working cross-tool contract.
+ */
+function importsItsMirrorSource(file: RuleFile): boolean {
+  try {
+    return /^\s*@AGENTS\.md\s*$/m.test(readFileSync(file.path, "utf8"));
+  } catch {
+    return false;
+  }
+}
+
 function comparableMirrorFingerprint(file: RuleFile): string {
   try {
     let content = readFileSync(file.path, "utf8").replace(/\r\n/g, "\n");
@@ -1339,6 +1353,12 @@ function buildMirrorGroups(
     // the intended output shape rather than drift between two copies. The generator config
     // lives beside the files it owns, which in a repo-of-clones is a nested directory rather
     // than the scan root — checking only the root missed every nested repo's config.
+    if (
+      status === "drifted" &&
+      row.members.some((member) => importsItsMirrorSource(member))
+    ) {
+      status = "healthy";
+    }
     if (
       status === "drifted" &&
       projectRoot &&

@@ -52,22 +52,18 @@ const PATTERNS: ReadonlyArray<[RegExp, string]> = [
 ];
 
 /**
- * Bare backticked version in prose: "The current `0.1.0-alpha.6` packet uses …". Only rewritten
- * on lines that are about this package — an unrelated `22.1.0` elsewhere in the docs must not be
- * dragged along with the release.
+ * Bare backticked version in prose: "The current `0.1.0-alpha.6` packet uses …".
+ *
+ * PINNED_DOCS is an explicit allowlist of this package's own proof-lane docs, and every
+ * backticked version in them is this package's version — verified by counting: 16 occurrences,
+ * all anvil's. An earlier attempt guarded this on nearby keywords and silently skipped two
+ * real pins, "`--version` prints `X`" and "first-run proof on pinned `X`", because neither
+ * line happened to say "anvil". The allowlist is the guard.
  */
 const PROSE_VERSION = new RegExp(String.raw`\`${VERSION}\``, "g");
-const PROSE_CONTEXT = /packet|anvil|@lambdacurry/i;
 
 function repinProseVersions(text: string): string {
-  return text
-    .split("\n")
-    .map((line) =>
-      PROSE_CONTEXT.test(line)
-        ? line.replace(PROSE_VERSION, `\`${version}\``)
-        : line,
-    )
-    .join("\n");
+  return text.replaceAll(PROSE_VERSION, `\`${version}\``);
 }
 
 const check = process.argv.includes("--check");

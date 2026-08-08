@@ -152,3 +152,46 @@ describe("rulesyncGeneratesInstructionPair", () => {
     expect(rulesyncGeneratesInstructionPair(broken)).toBe(false);
   });
 });
+
+describe("shim mirrors", () => {
+  test("a CLAUDE.md that imports AGENTS.md is healthy, not drifted", () => {
+    // The shim is the sanctioned alternative to a symlink: it lets Claude carry extras Codex
+    // must not receive, so the two files differ on purpose. Reporting that as drift asks the
+    // maintainer to repair a working cross-tool contract (robinhood-trader: 10 vs 291 lines).
+    const root = mkdtempSync(join(tmpdir(), "anvil-shim-"));
+    writeFileSync(
+      join(root, "AGENTS.md"),
+      "# Rules\n\nLong canonical prose for the repository.\n",
+    );
+    writeFileSync(
+      join(root, "CLAUDE.md"),
+      "@AGENTS.md\n\nRead AGENTS.md first; it is canonical for this repo.\n",
+    );
+
+    const inventory = buildRuleInventory(
+      discoverRuleFiles(root),
+      { hasConfig: false, agents: [], generatesInstructionPair: false },
+      root,
+    );
+    expect(inventory.mirrorDriftedCount).toBe(0);
+  });
+
+  test("two unrelated files with no import are still drift", () => {
+    const root = mkdtempSync(join(tmpdir(), "anvil-shim-neg-"));
+    writeFileSync(
+      join(root, "AGENTS.md"),
+      "# Rules\n\nCanonical prose here.\n",
+    );
+    writeFileSync(
+      join(root, "CLAUDE.md"),
+      "# Other\n\nCompletely different guidance.\n",
+    );
+
+    const inventory = buildRuleInventory(
+      discoverRuleFiles(root),
+      { hasConfig: false, agents: [], generatesInstructionPair: false },
+      root,
+    );
+    expect(inventory.mirrorDriftedCount).toBe(1);
+  });
+});
