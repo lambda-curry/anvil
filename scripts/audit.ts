@@ -594,16 +594,19 @@ export type ParsedArgs = {
   aiTimeoutMs: number | null;
   forceStageB: boolean;
   projectName: string | null;
+  /** Optional: fixtures and callers built before this field existed omit it. */
+  skipDirs?: string[];
 };
 
 function usageAndExit(): never {
   console.error(
-    "Usage: anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b] [--project-name <name>]",
+    "Usage: anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-dirs <a,b>] [--skip-bootstrap] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b] [--project-name <name>]",
   );
   console.error("");
   console.error("Options:");
   console.error(
     "  --target <path>         Path to project to audit (required)",
+    "  --skip-dirs <a,b>       Directory names to exclude from the scanned rule surface",
   );
   console.error(
     "  --output <file>         Write report to this path (default: docs/audits/<name>-<date>.md)",
@@ -646,6 +649,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
   let aiTimeoutMs: number | null = null;
   let forceStageB = false;
   let projectName: string | null = null;
+  let skipDirs: string[] = [];
 
   for (let i = 2; i < argv.length; i++) {
     const arg = argv[i];
@@ -655,6 +659,18 @@ export function parseArgs(argv: string[]): ParsedArgs {
       outputFile = argv[++i] ?? null;
     } else if (arg === "--artifacts-dir") {
       artifactsDir = argv[++i] ?? null;
+    } else if (arg === "--skip-dirs") {
+      const value = argv[++i];
+      if (!value) {
+        console.error(
+          "--skip-dirs requires a comma-separated list of directory names",
+        );
+        process.exit(1);
+      }
+      skipDirs = value
+        .split(",")
+        .map((d) => d.trim())
+        .filter(Boolean);
     } else if (arg === "--skip-bootstrap") {
       skipBootstrap = true;
     } else if (arg === "--json") {
@@ -730,6 +746,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     aiTimeoutMs,
     forceStageB,
     projectName,
+    skipDirs,
   };
 }
 
@@ -1307,10 +1324,42 @@ function buildMirrorGroups(ruleFiles: RuleFile[]): {
   };
 }
 
+/**
+ * Roots holding material this project did not author: a vendored upstream, an image seed baked
+ * for deployment, or a plugin kit copied into several repos. A rule file duplicated *there* is a
+ * copy that travels with that material, not duplication the project can reconcile — deleting one
+ * side would diverge the vendored tree from its source.
+ */
+const VENDORED_PATH_SEGMENTS = new Set([
+  "vendor",
+  "vendored",
+  "third_party",
+  "third-party",
+  "deploy",
+  ".devagent",
+  "generated-workspaces",
+  "node_modules",
+]);
+
+export function isVendoredPath(relativePath: string): boolean {
+  return relativePath
+    .split("/")
+    .some((segment) => VENDORED_PATH_SEGMENTS.has(segment));
+}
+
 function isExpectedDuplicateGroup(
   group: DuplicateGroup,
   mirrorByPath: Map<string, MirrorDescriptor>,
 ): boolean {
+  // A group is only the project's own accidental duplication if at least two of its members are
+  // outside vendored trees. Otherwise the "duplicate" is a vendored copy and there is nothing to
+  // fix here — this is what made saffron score 31% accidental duplicates and fail Stage A while
+  // every flagged group was a currybot image seed or a plugin kit vendored into four repos.
+  const ownedMembers = group.memberPaths.filter(
+    (path) => !isVendoredPath(path),
+  );
+  if (ownedMembers.length < 2) return true;
+
   const descriptors: MirrorDescriptor[] = [];
   for (const path of group.memberPaths) {
     const descriptor = mirrorByPath.get(path);
@@ -2765,10 +2814,13 @@ export function buildRemediationPack(
 
 // ─── Rule File Discovery ──────────────────────────────────────────────────────
 
-export function discoverRuleFiles(projectRoot: string): RuleFile[] {
+export function discoverRuleFiles(
+  projectRoot: string,
+  skipDirs?: ReadonlySet<string>,
+): RuleFile[] {
   const discovered: RuleFile[] = [];
 
-  for (const file of discoverRuleSurfaceFiles(projectRoot)) {
+  for (const file of discoverRuleSurfaceFiles(projectRoot, skipDirs)) {
     const rf = analyzeRuleFile(file.path, projectRoot, file.tool, file.format);
     if (rf) discovered.push(rf);
   }
@@ -5654,7 +5706,12 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
   logProgress("");
 
   logProgress("📁 Discovering rule files...");
-  const ruleFiles = discoverRuleFiles(projectRoot);
+  const ruleFiles = discoverRuleFiles(
+    projectRoot,
+    args.skipDirs && args.skipDirs.length > 0
+      ? new Set(args.skipDirs)
+      : undefined,
+  );
   logProgress(`   Found: ${ruleFiles.length} file(s)`);
   for (const rf of ruleFiles) {
     logProgress(`   - ${rf.relativePath} (${rf.tool}, ${rf.sizeLines} lines)`);
@@ -5708,6 +5765,12 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
       projectRoot,
       "--output",
       driftOutputPath,
+      // Drift runs as a subprocess, so --skip-dirs has to be forwarded explicitly. Without
+      // this the audit scores a scoped rule surface against an unscoped drift backlog and
+      // the two numbers in one report disagree.
+      ...(args.skipDirs && args.skipDirs.length > 0
+        ? ["--skip-dirs", args.skipDirs.join(",")]
+        : []),
     ],
     { encoding: "utf8", cwd: WORKSPACE_DIR },
   );
