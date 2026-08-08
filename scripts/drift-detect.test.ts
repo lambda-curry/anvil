@@ -1,5 +1,5 @@
 import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test, describe } from "bun:test";
 
@@ -18,6 +18,8 @@ import {
   type DriftIssue,
   parseArgs,
   normalizePath,
+  expandTilde,
+  isForeignRuntimePath,
   collectFiles,
   compileIgnorePattern,
   loadAnvilIgnore,
@@ -1677,5 +1679,44 @@ describe("main", () => {
       restoreConsole();
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("expandTilde", () => {
+  test("expands a leading ~/ to the running user's home", () => {
+    expect(expandTilde("~/saffron/shared/skills/x/SKILL.md")).toBe(
+      join(homedir(), "saffron/shared/skills/x/SKILL.md"),
+    );
+  });
+
+  test("leaves paths without a leading ~/ untouched", () => {
+    expect(expandTilde("docs/guide.md")).toBe("docs/guide.md");
+    expect(expandTilde("/abs/path.md")).toBe("/abs/path.md");
+    // A bare "~" is not a home reference and must not be rewritten.
+    expect(expandTilde("~config")).toBe("~config");
+  });
+});
+
+describe("isForeignRuntimePath", () => {
+  test("recognizes container and other-host runtime roots", () => {
+    // A rule saying "the workspace mounts at /home/node/.openclaw/workspace" is true of the
+    // container and unresolvable on the host — absence is not drift.
+    expect(isForeignRuntimePath("/home/node/.openclaw/workspace")).toBe(true);
+    expect(isForeignRuntimePath("/data/currybot-skills")).toBe(true);
+    expect(isForeignRuntimePath("/app/dist/index.js")).toBe(true);
+  });
+
+  test("treats another machine's home directory as foreign", () => {
+    const otherUser = homedir().endsWith("/nobodyhere") ? "someoneelse" : "nobodyhere";
+    expect(isForeignRuntimePath(`/Users/${otherUser}/saffron/AGENTS.md`)).toBe(true);
+  });
+
+  test("does not claim the running user's own home", () => {
+    expect(isForeignRuntimePath(join(homedir(), "saffron/AGENTS.md"))).toBe(false);
+  });
+
+  test("ignores relative references", () => {
+    expect(isForeignRuntimePath("docs/guide.md")).toBe(false);
+    expect(isForeignRuntimePath("~/saffron/AGENTS.md")).toBe(false);
   });
 });
