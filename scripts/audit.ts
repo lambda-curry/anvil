@@ -97,6 +97,13 @@ export type DuplicateGroup = {
 export type MirrorConfig = {
   hasConfig: boolean;
   agents: string[];
+  /**
+   * True when a generator declares it owns BOTH AGENTS.md and CLAUDE.md. Their contents then
+   * differ on purpose — rulesync gives AGENTS.md a TOON index of the path-scoped rules that
+   * CLAUDE.md does not need, because Claude reads those through .claude/rules instead. That is
+   * one source with two tool-appropriate outputs, not two copies that fell out of sync.
+   */
+  generatesInstructionPair: boolean;
 };
 
 export type MirrorStatus =
@@ -1135,18 +1142,47 @@ function parseAiRulesAgents(configText: string): string[] {
   return agents;
 }
 
+/** True when a rulesync config targets both the AGENTS.md and Claude Code rule surfaces. */
+export function rulesyncGeneratesInstructionPair(projectRoot: string): boolean {
+  for (const name of ["rulesync.jsonc", "rulesync.json"]) {
+    const path = join(projectRoot, name);
+    if (!existsSync(path)) continue;
+    try {
+      // Strip comments so the .jsonc form parses; targets appear as either an array of tool
+      // names or an object keyed by tool name.
+      const raw = readFileSync(path, "utf8").replace(/^\s*\/\/.*$/gm, "");
+      const config = JSON.parse(raw) as { targets?: unknown };
+      const targets = config.targets;
+      const names = Array.isArray(targets)
+        ? targets.map(String)
+        : targets && typeof targets === "object"
+          ? Object.keys(targets)
+          : [];
+      if (names.includes("agentsmd") && names.includes("claudecode"))
+        return true;
+    } catch {
+      // Unparseable config: fall through and treat the pair as hand-written.
+    }
+  }
+  return false;
+}
+
 function loadMirrorConfig(projectRoot: string): MirrorConfig {
+  const generatesInstructionPair =
+    rulesyncGeneratesInstructionPair(projectRoot);
   const configPath = join(projectRoot, "ai-rules", "ai-rules-config.yaml");
-  if (!existsSync(configPath)) return { hasConfig: false, agents: [] };
+  if (!existsSync(configPath))
+    return { hasConfig: false, agents: [], generatesInstructionPair };
 
   try {
     const content = readFileSync(configPath, "utf8");
     return {
       hasConfig: true,
       agents: [...new Set(parseAiRulesAgents(content))],
+      generatesInstructionPair,
     };
   } catch {
-    return { hasConfig: true, agents: [] };
+    return { hasConfig: true, agents: [], generatesInstructionPair };
   }
 }
 
@@ -1247,7 +1283,10 @@ function comparableMirrorFingerprint(file: RuleFile): string {
   }
 }
 
-function buildMirrorGroups(ruleFiles: RuleFile[]): {
+function buildMirrorGroups(
+  ruleFiles: RuleFile[],
+  projectRoot?: string,
+): {
   groups: MirrorGroup[];
   byPath: Map<string, MirrorDescriptor>;
   healthyCount: number;
@@ -1291,11 +1330,25 @@ function buildMirrorGroups(ruleFiles: RuleFile[]): {
     const fingerprintCount = new Set(
       row.members.map((m) => comparableMirrorFingerprint(m)),
     ).size;
-    const status = classifyMirrorStatus(
+    let status = classifyMirrorStatus(
       row.sources.length,
       row.projections.length,
       fingerprintCount,
     );
+    // A generator that owns both sides produces them from one source, so differing content is
+    // the intended output shape rather than drift between two copies. The generator config
+    // lives beside the files it owns, which in a repo-of-clones is a nested directory rather
+    // than the scan root — checking only the root missed every nested repo's config.
+    if (
+      status === "drifted" &&
+      projectRoot &&
+      key.startsWith("agent-instructions/")
+    ) {
+      const familyDir = key.slice("agent-instructions/".length);
+      const dirRoot =
+        familyDir === "root" ? projectRoot : join(projectRoot, familyDir);
+      if (rulesyncGeneratesInstructionPair(dirRoot)) status = "healthy";
+    }
     if (status === "healthy") healthyCount++;
     if (status === "drifted") driftedCount++;
     if (status === "orphan-projection") orphanProjectionCount++;
@@ -1387,6 +1440,7 @@ function isExpectedDuplicateGroup(
 export function buildRuleInventory(
   ruleFiles: RuleFile[],
   mirrorConfig: MirrorConfig,
+  projectRoot?: string,
 ): RuleInventory {
   const groups = new Map<string, RuleFile[]>();
   for (const rf of ruleFiles) {
@@ -1419,7 +1473,7 @@ export function buildRuleInventory(
     }
   }
 
-  const mirrorGroupsSummary = buildMirrorGroups(ruleFiles);
+  const mirrorGroupsSummary = buildMirrorGroups(ruleFiles, projectRoot);
   const expectedDuplicateGroups: DuplicateGroup[] = [];
   const accidentalDuplicateGroups: DuplicateGroup[] = [];
   for (const group of duplicateGroups) {
@@ -5727,7 +5781,11 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
   logProgress("");
 
   const mirrorConfig = loadMirrorConfig(projectRoot);
-  const ruleInventory = buildRuleInventory(ruleFiles, mirrorConfig);
+  const ruleInventory = buildRuleInventory(
+    ruleFiles,
+    mirrorConfig,
+    projectRoot,
+  );
   logProgress("🧩 Rule surface segmentation...");
   logProgress(`   Canonical unique: ${ruleInventory.canonicalFiles.length}`);
   logProgress(

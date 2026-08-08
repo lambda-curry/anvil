@@ -8,6 +8,7 @@ import {
   discoverRuleFiles,
   isVendoredPath,
   parseArgs,
+  rulesyncGeneratesInstructionPair,
 } from "./audit.ts";
 
 describe("audit --skip-dirs", () => {
@@ -108,5 +109,46 @@ describe("nested AGENTS.md/CLAUDE.md mirror families", () => {
     );
     expect(accidentalPaths).not.toContain("packages/core/CLAUDE.md");
     expect(accidentalPaths).not.toContain("CLAUDE.md");
+  });
+});
+
+describe("rulesyncGeneratesInstructionPair", () => {
+  test("detects a config that targets both surfaces, in either shape", () => {
+    const objectForm = mkdtempSync(join(tmpdir(), "anvil-rs-obj-"));
+    writeFileSync(
+      join(objectForm, "rulesync.jsonc"),
+      '{\n  // comment tolerated\n  "targets": { "agentsmd": ["rules"], "claudecode": ["rules"] }\n}\n',
+    );
+    expect(rulesyncGeneratesInstructionPair(objectForm)).toBe(true);
+
+    const arrayForm = mkdtempSync(join(tmpdir(), "anvil-rs-arr-"));
+    writeFileSync(
+      join(arrayForm, "rulesync.jsonc"),
+      '{ "targets": ["agentsmd", "claudecode", "cursor"] }\n',
+    );
+    expect(rulesyncGeneratesInstructionPair(arrayForm)).toBe(true);
+  });
+
+  test("is false when only one surface is generated", () => {
+    // 360training targets claudecode + cursor only, so its AGENTS.md is hand-written and a
+    // difference between the two files is real drift rather than generator output.
+    const root = mkdtempSync(join(tmpdir(), "anvil-rs-one-"));
+    writeFileSync(
+      join(root, "rulesync.jsonc"),
+      '{ "targets": ["claudecode", "cursor"] }\n',
+    );
+    expect(rulesyncGeneratesInstructionPair(root)).toBe(false);
+  });
+
+  test("is false with no config, and survives an unparseable one", () => {
+    expect(
+      rulesyncGeneratesInstructionPair(
+        mkdtempSync(join(tmpdir(), "anvil-rs-none-")),
+      ),
+    ).toBe(false);
+
+    const broken = mkdtempSync(join(tmpdir(), "anvil-rs-bad-"));
+    writeFileSync(join(broken, "rulesync.json"), "{ not json");
+    expect(rulesyncGeneratesInstructionPair(broken)).toBe(false);
   });
 });
