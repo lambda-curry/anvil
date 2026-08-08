@@ -17,7 +17,9 @@ function fixture(): string {
 
 describe("discoverRuleSurfaceFiles skipDirs", () => {
   test("discovers every rule surface when no skip list is given", () => {
-    const found = discoverRuleSurfaceFiles(fixture()).map((f) => f.relativePath);
+    const found = discoverRuleSurfaceFiles(fixture()).map(
+      (f) => f.relativePath,
+    );
     expect(found).toContain("AGENTS.md");
     expect(found).toContain("vendor/openclaw/AGENTS.md");
     expect(found).toContain("agents/scout/AGENTS.md");

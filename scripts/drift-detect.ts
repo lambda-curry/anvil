@@ -1393,9 +1393,10 @@ export function main(): void {
     );
   }
 
-  const discoveredRuleFiles = discoverRuleSurfaceFiles(projectRoot, SKIP_DIRS).map(
-    (file) => file.path,
-  );
+  const discoveredRuleFiles = discoverRuleSurfaceFiles(
+    projectRoot,
+    SKIP_DIRS,
+  ).map((file) => file.path);
   const includedRuleFiles = discoveredRuleFiles.filter(
     (filePath) => !isIgnored(filePath, projectRoot, ignoreMatchers),
   );

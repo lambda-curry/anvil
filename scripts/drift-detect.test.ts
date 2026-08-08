@@ -1707,12 +1707,18 @@ describe("isForeignRuntimePath", () => {
   });
 
   test("treats another machine's home directory as foreign", () => {
-    const otherUser = homedir().endsWith("/nobodyhere") ? "someoneelse" : "nobodyhere";
-    expect(isForeignRuntimePath(`/Users/${otherUser}/saffron/AGENTS.md`)).toBe(true);
+    const otherUser = homedir().endsWith("/nobodyhere")
+      ? "someoneelse"
+      : "nobodyhere";
+    expect(isForeignRuntimePath(`/Users/${otherUser}/saffron/AGENTS.md`)).toBe(
+      true,
+    );
   });
 
   test("does not claim the running user's own home", () => {
-    expect(isForeignRuntimePath(join(homedir(), "saffron/AGENTS.md"))).toBe(false);
+    expect(isForeignRuntimePath(join(homedir(), "saffron/AGENTS.md"))).toBe(
+      false,
+    );
   });
 
   test("ignores relative references", () => {
