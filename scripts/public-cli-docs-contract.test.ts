@@ -60,6 +60,16 @@ test("CLI reference documents every public audit output and timeout flag", () =>
   expect(cliReference).toContain("`--ai-timeout-ms <ms>`");
 });
 
+test("CLI reference documents every public drift flag", () => {
+  const cliReference = readRepoFile(
+    "docs-site/src/content/docs/reference/cli.md",
+  );
+
+  expect(cliReference).toContain("`--skip-dirs <dir1,dir2,...>`");
+  expect(cliReference).toContain("`--output <file>`");
+  expect(cliReference).toContain("`--target <path>`");
+});
+
 test("README does not link to removed docs-site proof pages", () => {
   const readme = readRepoFile("README.md");
 

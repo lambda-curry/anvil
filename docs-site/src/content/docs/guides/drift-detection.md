@@ -23,9 +23,17 @@ Drifted rules don't just fail to help — they actively mislead. A path drift ca
 # standalone drift check
 bunx @lambdacurry/anvil drift ./my-repo
 
+# exclude generated or vendored directories from scanning
+bunx @lambdacurry/anvil drift ./my-repo --skip-dirs node_modules,dist,generated
+
+# write the report to a specific file
+bunx @lambdacurry/anvil drift ./my-repo --output ./drift-report.md
+
 # drift is also included in the full audit
 bunx @lambdacurry/anvil audit --target ./my-repo
 ```
+
+Use `--skip-dirs` to exclude directories that contain generated code, vendored copies, or template files — these often produce false-positive path and glob drift. Pass directory names (not paths), comma-separated.
 
 ## Current capabilities
 
