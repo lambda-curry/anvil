@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -57,5 +57,33 @@ describe("discoverRuleSurfaceFiles skipDirs", () => {
       (f) => f.relativePath,
     );
     expect(found).toContain("vendored-utils/AGENTS.md");
+  });
+});
+
+describe("symlink aliases", () => {
+  test("marks a CLAUDE.md symlinked to its AGENTS.md, without dropping it", () => {
+    // Both names must stay discoverable so mirror-family detection can see the pair, but
+    // per-file scanners must be able to skip one: they are physically the same file, and
+    // scanning both counted saffron's references twice (drift 205 -> 230 from pairing alone).
+    const root = mkdtempSync(join(tmpdir(), "anvil-alias-"));
+    writeFileSync(join(root, "AGENTS.md"), "# rules\n");
+    symlinkSync("AGENTS.md", join(root, "CLAUDE.md"));
+
+    const found = discoverRuleSurfaceFiles(root);
+    const agents = found.find((f) => f.relativePath === "AGENTS.md");
+    const claude = found.find((f) => f.relativePath === "CLAUDE.md");
+
+    expect(agents?.isSymlinkAlias).toBeUndefined();
+    expect(claude?.isSymlinkAlias).toBe(true);
+  });
+
+  test("does not mark a real file that merely shares content", () => {
+    const root = mkdtempSync(join(tmpdir(), "anvil-alias-"));
+    writeFileSync(join(root, "AGENTS.md"), "# rules\n");
+    writeFileSync(join(root, "CLAUDE.md"), "# rules\n");
+
+    for (const file of discoverRuleSurfaceFiles(root)) {
+      expect(file.isSymlinkAlias).toBeUndefined();
+    }
   });
 });

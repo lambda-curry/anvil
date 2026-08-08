@@ -1393,10 +1393,12 @@ export function main(): void {
     );
   }
 
-  const discoveredRuleFiles = discoverRuleSurfaceFiles(
-    projectRoot,
-    SKIP_DIRS,
-  ).map((file) => file.path);
+  const discoveredRuleFiles = discoverRuleSurfaceFiles(projectRoot, SKIP_DIRS)
+    // A CLAUDE.md symlinked to its AGENTS.md is one file; scanning both counts the same
+    // references twice. Saffron's backlog rose 205 -> 230 purely from pairing nine packages
+    // that already existed, with no new content anywhere.
+    .filter((file) => !file.isSymlinkAlias)
+    .map((file) => file.path);
   const includedRuleFiles = discoveredRuleFiles.filter(
     (filePath) => !isIgnored(filePath, projectRoot, ignoreMatchers),
   );
