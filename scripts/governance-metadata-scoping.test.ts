@@ -25,6 +25,7 @@ function makeRuleFile(overrides: Partial<RuleFile>): RuleFile {
     fingerprint: overrides.relativePath ?? "AGENTS.md",
     loadTier: "always-on",
     importsRootMirror: false,
+    isUpstreamAuthored: false,
     ...overrides,
   };
 }
@@ -82,7 +83,7 @@ test("a reference catalog does not need governance metadata", () => {
   expect(check?.status).toBe("pass");
   expect(check?.detail).toContain("100%");
   // The exemption is stated, so a coverage figure that rose is auditable.
-  expect(check?.detail).toContain("excludes 7 reference/pointer docs");
+  expect(check?.detail).toContain("excludes 7 reference/pointer/upstream docs");
 });
 
 test("a pointer document does not need governance metadata", () => {
@@ -99,7 +100,7 @@ test("a pointer document does not need governance metadata", () => {
   const check = dateCheck(files);
 
   expect(check?.status).toBe("pass");
-  expect(check?.detail).toContain("excludes 1 reference/pointer doc");
+  expect(check?.detail).toContain("excludes 1 reference/pointer/upstream doc");
 });
 
 test("real governance docs still have to carry a date", () => {
@@ -134,11 +135,10 @@ test("a repo with no exemptions reads exactly as before", () => {
   expect(check?.detail).toBe("50% of governance files include Last validated");
 });
 
-test("a repo whose governance surface is entirely exempt is not failed at 0%", () => {
-  // The regression this nearly shipped with: exempting every file emptied the
-  // denominator, and an empty denominator read as 0% — failing Anvil itself,
-  // whose whole governance surface is bootstrap templates. With nothing left to
-  // measure, fall back to the full set rather than inventing a failure.
+test("a repo whose governance surface is entirely exempt passes", () => {
+  // Nothing left to ask is a pass, not a 0%. This previously fell back to the
+  // unexempted set, which re-failed exactly the repos the exemption exists for
+  // — openclaw's 23 files are all upstream's.
   const files = ["a", "b", "c"].map((name) =>
     makeRuleFile({
       relativePath: `docs/patterns/${name}.md`,
@@ -149,7 +149,7 @@ test("a repo whose governance surface is entirely exempt is not failed at 0%", (
   const check = dateCheck(files);
 
   expect(check?.status).toBe("pass");
-  expect(check?.detail).toBe("100% of governance files include Last validated");
+  expect(check?.detail).toContain("excludes 3 reference/pointer/upstream docs");
 });
 
 test("bootstrap templates are governance documents, not reference catalogs", () => {
@@ -167,4 +167,36 @@ test("bootstrap templates are governance documents, not reference catalogs", () 
   const check = dateCheck(files);
 
   expect(check?.detail).toBe("50% of governance files include Last validated");
+});
+
+test("an upstream-authored file is not asked for our governance metadata", () => {
+  // openclaw and postiz-app sat permanently red for files carrying zero lines
+  // of ours. Adding a date would be our first authored line in someone else's
+  // document, and would conflict on every merge.
+  const files = [
+    makeRuleFile({
+      relativePath: "AGENTS.md",
+      hasLastValidated: false,
+      isUpstreamAuthored: true,
+    }),
+    makeRuleFile({ relativePath: "OURS.md", hasLastValidated: true }),
+  ];
+
+  const check = dateCheck(files);
+
+  expect(check?.status).toBe("pass");
+  expect(check?.detail).toContain("excludes 1 reference/pointer/upstream doc");
+});
+
+test("a file we have committed to is still ours to date", () => {
+  // The guard: authorship is the signal, not living in a vendored repo.
+  const files = [
+    makeRuleFile({
+      relativePath: "AGENTS.md",
+      hasLastValidated: false,
+      isUpstreamAuthored: false,
+    }),
+  ];
+
+  expect(dateCheck(files)?.status).toBe("fail");
 });

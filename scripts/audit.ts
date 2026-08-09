@@ -48,6 +48,7 @@ import {
 } from "./lib/audit-config.ts";
 import { resolveProjectName } from "./lib/project-name.ts";
 import { hasWhy } from "./lib/rationale.ts";
+import { upstreamAuthoredFiles } from "./lib/upstream-authorship.ts";
 import {
   classifyLoadTier,
   importsRootMirror,
@@ -94,6 +95,8 @@ export type RuleFile = {
   loadTier: LoadTier;
   /** Root CLAUDE.md that `@AGENTS.md`-imports rather than copying. */
   importsRootMirror: boolean;
+  /** Exists upstream and carries no local commits — see lib/upstream-authorship.ts. */
+  isUpstreamAuthored: boolean;
 };
 
 export type RuleAuthorship = "governance" | "generated";
@@ -1608,22 +1611,28 @@ export function assessStageA(
   // every other check.
   const exemptFromGovernanceMetadata =
     inventory.canonicalGovernanceFiles.filter(
-      (file) => isPatternDocPath(file.relativePath) || file.importsRootMirror,
+      (file) =>
+        isPatternDocPath(file.relativePath) ||
+        file.importsRootMirror ||
+        file.isUpstreamAuthored,
     );
-  // If every governance file is exempt there is nothing left to measure, and an
-  // empty denominator must not read as 0% — that would fail a repo for having
-  // only the document kinds we just decided not to ask. Fall back to the full
-  // set, which is exactly the pre-exemption behaviour.
-  const datedCandidates =
-    exemptFromGovernanceMetadata.length === governanceCount
-      ? inventory.canonicalGovernanceFiles
-      : inventory.canonicalGovernanceFiles.filter(
-          (file) => !exemptFromGovernanceMetadata.includes(file),
-        );
+  const datedCandidates = inventory.canonicalGovernanceFiles.filter(
+    (file) => !exemptFromGovernanceMetadata.includes(file),
+  );
   const datedExempt = governanceCount - datedCandidates.length;
+  // Nothing left to ask is a pass, not a 0%. A vendored fork whose whole
+  // instruction surface is upstream's has no governance metadata to owe us —
+  // the previous fallback to the unexempted set re-failed exactly the repos the
+  // exemption exists for, because it predates upstream authorship being one.
   const datedCoverage =
     datedCandidates.length === 0
-      ? 0
+      ? // No governance files at all is a different emptiness from every file
+        // being exempt: the first is a missing surface, which Governance
+        // Surface already fails on, and the second is a surface we decided not
+        // to ask.
+        governanceCount === 0
+        ? 0
+        : 1
       : datedCandidates.filter((f) => f.hasLastValidated).length /
         datedCandidates.length;
 
@@ -1680,7 +1689,7 @@ export function assessStageA(
     detail:
       `${Math.round(datedCoverage * 100)}% of governance files include Last validated` +
       (datedExempt > 0
-        ? ` (excludes ${datedExempt} reference/pointer doc${datedExempt === 1 ? "" : "s"})`
+        ? ` (excludes ${datedExempt} reference/pointer/upstream doc${datedExempt === 1 ? "" : "s"})`
         : ""),
   });
 
@@ -2970,9 +2979,17 @@ export function discoverRuleFiles(
   skipDirs?: ReadonlySet<string>,
 ): RuleFile[] {
   const discovered: RuleFile[] = [];
+  // Two git calls for the repo, not two per file.
+  const upstreamAuthored = upstreamAuthoredFiles(projectRoot);
 
   for (const file of discoverRuleSurfaceFiles(projectRoot, skipDirs)) {
-    const rf = analyzeRuleFile(file.path, projectRoot, file.tool, file.format);
+    const rf = analyzeRuleFile(
+      file.path,
+      projectRoot,
+      file.tool,
+      file.format,
+      upstreamAuthored,
+    );
     if (rf) discovered.push(rf);
   }
 
@@ -3009,6 +3026,7 @@ export function analyzeRuleFile(
   projectRoot: string,
   tool: string,
   format: string,
+  upstreamAuthored: ReadonlySet<string> = new Set(),
 ): RuleFile | null {
   try {
     const content = readFileSync(fullPath, "utf8");
@@ -3068,6 +3086,7 @@ export function analyzeRuleFile(
         content,
       }),
       importsRootMirror: importsRootMirror(content),
+      isUpstreamAuthored: upstreamAuthored.has(relativePath),
     };
   } catch {
     return null;
