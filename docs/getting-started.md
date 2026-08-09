@@ -64,7 +64,7 @@ anvil --version
 What you should see in the current alpha:
 
 - `--help` lists the four shipped commands: `audit`, `drift`, `bootstrap`, `mine-pr`
-- `--version` prints `0.1.0-alpha.14`
+- `--version` prints `0.1.0-alpha.15`
 
 If you are validating Anvil from a cloned checkout instead of a global install, run:
 
@@ -125,7 +125,7 @@ Top 5 improvements:
 
 ## Save the report to a file
 
-> **Current alpha note:** The published `0.1.0-alpha.14` proof packet uses one canonical repo-root `bunx` command with `--ci --output ./anvil-audit.md`, while the packaged CLI still resolves relative `--target` and `--output` paths from your shell cwd on `bunx`, `npx`, and Bun global install. Normal relative-path examples are honest when you use the unpinned command (it tracks the latest published build).
+> **Current alpha note:** The published `0.1.0-alpha.15` proof packet uses one canonical repo-root `bunx` command with `--ci --output ./anvil-audit.md`, while the packaged CLI still resolves relative `--target` and `--output` paths from your shell cwd on `bunx`, `npx`, and Bun global install. Normal relative-path examples are honest when you use the unpinned command (it tracks the latest published build).
 
 ```bash
 # zero-install with bunx
@@ -235,7 +235,7 @@ anvil audit \
 
 `--ci` keeps discovery, drift detection, coverage scoring, and markdown output local. The report headline becomes `Structural Lint Score`, and the improvement section is generated from repo-local heuristics instead of a provider.
 
-`--no-ai` still works as a deprecated compatibility alias for the same mode. The current external first-user proof packet stays pinned to `0.1.0-alpha.14` and uses `--ci` for the local-only lane.
+`--no-ai` still works as a deprecated compatibility alias for the same mode. The current external first-user proof packet stays pinned to `0.1.0-alpha.15` and uses `--ci` for the local-only lane.
 
 Privacy-first example artifact from the same example target:
 

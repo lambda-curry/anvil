@@ -15,7 +15,7 @@ Capture one real outside-Lambda-Curry run that proves:
 
 Do this only after the exact published version you want to validate is live, and before Milestone 3 is called complete.
 
-Do not send this packet with the floating `@alpha` tag. Replace `<exact-version>` in the command below with the specific published build you are validating, for example `0.1.0-alpha.14`.
+Do not send this packet with the floating `@alpha` tag. Replace `<exact-version>` in the command below with the specific published build you are validating, for example `0.1.0-alpha.15`.
 
 ## Suggested tester profile
 
@@ -115,7 +115,7 @@ bun run verify:first-user-proof -- docs/proofs/YYYY-MM-DD-<tester>-first-user-pr
 ```
 
 That validator checks the outside-tester status, pinned CLI version, first-try success, returned artifact, and other minimum packet fields, then returns `counts` or `does-not-count` with explicit reasons.
-For the current pinned `0.1.0-alpha.14` proof lane, it requires the retained audit command to keep the exact `--ci` spelling from the packet.
+For the current pinned `0.1.0-alpha.15` proof lane, it requires the retained audit command to keep the exact `--ci` spelling from the packet.
 
 ## Done signal for Milestone 3 gate
 
