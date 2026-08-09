@@ -70,6 +70,46 @@ test("CLI reference documents every public drift flag", () => {
   expect(cliReference).toContain("`--target <path>`");
 });
 
+test("CLI reference documents every public repo audit flag and its read-only promise", () => {
+  const cliReference = readRepoFile(
+    "docs-site/src/content/docs/reference/cli.md",
+  );
+
+  expect(cliReference).toContain("`anvil repo audit`");
+  for (const flag of [
+    "`--fail-on <level>`",
+    "`--verify-remote`",
+    "`--remote <name>`",
+    "`--default-branch <name>`",
+    "`--reflog-days <n>`",
+    "`--stale-fetch-hours <n>`",
+  ]) {
+    expect(cliReference).toContain(flag);
+  }
+  expect(cliReference).toContain("never writes to the repository it inspects");
+});
+
+test("every finding code in the engine is documented in the CLI reference", () => {
+  const cliReference = readRepoFile(
+    "docs-site/src/content/docs/reference/cli.md",
+  );
+  const engine = readRepoFile("scripts/lib/repo-audit.ts");
+  const codes = engine.match(/"GIT_[A-Z_]+"/g) ?? [];
+
+  expect(codes.length).toBeGreaterThan(0);
+  for (const quoted of codes) {
+    const code = quoted.replaceAll('"', "");
+    // GIT_COLLECTION_ERROR is an internal passthrough of git's own stderr,
+    // not a hygiene finding operators write alerts against.
+    if (code === "GIT_COLLECTION_ERROR") {
+      continue;
+    }
+    expect(`${code} documented: ${cliReference.includes(code)}`).toBe(
+      `${code} documented: true`,
+    );
+  }
+});
+
 test("README does not link to removed docs-site proof pages", () => {
   const readme = readRepoFile("README.md");
 

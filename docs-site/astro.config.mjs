@@ -43,6 +43,7 @@ export default defineConfig({
             { label: 'Drift Detection', slug: 'guides/drift-detection' },
             { label: 'Bootstrap Rules', slug: 'guides/bootstrap' },
             { label: 'Mine PR History', slug: 'guides/mine-pr' },
+            { label: 'Repository Audit', slug: 'guides/repo-audit' },
           ],
         },
         {
