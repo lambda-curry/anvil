@@ -65,7 +65,12 @@ async function auditJson(target: string): Promise<{
     ["bun", CLI, "audit", "--target", target, "--ci", "--json"],
     { cwd: REPO_ROOT, stdout: "pipe", stderr: "pipe" },
   );
-  const stdout = await new Response(proc.stdout).text();
+  // Drain both pipes concurrently: `--json` emits per-file progress on stderr,
+  // and a full stderr buffer would deadlock the child while we read stdout.
+  const [stdout] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
   await proc.exited;
   return JSON.parse(stdout) as { overkill: { alwaysOnLines: number } };
 }
