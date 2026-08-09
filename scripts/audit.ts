@@ -1313,11 +1313,9 @@ function classifyMirrorStatus(
  * the maintainer to "repair" a working cross-tool contract.
  */
 function importsItsMirrorSource(file: RuleFile): boolean {
-  try {
-    return /^\s*@AGENTS\.md\s*$/m.test(readFileSync(file.path, "utf8"));
-  } catch {
-    return false;
-  }
+  // Classified once at parse time; this used to re-read the file from disk with
+  // a second copy of the same regex.
+  return file.importsRootMirror;
 }
 
 function comparableMirrorFingerprint(file: RuleFile): string {
@@ -2143,10 +2141,19 @@ export function assessStageD(
 ): { stage: StageResult; metrics: OverkillMetrics } {
   const load = summarizeLoad(countableLoadFiles(scoringRuleFiles));
   const alwaysOnLines = load.alwaysOnLines;
-  const lowYieldRules = scoringRuleFiles.filter(
+  // A pointer redirects to the canonical document; it carries no rules, so
+  // asking it for rationale and examples asks the maintainer to pad a redirect.
+  // It leaves the denominator, not just the numerator — it was never a rule
+  // document to score. Note this is scoped to Low-Yield deliberately: the same
+  // file still counts toward Context Load Pressure, because Claude really does
+  // load the shim in addition to what it imports.
+  const lowYieldCandidates = scoringRuleFiles.filter(
+    (ruleFile) => !ruleFile.importsRootMirror,
+  );
+  const lowYieldRules = lowYieldCandidates.filter(
     (ruleFile) => !ruleFile.hasWhySection || !ruleFile.hasExamplesSection,
   ).length;
-  const lowYieldRatio = ratio(lowYieldRules, scoringRuleFiles.length);
+  const lowYieldRatio = ratio(lowYieldRules, lowYieldCandidates.length);
   const keywordConflicts = detectKeywordConflicts(scoringRuleFiles);
 
   const redundancyPressure = clamp01(inventory.accidentalDuplicationRate * 3);
@@ -2220,8 +2227,8 @@ export function assessStageD(
       label: "Low-Yield Rule Ratio",
       status: lowYieldStatus,
       detail: toolNativeAdvisoryLowYield
-        ? `${lowYieldRules}/${scoringRuleFiles.length || 0} scoring files miss Why or Examples; tool-native-first surface keeps this advisory while duplication/conflict/load stay healthy`
-        : `${lowYieldRules}/${scoringRuleFiles.length || 0} scoring files miss Why or Examples`,
+        ? `${lowYieldRules}/${lowYieldCandidates.length || 0} scoring files miss Why or Examples; tool-native-first surface keeps this advisory while duplication/conflict/load stay healthy`
+        : `${lowYieldRules}/${lowYieldCandidates.length || 0} scoring files miss Why or Examples`,
     },
   ];
 

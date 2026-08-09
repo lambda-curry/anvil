@@ -25,6 +25,8 @@
  * what gets loaded — not a smaller number.
  */
 
+import { isPointerDocument } from "./document-role.ts";
+
 /** Frontmatter keys that scope a rule to a subset of files. */
 const SCOPE_KEYS = [
   "paths",
@@ -150,10 +152,13 @@ export type TieredFile = {
   importsRootMirror?: boolean;
 };
 
-/** Whether a file's body imports its mirror source rather than copying it. */
-export function importsRootMirror(content: string): boolean {
-  return /^\s*@AGENTS\.md\s*$/m.test(content);
-}
+/**
+ * Whether a file's body imports its mirror source rather than copying it.
+ *
+ * Same question as {@link isPointerDocument}; kept as a named re-export so the
+ * loading model reads in its own vocabulary.
+ */
+export const importsRootMirror = isPointerDocument;
 
 export function summarizeLoad(files: TieredFile[]): LoadBreakdown {
   let alwaysOn = 0;

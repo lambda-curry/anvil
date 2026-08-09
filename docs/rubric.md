@@ -170,6 +170,8 @@ Globs: [if glob-matched] / alwaysApply: [true/false] / on-demand: [how to pull]
 
 The two paths cover different genres, and short files depend on the first. A 35-line Cursor `.mdc` rule states its rationale in one dense paragraph, which rarely trips two separate prose families — the label is what carries it. Long-form instruction files usually pass on prose alone. **You need one of the two, not both.**
 
+*Pointers are not scored.* A `CLAUDE.md` whose body is an `@AGENTS.md` import is a redirect to the canonical document, not a rule document, so it leaves the Low-Yield denominator entirely rather than being counted and forgiven — requiring rationale and examples of a redirect would only invite padding it. The signal is the import, not the length: a genuinely thin rule document of the same size is still scored, and still fails. Such a file does still count toward Context Load Pressure, because Claude loads the shim in addition to the file it imports.
+
 **Examples are load-bearing.** A rule without examples is a hypothesis. Examples demonstrate the failure mode in a form the model can pattern-match against.
 
 **Imperative voice.** Rules give instructions. Use "Use X" not "X should be used." Use "Never modify Y" not "Y shouldn't be modified."
