@@ -6,6 +6,7 @@ import {
   hasWhy,
   RATIONALE_FAMILY_THRESHOLD,
   rationaleFamilies,
+  WHY_LABEL,
 } from "./rationale.ts";
 
 // Shaped after `clawconnect/AGENTS.md`, the file that exposed the false negative:
@@ -137,4 +138,87 @@ test("extractProse strips fences and collapses whitespace", () => {
 test("an empty or heading-only file has no rationale", () => {
   expect(hasWhy("")).toBe(false);
   expect(hasWhy("# Title\n\n## Setup\n\n- step one\n")).toBe(false);
+});
+
+// ─── Labelled rationale, in the spellings people actually write ──────────────
+
+test("`**Why:**` with the colon inside the bold counts", () => {
+  // The exact arbor spelling. The old pattern was the literal `**Why**`, so
+  // four of the best-documented rule files in the fleet missed by one character.
+  const arborShaped = `---
+globs: ["packages/core/**"]
+---
+# Server-resolved attribution
+
+Last validated: 2026-07-05
+
+**Why:** Profile and Client are separate objects precisely so the system can
+keep *who* distinct from *how*.
+
+**DO**
+\`\`\`ts
+thread.create({ spaceId }, ctx)
+\`\`\`
+`;
+
+  expect(WHY_LABEL.test(arborShaped)).toBe(true);
+  expect(hasWhy(arborShaped)).toBe(true);
+  // It passes on the label alone — the prose path does not fire on a file this
+  // short, which is the whole reason the label path has to work.
+  expect(hasStatedRationale(arborShaped)).toBe(false);
+});
+
+test("every labelled spelling is accepted", () => {
+  for (const label of [
+    "**Why**",
+    "**Why:**",
+    "**Why this file:**",
+    "__Rationale:__",
+    "- **Rationale:**",
+    "## Why",
+    "### Why — the incident",
+    "#### Rationale: what broke",
+    "> Why we pin the toolchain",
+    "Why: the lockfile drifts otherwise",
+    "**Context:**",
+  ]) {
+    expect(`${label} -> ${WHY_LABEL.test(`${label} some text\n`)}`).toBe(
+      `${label} -> true`,
+    );
+  }
+
+  // Weak label words count when they stand alone on their line.
+  for (const label of ["## Context", "## Background"]) {
+    expect(`${label} -> ${WHY_LABEL.test(`${label}\n\nsome text\n`)}`).toBe(
+      `${label} -> true`,
+    );
+  }
+});
+
+test("ordinary prose using the word why is not a label", () => {
+  for (const text of [
+    "This explains why we do it this way.\n",
+    "The reason why is documented elsewhere.\n",
+  ]) {
+    expect(`${JSON.stringify(text)} -> ${WHY_LABEL.test(text)}`).toBe(
+      `${JSON.stringify(text)} -> false`,
+    );
+  }
+});
+
+test("weak label words stay nouns unless they stand alone or are punctuated", () => {
+  // Found as a live false positive in medusa-forms: a React Context heading.
+  expect(WHY_LABEL.test("### Context Patterns\n\nUse providers.\n")).toBe(
+    false,
+  );
+  expect(WHY_LABEL.test("## Background jobs\n\nQueue them.\n")).toBe(false);
+  expect(WHY_LABEL.test("**Context switching is expensive**\n")).toBe(false);
+  // ...but the label forms still count.
+  expect(WHY_LABEL.test("## Context\n\nWe run on Bun.\n")).toBe(true);
+  expect(WHY_LABEL.test("## Background — the incident\n")).toBe(true);
+});
+
+test("a terse command reference is still a true negative", () => {
+  expect(WHY_LABEL.test(TERSE_SHAPED)).toBe(false);
+  expect(hasWhy(TERSE_SHAPED)).toBe(false);
 });
