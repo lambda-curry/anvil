@@ -21,9 +21,51 @@
  *   threshold 3 → 14/15 agreement (a genuinely explanatory file drops out)
  */
 
-/** A heading literally naming rationale. Retained as an accepted path. */
-export const WHY_HEADING =
-  /^##\s+(Why|Background|Motivation|Context)|\*\*Why\*\*/im;
+/**
+ * Words that mean "rationale" wherever they appear as a label, so anything may
+ * follow them: `## Why we pin the toolchain`.
+ */
+const STRONG_LABELS = "Why|Rationale|Motivation|Reasoning";
+
+/**
+ * Words that are ordinary nouns as often as they are labels. `### Context
+ * Patterns` is a React heading and `## Background jobs` is a subsystem, so these
+ * only count when the label stands alone or is punctuated.
+ */
+const WEAK_LABELS = "Background|Context";
+
+/** Trailing context allowed after a weak label: nothing, or punctuation. */
+const WEAK_TAIL = `(?:[ \\t]*(?:[:—–-]|\\*\\*|__)|[ \\t]*$)`;
+
+/**
+ * An explicit rationale *label*, in the spellings people actually write.
+ *
+ * The old pattern accepted `## Why` and the exact string `**Why**`. arbor writes
+ * `**Why:**` — the colon sits inside the bold markers — so four of the
+ * best-documented rule files in the fleet missed by a single character.
+ *
+ * Matching is deliberately lenient about decoration and strict about being a
+ * label: a heading, or an emphasised run that is either the bare label word or
+ * ends in a colon. That last condition is what stops `**Context switching is
+ * expensive**` from reading as a rationale section.
+ */
+export const WHY_LABEL = new RegExp(
+  [
+    // `## Why`, `### Why — the incident`, `#### Rationale: ...`
+    `^[ \\t]*#{1,6}[ \\t]+(?:${STRONG_LABELS})\\b`,
+    // `## Context`, `## Background —` but not `### Context Patterns`
+    `^[ \\t]*#{1,6}[ \\t]+(?:${WEAK_LABELS})\\b${WEAK_TAIL}`,
+    // `**Why**`, `**Why:**`, `**Why this file:**`, `- __Rationale:__`
+    `^[ \\t]*(?:[-*+>][ \\t]+)?(?:\\*\\*|__)[ \\t]*(?:${STRONG_LABELS})\\b(?:[^*_\\n]{0,40}:)?[ \\t]*(?:\\*\\*|__)`,
+    // `**Context:**` — the colon is what makes a weak word a label
+    `^[ \\t]*(?:[-*+>][ \\t]+)?(?:\\*\\*|__)[ \\t]*(?:${WEAK_LABELS})[ \\t]*:[ \\t]*(?:\\*\\*|__)`,
+    // `> Why ...`
+    `^[ \\t]*>[ \\t]*(?:${STRONG_LABELS})\\b`,
+    // `Why: ...` on its own line
+    `^[ \\t]*(?:${STRONG_LABELS})[ \\t]*:`,
+  ].join("|"),
+  "im",
+);
 
 /**
  * Families of rationale language. Each family is one *way* of explaining, so
@@ -86,5 +128,5 @@ export function hasStatedRationale(content: string): boolean {
  * failing; prose rationale now counts too.
  */
 export function hasWhy(content: string): boolean {
-  return WHY_HEADING.test(content) || hasStatedRationale(content);
+  return WHY_LABEL.test(content) || hasStatedRationale(content);
 }
