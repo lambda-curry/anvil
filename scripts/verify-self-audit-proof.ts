@@ -18,7 +18,7 @@ export const defaultCheckedInReport = resolve(
   REPO_ROOT,
   "docs",
   "audits",
-  "anvil-audit-2026-08-08.md",
+  "anvil-audit-2026-08-09.md",
 );
 
 const REPORT_DATE_PATTERN = /^\*Date: (\d{4}-\d{2}-\d{2})\*$/m;
