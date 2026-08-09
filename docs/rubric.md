@@ -162,6 +162,8 @@ Globs: [if glob-matched] / alwaysApply: [true/false] / on-demand: [how to pull]
 
 **Why comes first.** Agents (and humans) follow rules better when they understand the failure mode. "Don't use `npm install`" is weaker than "Agents default to `npm` in this monorepo, which breaks the lockfile — always use `bun install`."
 
+*How the audit measures this:* a heading named Why/Background/Motivation/Context counts, but so does rationale stated anywhere in prose — causal language ("because", "so that", "otherwise"), rejected alternatives ("rather than", "instead of"), stated intent ("this is deliberate", "by design"), cited failures ("broke", "silently passed"), or named consequences ("will fail", "which meant"). Signals from two distinct families are required, because a lone keyword inside an imperative ("Do not silently change the envelope") explains nothing. **You do not need a `## Why` heading to pass** — a file that explains itself throughout already does.
+
 **Examples are load-bearing.** A rule without examples is a hypothesis. Examples demonstrate the failure mode in a form the model can pattern-match against.
 
 **Imperative voice.** Rules give instructions. Use "Use X" not "X should be used." Use "Never modify Y" not "Y shouldn't be modified."
