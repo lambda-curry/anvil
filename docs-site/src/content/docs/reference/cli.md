@@ -32,7 +32,7 @@ anvil audit --target ./my-repo [options]
 
 Relative `--target` paths resolve from your current shell cwd.
 
-If you arrived here from the external first-user proof docs, use the exact pinned command from that packet. The current `0.1.0-alpha.16` packet uses the public `--ci` spelling; `--no-ai` remains only as a deprecated compatibility alias.
+If you arrived here from the external first-user proof docs, use the exact pinned command from that packet. The current `0.1.0-alpha.17` packet uses the public `--ci` spelling; `--no-ai` remains only as a deprecated compatibility alias.
 
 ## `anvil drift`
 
