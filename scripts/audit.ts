@@ -47,6 +47,7 @@ import {
   loadAuditConfig,
 } from "./lib/audit-config.ts";
 import { resolveProjectName } from "./lib/project-name.ts";
+import { hasWhy } from "./lib/rationale.ts";
 import { type CliSignals, detectCliSignals } from "./lib/cli-detectors.ts";
 import {
   type GuardrailScoreResult,
@@ -2970,9 +2971,8 @@ export function analyzeRuleFile(
       /^##\s+Why/im.test(content) ||
       /^>\s+Why/im.test(content);
     const hasLastValidated = /Last validated:/i.test(content);
-    const hasWhySection =
-      /^##\s+(Why|Background|Motivation|Context)/im.test(content) ||
-      /\*\*Why\*\*/i.test(content);
+    // Detects stated rationale, not a heading named Why — see scripts/lib/rationale.ts.
+    const hasWhySection = hasWhy(content);
     const hasExamplesSection = /```|DO:|DON'T:|✅|❌/i.test(content);
     const linesOverBudget = sizeLines > recommendedLineBudget(relativePath);
 
