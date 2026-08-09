@@ -200,3 +200,13 @@ test("a file we have committed to is still ours to date", () => {
 
   expect(dateCheck(files)?.status).toBe("fail");
 });
+
+test("no governance files at all still scores zero, unlike all-exempt", () => {
+  // The other half of the emptiness split, and previously covered only
+  // indirectly by a golden fixture. A missing surface is Governance Surface's
+  // failure to report; it must not be laundered into a date-hygiene pass.
+  const check = dateCheck([]);
+
+  expect(check?.status).toBe("fail");
+  expect(check?.detail).toContain("0%");
+});

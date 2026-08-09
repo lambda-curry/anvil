@@ -254,15 +254,25 @@ function evaluateBranches(state: GitState): Finding[] {
           totalCommits: branch.totalCommits,
         },
       });
-    } else if (!branch.isDefault && (branch.aheadOfDefault ?? 0) > 0) {
+    } else if (
+      !branch.isDefault &&
+      (branch.aheadOfDefault ?? 0) > 0 &&
+      // Ahead-of-default calls merged work unmerged forever once the merge
+      // rewrote SHAs, which rebase and squash merges both do. Anvil's own repo
+      // reported eight such branches, seven of them fully merged. Patch-id
+      // equivalence is what separates them.
+      branch.unappliedCommits !== 0
+    ) {
+      const unapplied = branch.unappliedCommits ?? branch.aheadOfDefault;
       findings.push({
         code: FINDING_CODES.branchNotOnDefault,
         severity: "low",
         subject: branchLabel(branch),
-        message: `Branch \`${branch.name}\` has ${branch.aheadOfDefault} commit(s) not reachable from \`${state.defaultBranch.name}\` (and is ${branch.behindDefault} behind).`,
+        message: `Branch \`${branch.name}\` has ${unapplied} commit(s) with no equivalent on \`${state.defaultBranch.name}\` (and is ${branch.behindDefault} behind).`,
         details: {
           branch: branch.name,
           ahead: branch.aheadOfDefault,
+          unapplied: branch.unappliedCommits,
           behind: branch.behindDefault,
           defaultBranch: state.defaultBranch.name,
         },
