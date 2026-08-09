@@ -23,6 +23,11 @@ import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { discoverRuleSurfaceFiles } from "./lib/rule-surface.ts";
 import { resolveProjectName } from "./lib/project-name.ts";
+import {
+  buildResolutionContext,
+  pointsIntoSkippedDir,
+  resolvesSomewhere,
+} from "./lib/path-resolution.ts";
 
 export interface DriftIssue {
   type: "path" | "glob" | "command" | "date" | "coverage-gap";
@@ -738,6 +743,7 @@ export function detectPathDrift(
     basename(parentRoot) === "projects"
       ? resolve(parentRoot, "..")
       : parentRoot;
+  const resolutionContext = buildResolutionContext(projectRoot);
 
   for (const filePath of files) {
     if (basename(filePath) === "drift-report.md") {
@@ -836,6 +842,13 @@ export function detectPathDrift(
           line: btLine,
           detail: contextNote,
         });
+        continue;
+      }
+
+      if (
+        pointsIntoSkippedDir(btPath) ||
+        resolvesSomewhere(btPath, resolutionContext)
+      ) {
         continue;
       }
 
@@ -946,6 +959,13 @@ export function detectPathDrift(
           line,
           detail: contextNote,
         });
+        continue;
+      }
+
+      if (
+        pointsIntoSkippedDir(reference) ||
+        resolvesSomewhere(reference, resolutionContext)
+      ) {
         continue;
       }
 
