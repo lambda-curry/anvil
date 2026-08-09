@@ -16,6 +16,7 @@
  * reported.
  */
 
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
@@ -27,7 +28,43 @@ export type ResolutionContext = {
   packageNames: Set<string>;
   /** tsconfig `paths` prefixes, e.g. `~/` -> [`<root>/app/`]. */
   aliases: Array<{ prefix: string; targets: string[] }>;
+  /** Every tracked path, for the unique-suffix fallback. */
+  trackedFiles: string[];
 };
+
+/**
+ * A reference that names the tail of exactly one tracked file.
+ *
+ * `steps/create-order-note-step.ts` lives at
+ * `apps/medusa/src/workflows/order-note/steps/create-order-note-step.ts` — far
+ * below any workspace package root, so no frame resolves it, yet the file
+ * plainly exists.
+ *
+ * The match must be UNIQUE. 360training alone has 221 two-segment suffixes
+ * shared by more than one file, so an ambiguous tail is not evidence that this
+ * particular reference is right — and silencing a real defect because some
+ * unrelated file happens to end the same way is the direction `ancestorRoots`
+ * already failed in once.
+ */
+export function matchesExactlyOneTrackedFile(
+  reference: string,
+  trackedFiles: readonly string[],
+): boolean {
+  if (reference.startsWith("/") || !reference.includes("/")) {
+    return false;
+  }
+  const tail = `/${reference}`;
+  let hits = 0;
+  for (const file of trackedFiles) {
+    if (file === reference || file.endsWith(tail)) {
+      hits++;
+      if (hits > 1) {
+        return false;
+      }
+    }
+  }
+  return hits === 1;
+}
 
 /** Directories drift never scans, so a reference into one cannot resolve. */
 export const UNRESOLVABLE_DIRS = [
@@ -200,6 +237,18 @@ function collectAliases(
   return aliases;
 }
 
+/** Tracked paths, repo-relative. Empty outside a git repo. */
+function listTrackedFiles(repoRoot: string): string[] {
+  const result = spawnSync("git", ["-C", repoRoot, "ls-files"], {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    return [];
+  }
+  return (result.stdout ?? "").split("\n").filter(Boolean);
+}
+
 export function buildResolutionContext(repoRoot: string): ResolutionContext {
   const packageRoots = [
     ...new Set(
@@ -213,6 +262,7 @@ export function buildResolutionContext(repoRoot: string): ResolutionContext {
     roots,
     packageNames: collectPackageNames([repoRoot, ...packageRoots]),
     aliases: collectAliases(repoRoot, packageRoots),
+    trackedFiles: listTrackedFiles(repoRoot),
   };
 }
 
@@ -270,6 +320,12 @@ export function resolvesSomewhere(
   }
 
   const candidates = [reference];
+  // Claude's import sigil: `@.agents/commands/research.md` is a path with an `@`
+  // in front, not a package specifier. A scoped specifier never has `.` or `/`
+  // straight after the `@`, so the two shapes do not overlap.
+  if (/^@[./]/.test(reference)) {
+    candidates.push(reference.slice(1));
+  }
   // The unbackticked scanner is anchored on `\b`, and there is no word boundary
   // between a delimiter and a leading dot — so `(mdc:.cursor/rules/x.mdc)` and
   // `(./.config/y)` both arrive here with the dot already gone, naming a path
@@ -280,12 +336,13 @@ export function resolvesSomewhere(
     candidates.push(`.${reference}`);
   }
 
-  return candidates.some((candidate) =>
-    context.roots.some(
-      (root) =>
-        existsSync(resolve(root, candidate)) ||
-        resolveWithExtensions(resolve(root, candidate)),
-    ),
+  return candidates.some(
+    (candidate) =>
+      context.roots.some(
+        (root) =>
+          existsSync(resolve(root, candidate)) ||
+          resolveWithExtensions(resolve(root, candidate)),
+      ) || matchesExactlyOneTrackedFile(candidate, context.trackedFiles),
   );
 }
 
