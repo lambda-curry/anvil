@@ -1601,11 +1601,31 @@ export function assessStageA(
   const oversizedCount = inventory.canonicalFiles.filter(
     (f) => f.linesOverBudget,
   ).length;
+  // Governance metadata is asked of documents that govern. A reference catalog
+  // read on demand and a pointer to the canonical document are neither, so they
+  // leave the denominator rather than being counted and forgiven. Scoped to this
+  // coverage figure deliberately — both still belong to the scoring surface for
+  // every other check.
+  const exemptFromGovernanceMetadata =
+    inventory.canonicalGovernanceFiles.filter(
+      (file) => isPatternDocPath(file.relativePath) || file.importsRootMirror,
+    );
+  // If every governance file is exempt there is nothing left to measure, and an
+  // empty denominator must not read as 0% — that would fail a repo for having
+  // only the document kinds we just decided not to ask. Fall back to the full
+  // set, which is exactly the pre-exemption behaviour.
+  const datedCandidates =
+    exemptFromGovernanceMetadata.length === governanceCount
+      ? inventory.canonicalGovernanceFiles
+      : inventory.canonicalGovernanceFiles.filter(
+          (file) => !exemptFromGovernanceMetadata.includes(file),
+        );
+  const datedExempt = governanceCount - datedCandidates.length;
   const datedCoverage =
-    governanceCount === 0
+    datedCandidates.length === 0
       ? 0
-      : inventory.canonicalGovernanceFiles.filter((f) => f.hasLastValidated)
-          .length / governanceCount;
+      : datedCandidates.filter((f) => f.hasLastValidated).length /
+        datedCandidates.length;
 
   const checks: StageCheck[] = [];
 
@@ -1655,7 +1675,13 @@ export function assessStageA(
     label: "Validation Date Coverage",
     status:
       datedCoverage < 0.3 ? "fail" : datedCoverage < 0.7 ? "warn" : "pass",
-    detail: `${Math.round(datedCoverage * 100)}% of governance files include Last validated`,
+    // Name the exemptions, so a coverage figure that rose is auditable rather
+    // than mysterious.
+    detail:
+      `${Math.round(datedCoverage * 100)}% of governance files include Last validated` +
+      (datedExempt > 0
+        ? ` (excludes ${datedExempt} reference/pointer doc${datedExempt === 1 ? "" : "s"})`
+        : ""),
   });
 
   checks.push({
