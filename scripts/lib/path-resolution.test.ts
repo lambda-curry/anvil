@@ -104,3 +104,42 @@ test("a genuinely absent path still resolves nowhere", () => {
   expect(resolvesSomewhere("apps/todo-app/TESTING.md", context)).toBe(false);
   expect(resolvesSomewhere("src/does-not-exist.ts", context)).toBe(false);
 });
+
+test("an unrelated sibling repo is not an ancestor frame", () => {
+  // CodeRabbit on #44: accepting every parent let a genuinely missing path
+  // resolve against an unrelated repo further up and vanish from the report.
+  const parent = mkdtempSync(join(tmpdir(), "anvil-siblings-"));
+  created.push(parent);
+  mkdirSync(join(parent, "other-repo", "src"), { recursive: true });
+  writeFileSync(join(parent, "other-repo", "src", "secret.ts"), "");
+  const repo = join(parent, "mine");
+  mkdirSync(repo, { recursive: true });
+  writeFileSync(join(repo, "package.json"), JSON.stringify({ name: "mine" }));
+
+  const context = buildResolutionContext(repo);
+
+  // The plain parent holds no package.json/.git, so it is not a frame.
+  expect(resolvesSomewhere("other-repo/src/secret.ts", context)).toBe(false);
+});
+
+test("non-tilde aliases and baseUrl are honoured", () => {
+  const root = mkdtempSync(join(tmpdir(), "anvil-alias-"));
+  created.push(root);
+  mkdirSync(join(root, "src", "lib"), { recursive: true });
+  writeFileSync(join(root, "src", "lib", "util.ts"), "");
+  writeFileSync(
+    join(root, "package.json"),
+    JSON.stringify({ name: "aliased" }),
+  );
+  writeFileSync(
+    join(root, "tsconfig.json"),
+    JSON.stringify({
+      compilerOptions: { baseUrl: "./src", paths: { "@/*": ["./lib/*"] } },
+    }),
+  );
+
+  const context = buildResolutionContext(root);
+
+  expect(resolvesSomewhere("@/util.ts", context)).toBe(true);
+  expect(resolvesSomewhere("@/missing.ts", context)).toBe(false);
+});
