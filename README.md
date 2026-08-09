@@ -6,11 +6,11 @@ AI rules and engineering guardrails audit engine. Anvil optimizes project outcom
 
 Rules and guardrails in AI-assisted codebases accumulate organically. Contradictions emerge. Patterns go stale. Safety nets drift. Repeated PR feedback never becomes a durable standard. Anvil closes that loop.
 
-- **Audit existing rules** — score for coverage gaps, stale references, conflicts, sizing issues, and format compliance
+- **Audit existing rules** — score for coverage gaps, stale references, conflicts, sizing issues, and format compliance; includes coverage gap analysis against community baseline categories
 - **Score engineering guardrails** — measure readiness across CI, type safety, test depth, code quality, review ownership, security, and drift resilience
 - **Bootstrap from scratch** — generate starter rule sets from tech stack analysis (package.json, tsconfig, framework config)
 - **Mine PR history** — surface recurring review feedback that should become rules
-- **Drift detection** — flag stale path references, broken glob patterns, rules with outdated validation dates, and command drift; coverage gap analysis is planned (Phase 2)
+- **Drift detection** — flag stale path references, broken glob patterns, rules with outdated validation dates, and command drift
 - **Shape report-quality outputs** — make audit results easier to act on and safer for downstream consumers
 - **Community intelligence** — track public ai-rules repos and relevant upstream findings
 

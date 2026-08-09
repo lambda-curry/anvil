@@ -66,7 +66,7 @@ test("does not mistake a planned future phase for a stale shipped claim", () => 
   mkdirSync(join(fixtureRoot, "docs"), { recursive: true });
   writeFileSync(
     join(fixtureRoot, "README.md"),
-    "Drift detection ships path, glob, date, and command checks; coverage gap analysis is planned.\n",
+    "Drift detection ships path, glob, date, and command checks; bootstrap generation is planned.\n",
   );
 
   try {

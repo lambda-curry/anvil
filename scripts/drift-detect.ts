@@ -1325,7 +1325,6 @@ export function buildReport(
     `- Glob drift: ${counts.glob} issues`,
     `- Command drift: ${counts.command} issues`,
     `- Date drift: ${counts.date} issues`,
-    "- Coverage gap: not implemented (Phase 2)",
     `- **Skip dirs:** ${skipDirList}`,
     ...(ignoreMatchers.length > 0
       ? [`- **Anvil ignore patterns:** ${ignorePatternList}`]
@@ -1357,7 +1356,6 @@ export function printConsoleSummary(
   console.log(`- Non-drift path notes: ${notes.length}`);
   console.log(`- Glob drift: ${counts.glob}`);
   console.log(`- Command drift: ${counts.command}`);
-  console.log("- Coverage gap: not implemented (Phase 2)");
   console.log(`Report written to: ${outputPath}`);
 }
 

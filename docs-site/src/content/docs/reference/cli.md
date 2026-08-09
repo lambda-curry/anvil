@@ -48,7 +48,7 @@ anvil drift --target ./my-repo [options]
 | `--output <file>` | Write report to a specific path |
 | `--skip-dirs <dir1,dir2,...>` | Comma-separated directory names to exclude from scanning |
 
-Checks path existence, glob pattern resolution, broken symlinks, validation dates, and command availability. Coverage gap analysis is planned.
+Checks path existence, glob pattern resolution, broken symlinks, validation dates, and command availability.
 The positional form `anvil drift ./my-repo` remains supported for compatibility.
 
 ## `anvil bootstrap`
