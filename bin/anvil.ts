@@ -31,12 +31,13 @@ function getVersion(repoRoot: string): string {
 
 const SUBCOMMAND_HELP: Record<string, string> = {
   audit:
-    "Usage: anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]\n\n" +
+    "Usage: anvil audit --target <path> [--output <file>] [--artifacts-dir <dir>] [--skip-bootstrap] [--skip-dirs <d1,d2,...>] [--json] [--ci] [--ai-provider <provider>] [--ai-model <model>] [--ai-timeout-ms <ms>] [--force-stage-b]\n\n" +
     "Options:\n" +
     "  --target <path>         Path to project to audit (required)\n" +
     "  --output <file>         Write report to this path (default: docs/audits/<name>-<date>.md)\n" +
     "  --artifacts-dir <dir>   Write drift/bootstrap artifacts here (default: docs/audits/artifacts/<name>-<date>)\n" +
     "  --skip-bootstrap        Skip bootstrap stack detection\n" +
+    "  --skip-dirs <d1,d2,..>  Comma-separated directory names to exclude from scanning\n" +
     "  --json                  Output JSON instead of markdown report\n" +
     "  --ci                    Run deterministic structural lint mode (local-only heuristic suggestions)\n" +
     "  --ai-provider <name>    AI provider: auto | openai | codex-cli | claude-code | gemini-cli | opencode | heuristic\n" +
