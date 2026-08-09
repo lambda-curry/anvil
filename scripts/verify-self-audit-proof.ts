@@ -53,6 +53,18 @@ type CliOptions = {
   retainDir: string | null;
 };
 
+/** One row of the PR-mined theme table: `| Naming | 9 comments | 3 PRs (medium) | low | … |`. */
+const MINED_THEME_ROW_PATTERN =
+  /^\| .+? \| \d+ comments \| \d+ PRs \([a-z]+\) \| [a-z]+ \|.*$/gm;
+
+const MINED_THEME_ROW = "| <normalized PR-mined theme row> |";
+
+/** Consecutive placeholder rows, so the NUMBER of themes stops mattering too. */
+const COLLAPSE_MINED_THEME_ROWS = new RegExp(
+  `(?:${MINED_THEME_ROW.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}\n?)+`,
+  "g",
+);
+
 function normalizeVolatileReportFields(reportText: string): string {
   return (
     reportText
@@ -73,10 +85,16 @@ function normalizeVolatileReportFields(reportText: string): string {
       // already normalized. Anvil mines its own PR history, so these move whenever anyone opens
       // a PR here and the packet needs a hand refresh: 20->22, then 22->24 days later.
       // Normalizing them ends the chore.
-      .replaceAll(
-        /^\| (.+?) \| \d+ comments \| \d+ PRs \([a-z]+\) \| [a-z]+ \|/gm,
-        "| $1 | <normalized> comments | <normalized> PRs (<normalized>) | <normalized> |",
-      )
+      //
+      // The theme SET is volatile too, not only the counts inside each row. Normalizing just the
+      // numbers still broke the moment a code review pushed a fifth theme over its threshold:
+      // the rows shifted, and "Documentation" was compared against a freshly inserted "Error
+      // Handling". Which themes appear is derived wholly from live GitHub comments and can differ
+      // between two runs minutes apart — a branch build and the merge build of the same commit
+      // disagreed exactly that way. So the block collapses to one placeholder. What this proof
+      // exists to protect — scores, stages, checks, every deterministic line — is untouched.
+      .replaceAll(MINED_THEME_ROW_PATTERN, MINED_THEME_ROW)
+      .replace(COLLAPSE_MINED_THEME_ROWS, `${MINED_THEME_ROW}\n`)
   );
 }
 
