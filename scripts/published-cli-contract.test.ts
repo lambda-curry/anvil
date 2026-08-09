@@ -204,12 +204,17 @@ test("repo README and public installation guide match the published launcher con
     "### `npx` (still launches the Bun-native CLI)",
   );
 
+  // The contract pinned here is bunx-not-npx. The command it pinned audited
+  // ./some-typescript-repo — a path that never exists, so the documented
+  // zero-install proof could only ever fail — using the deprecated `--no-ai`
+  // alias. Both are corrected; the launcher contract itself is unchanged.
   expect(releasing).toContain(
-    "bunx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --no-ai",
+    "bunx @lambdacurry/anvil audit --target ./saffron-starter --ci --output ./report.md",
   );
   expect(releasing).not.toContain(
-    "npx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --no-ai",
+    "npx @lambdacurry/anvil audit --target ./saffron-starter",
   );
+  expect(releasing).not.toContain("./some-typescript-repo");
 });
 
 test("packed npm artifact keeps the runtime and proof surfaces while excluding internal test baggage", () => {

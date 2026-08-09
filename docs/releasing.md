@@ -79,9 +79,13 @@ Useful when a previous run failed for transient reasons (npm registry hiccup, ru
 # Check what's on npm under the alpha tag:
 npm view @lambdacurry/anvil version    # or: curl -s https://registry.npmjs.org/@lambdacurry/anvil | jq .'dist-tags'
 
-# Test zero-install against a sample repo:
-mkdir /tmp/anvil-zero-install && cd /tmp/anvil-zero-install
-bunx @lambdacurry/anvil audit --target ./some-typescript-repo --output ./report.md --no-ai
+# Test zero-install against a sample repo. Clone a real one — an earlier
+# spelling here audited a placeholder path that never exists, so this proof
+# could only ever fail.
+tmpdir=$(mktemp -d /tmp/anvil-zero-install-XXXXXX)
+git clone --depth=1 https://github.com/lambda-curry/saffron-starter.git "$tmpdir/saffron-starter"
+cd "$tmpdir"
+bunx @lambdacurry/anvil audit --target ./saffron-starter --ci --output ./report.md
 ```
 
 Confirm:

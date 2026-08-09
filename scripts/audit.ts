@@ -48,6 +48,12 @@ import {
 } from "./lib/audit-config.ts";
 import { resolveProjectName } from "./lib/project-name.ts";
 import { hasWhy } from "./lib/rationale.ts";
+import {
+  classifyLoadTier,
+  importsRootMirror,
+  type LoadTier,
+  summarizeLoad,
+} from "./lib/rule-loading.ts";
 import { type CliSignals, detectCliSignals } from "./lib/cli-detectors.ts";
 import {
   type GuardrailScoreResult,
@@ -84,6 +90,10 @@ export type RuleFile = {
   loadingPatterns?: string[];
   authorship: RuleAuthorship;
   fingerprint: string;
+  /** When this file is actually loaded — see scripts/lib/rule-loading.ts. */
+  loadTier: LoadTier;
+  /** Root CLAUDE.md that `@AGENTS.md`-imports rather than copying. */
+  importsRootMirror: boolean;
 };
 
 export type RuleAuthorship = "governance" | "generated";
@@ -837,13 +847,37 @@ function requiresExplicitTier(ruleFile: RuleFile): boolean {
   return !isPatternDocPath(ruleFile.relativePath);
 }
 
-function countsAsAlwaysOn(ruleFile: RuleFile): boolean {
-  if (
-    isPatternDocPath(ruleFile.relativePath) ||
-    isBootstrapTemplatePath(ruleFile.relativePath)
-  )
-    return false;
-  return ruleFile.hasAlwaysApply || !ruleFile.hasGlob;
+/**
+ * Rule files whose volume is attributable to this repo's own instruction load.
+ *
+ * Pattern docs and bootstrap templates ship as reference material, so they were
+ * never part of the loaded surface.
+ */
+/** Trailing " (+N chain-loaded, +N path-scoped, +N mirror twin)" when non-zero. */
+function describeLazyLoad(load: {
+  chainLoadedLines: number;
+  pathScopedLines: number;
+  mirrorDedupedLines: number;
+}): string {
+  const parts: string[] = [];
+  if (load.chainLoadedLines > 0) {
+    parts.push(`${load.chainLoadedLines} chain-loaded`);
+  }
+  if (load.pathScopedLines > 0) {
+    parts.push(`${load.pathScopedLines} path-scoped`);
+  }
+  if (load.mirrorDedupedLines > 0) {
+    parts.push(`${load.mirrorDedupedLines} mirror twin`);
+  }
+  return parts.length > 0 ? ` (excludes ${parts.join(", ")})` : "";
+}
+
+function countableLoadFiles(ruleFiles: RuleFile[]): RuleFile[] {
+  return ruleFiles.filter(
+    (ruleFile) =>
+      !isPatternDocPath(ruleFile.relativePath) &&
+      !isBootstrapTemplatePath(ruleFile.relativePath),
+  );
 }
 
 const TOOL_NATIVE_SURFACE_ROOTS = [
@@ -1042,9 +1076,9 @@ function classifySurfacePosture(
   }
 
   const projectFiles = collectWorkingProjectFiles(projectRoot);
-  const alwaysOnLines = scoringRuleFiles
-    .filter((ruleFile) => countsAsAlwaysOn(ruleFile))
-    .reduce((sum, ruleFile) => sum + ruleFile.sizeLines, 0);
+  const alwaysOnLines = summarizeLoad(
+    countableLoadFiles(scoringRuleFiles),
+  ).alwaysOnLines;
   const nativeLoadingFidelity = ratio(
     scoringRuleFiles.filter(
       (ruleFile) => ruleFile.hasAlwaysApply || ruleFile.hasGlob,
@@ -2107,9 +2141,8 @@ export function assessStageD(
   scoringRuleFiles: RuleFile[],
   surfacePosture: SurfacePostureAssessment,
 ): { stage: StageResult; metrics: OverkillMetrics } {
-  const alwaysOnLines = scoringRuleFiles
-    .filter((ruleFile) => countsAsAlwaysOn(ruleFile))
-    .reduce((sum, ruleFile) => sum + ruleFile.sizeLines, 0);
+  const load = summarizeLoad(countableLoadFiles(scoringRuleFiles));
+  const alwaysOnLines = load.alwaysOnLines;
   const lowYieldRules = scoringRuleFiles.filter(
     (ruleFile) => !ruleFile.hasWhySection || !ruleFile.hasExamplesSection,
   ).length;
@@ -2178,7 +2211,9 @@ export function assessStageD(
       label: "Context Load Pressure",
       status:
         loadPressure > 0.7 ? "fail" : loadPressure > 0.4 ? "warn" : "pass",
-      detail: `${alwaysOnLines} always-on lines across scoring surface`,
+      // Name the lazy volume rather than dropping it: a reader who sees the
+      // number fall needs to know where the rest of the surface went.
+      detail: `${alwaysOnLines} always-on lines across scoring surface${describeLazyLoad(load)}`,
     },
     {
       id: "low-yield-rules",
@@ -2992,6 +3027,14 @@ export function analyzeRuleFile(
       loadingPatterns,
       authorship,
       fingerprint,
+      loadTier: classifyLoadTier({
+        relativePath,
+        sizeLines,
+        hasAlwaysApply,
+        hasGlob,
+        content,
+      }),
+      importsRootMirror: importsRootMirror(content),
     };
   } catch {
     return null;

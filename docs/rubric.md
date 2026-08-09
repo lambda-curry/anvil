@@ -238,6 +238,14 @@ alwaysApply: false
 
 **Benefit:** These rules carry full detail without burning the always-on budget. A 150-line testing guide costs nothing when you're editing a React component.
 
+*How the audit measures this:* Context Load Pressure counts only what a single tool loads at session start. Three tiers —
+
+- **always-on** — root `AGENTS.md` / `CLAUDE.md`, and tool-native rules with no path scoping. Counted.
+- **chain-loaded** — nested `AGENTS.md` / `CLAUDE.md`. Codex reads the git-root→cwd chain, so these load only when you work inside that subtree; Claude Code does not read them. Not counted.
+- **path-scoped** — rules carrying `paths:`, `globs:`, or `fileMatching:` frontmatter. Loaded on demand. Not counted.
+
+A generated `AGENTS.md`/`CLAUDE.md` pair is one document stored twice, so only the heavier side counts — Codex reads one and Claude Code the other, never both. A `CLAUDE.md` that `@AGENTS.md`-imports is the exception: a shim is additive, so its lines are added rather than substituted. The excluded volume is reported alongside the number, so a repo that keeps everything resident at root still pays full price.
+
 ### Tier 3: Apply Intelligently — Agent-Discretion (v1.7)
 
 Some tools and frameworks support a fourth loading mode that falls between glob-matched and always-on: the rule is always *available* to the model, but the model decides whether it is relevant to the current task.
