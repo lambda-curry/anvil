@@ -520,3 +520,43 @@ test("summary.passed tracks the configured threshold", () => {
     buildReport(state, findings, { failOn: "medium" }).summary.passed,
   ).toBe(false);
 });
+
+test("a rebase-merged branch is not reported as unmerged", () => {
+  // Anvil's own repo reported eight branches as not-on-default; seven were
+  // fully merged. A rebase or squash merge rewrites SHAs, so ancestry calls the
+  // work unmerged forever while its patches sit on main.
+  const { root } = makeRepoWithRemote();
+  gitOrThrow(root, ["checkout", "--quiet", "-b", "feature"]);
+  const sha = commitFile(root, "feature.txt", "work\n", "feat: the work");
+  gitOrThrow(root, ["checkout", "--quiet", "main"]);
+  // Move main first, so replaying the patch lands it under a NEW sha — without
+  // this the cherry-pick reproduces the identical commit and nothing diverges.
+  commitFile(root, "unrelated.txt", "other\n", "chore: unrelated");
+  gitOrThrow(root, ["cherry-pick", sha]);
+
+  const state = collectGitState({ repoRoot: root });
+  const feature = state.branches.find((b) => b.name === "feature");
+
+  expect(feature?.aheadOfDefault).toBeGreaterThan(0);
+  expect(feature?.unappliedCommits).toBe(0);
+  expect(evaluateFindings(state, STALE).map((f) => f.code)).not.toContain(
+    FINDING_CODES.branchNotOnDefault,
+  );
+});
+
+test("a genuinely unmerged branch is still reported", () => {
+  // The guard against silencing the check entirely.
+  const { root } = makeRepoWithRemote();
+  gitOrThrow(root, ["checkout", "--quiet", "-b", "feature"]);
+  commitFile(root, "feature.txt", "work\n", "feat: never landed");
+  gitOrThrow(root, ["checkout", "--quiet", "main"]);
+
+  const state = collectGitState({ repoRoot: root });
+  const feature = state.branches.find((b) => b.name === "feature");
+
+  expect(feature?.unappliedCommits).toBe(1);
+  const finding = evaluateFindings(state, STALE).find(
+    (f) => f.code === FINDING_CODES.branchNotOnDefault,
+  );
+  expect(finding?.message).toContain("no equivalent on");
+});

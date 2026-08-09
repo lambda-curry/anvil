@@ -34,6 +34,8 @@ export const READ_ONLY_GIT_COMMANDS: Readonly<Record<string, ReadOnlyRule>> =
   Object.freeze({
     "cat-file": {},
     "check-ignore": {},
+    // Reports which commits already have an equivalent upstream. Read-only.
+    cherry: {},
     config: { subVerbs: ["--get", "--get-all", "--list"] },
     diff: {},
     "for-each-ref": {},
@@ -269,6 +271,15 @@ export type BranchInfo = {
   isDefault: boolean;
   /** Null when the branch shares no merge base with the default branch. */
   aheadOfDefault: number | null;
+  /**
+   * Commits ahead of the default that have NO equivalent patch there.
+   *
+   * Ahead-of-default counts merged work as unmerged forever once the merge
+   * rewrote SHAs, which rebase and squash merges both do. `git cherry` compares
+   * patch ids instead, so a rebase-merged branch reads as zero. Null when the
+   * comparison could not run.
+   */
+  unappliedCommits: number | null;
   behindDefault: number | null;
   /** Total commits on each side; meaningful when histories are unrelated. */
   totalCommits: number;
@@ -835,6 +846,7 @@ function collectBranches(
 
     let aheadOfDefault: number | null = null;
     let behindDefault: number | null = null;
+    let unappliedCommits: number | null = null;
     let sharesHistoryWithDefault = true;
 
     if (!isDefault && defaultRef) {
@@ -849,10 +861,22 @@ function collectBranches(
           behindDefault = counts.left;
           aheadOfDefault = counts.right;
         }
+        if ((aheadOfDefault ?? 0) > 0) {
+          // `+` marks a commit with no equivalent patch on the default branch.
+          const cherry = git(["-C", repoRoot, "cherry", defaultRef, name]);
+          if (cherry.ok) {
+            unappliedCommits = lines(cherry.stdout).filter((line) =>
+              line.startsWith("+"),
+            ).length;
+          }
+        } else {
+          unappliedCommits = 0;
+        }
       }
     } else if (isDefault) {
       aheadOfDefault = 0;
       behindDefault = 0;
+      unappliedCommits = 0;
     }
 
     let aheadOfUpstream: number | null = null;
@@ -873,6 +897,7 @@ function collectBranches(
       isDefault,
       aheadOfDefault,
       behindDefault,
+      unappliedCommits,
       totalCommits,
       sharesHistoryWithDefault,
       aheadOfUpstream,
