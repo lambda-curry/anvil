@@ -133,7 +133,16 @@ function ancestorRoots(repoRoot: string): string[] {
     if (!current || current === "/" || basename(current) === "") {
       break;
     }
-    roots.push(current);
+    // Only real roots. Accepting every parent would let a genuinely missing
+    // path resolve against an unrelated sibling repo further up the tree and
+    // disappear from the report — trading a false positive for a false
+    // negative, which is the worse of the two here.
+    if (
+      existsSync(join(current, "package.json")) ||
+      existsSync(join(current, ".git"))
+    ) {
+      roots.push(current);
+    }
     current = dirname(current);
   }
   return roots;
@@ -159,11 +168,19 @@ function collectAliases(
   for (const root of [repoRoot, ...packageRoots]) {
     for (const file of ["tsconfig.json", "tsconfig.base.json"]) {
       const config = readJson(join(root, file));
-      const paths = (config?.compilerOptions as { paths?: unknown } | undefined)
-        ?.paths;
+      const compilerOptions = config?.compilerOptions as
+        | { paths?: unknown; baseUrl?: unknown }
+        | undefined;
+      const paths = compilerOptions?.paths;
       if (!paths || typeof paths !== "object") {
         continue;
       }
+      // Alias targets are relative to baseUrl when it is set, not to the
+      // tsconfig's own directory.
+      const base =
+        typeof compilerOptions?.baseUrl === "string"
+          ? resolve(root, compilerOptions.baseUrl)
+          : root;
       for (const [key, value] of Object.entries(
         paths as Record<string, unknown>,
       )) {
@@ -173,7 +190,7 @@ function collectAliases(
         const prefix = key.replace(/\*$/, "");
         const targets = value
           .filter((v): v is string => typeof v === "string")
-          .map((v) => resolve(root, v.replace(/\*$/, "")));
+          .map((v) => resolve(base, v.replace(/\*$/, "")));
         if (prefix && targets.length > 0) {
           aliases.push({ prefix, targets });
         }
@@ -221,23 +238,28 @@ export function resolvesSomewhere(
     }
   }
 
+  // Every declared alias, not only `~` — `@/components/x` and `#/lib/y` are as
+  // common and were being reported as drift.
+  for (const alias of context.aliases) {
+    if (!reference.startsWith(alias.prefix)) {
+      continue;
+    }
+    const aliasRest = reference.slice(alias.prefix.length);
+    if (
+      alias.targets.some(
+        (target) =>
+          existsSync(join(target, aliasRest)) ||
+          resolveWithExtensions(join(target, aliasRest)),
+      )
+    ) {
+      return true;
+    }
+  }
+
+  // Only after aliases: `~` is a home directory in some of these repos and a
+  // tsconfig alias in others.
   if (reference.startsWith("~")) {
     const rest = reference.slice(1).replace(/^\//, "");
-    for (const alias of context.aliases) {
-      if (!alias.prefix.startsWith("~")) {
-        continue;
-      }
-      const aliasRest = reference.slice(alias.prefix.length);
-      if (
-        alias.targets.some(
-          (target) =>
-            existsSync(join(target, aliasRest)) ||
-            resolveWithExtensions(join(target, aliasRest)),
-        )
-      ) {
-        return true;
-      }
-    }
     if (existsSync(join(homedir(), rest))) {
       return true;
     }
