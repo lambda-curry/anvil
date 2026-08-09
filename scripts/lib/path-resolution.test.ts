@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import {
   buildResolutionContext,
+  matchesExactlyOneTrackedFile,
   pointsIntoSkippedDir,
   resolvesSomewhere,
 } from "./path-resolution.ts";
@@ -142,4 +143,42 @@ test("non-tilde aliases and baseUrl are honoured", () => {
 
   expect(resolvesSomewhere("@/util.ts", context)).toBe(true);
   expect(resolvesSomewhere("@/missing.ts", context)).toBe(false);
+});
+
+test("a reference naming exactly one tracked file resolves", () => {
+  // 360training cites `steps/create-order-note-step.ts`; the file sits at
+  // apps/medusa/src/workflows/order-note/steps/... — below every frame.
+  const files = [
+    "apps/medusa/src/workflows/order-note/steps/create-order-note-step.ts",
+    "apps/web/app/routes/about.tsx",
+  ];
+
+  expect(
+    matchesExactlyOneTrackedFile("steps/create-order-note-step.ts", files),
+  ).toBe(true);
+  expect(matchesExactlyOneTrackedFile("apps/todo-app/TESTING.md", files)).toBe(
+    false,
+  );
+});
+
+test("an ambiguous tail is not evidence and does not resolve", () => {
+  // 360training alone has 221 two-segment suffixes shared by several files.
+  // Silencing on an ambiguous match is how a real defect disappears.
+  const files = ["apps/a/src/index.ts", "apps/b/src/index.ts"];
+
+  expect(matchesExactlyOneTrackedFile("src/index.ts", files)).toBe(false);
+  // A bare basename is never enough on its own.
+  expect(matchesExactlyOneTrackedFile("index.ts", files)).toBe(false);
+});
+
+test("Claude's @ import sigil is stripped, scoped specifiers are not", () => {
+  const root = makeMonorepo();
+  const context = buildResolutionContext(root);
+
+  // `@.agents/...` is a path wearing an import sigil.
+  expect(/^@[./]/.test("@.agents/commands/research.md")).toBe(true);
+  // A scoped specifier never has `.` or `/` straight after the `@`, so the two
+  // shapes cannot be confused.
+  expect(/^@[./]/.test("@wt/ui")).toBe(false);
+  expect(resolvesSomewhere("@wt/ui", context)).toBe(true);
 });

@@ -732,6 +732,30 @@ function globToRegex(pattern: string): RegExp | null {
   }
 }
 
+/**
+ * Collapse issues that name the same cited path, keeping the first occurrence.
+ *
+ * The reported file stays the one drift saw first, so the remediation still
+ * points somewhere real.
+ */
+function dedupeByCitedPath(issues: DriftIssue[]): DriftIssue[] {
+  const seenPath = new Set<string>();
+  const deduped: DriftIssue[] = [];
+  for (const issue of issues) {
+    const cited = /Path reference not found: `([^`]+)`/.exec(issue.detail)?.[1];
+    if (cited === undefined) {
+      deduped.push(issue);
+      continue;
+    }
+    if (seenPath.has(cited)) {
+      continue;
+    }
+    seenPath.add(cited);
+    deduped.push(issue);
+  }
+  return deduped;
+}
+
 export function detectPathDrift(
   projectRoot: string,
   files: string[],
@@ -979,7 +1003,13 @@ export function detectPathDrift(
     }
   }
 
-  return { issues, notes };
+  // One broken path cited from a generated mirror is one defect, not three.
+  // atlas reported 9 path issues that were 3 paths seen through
+  // `.cursor/rules/ai-rules-generated-*`, `ai-rules/.generated-ai-rules/*` and
+  // `ai-rules/*` — a single source fix clears all three, so counting them
+  // separately overstates the backlog by the number of surfaces a repo
+  // generates.
+  return { issues: dedupeByCitedPath(issues), notes };
 }
 
 export function daysSince(dateText: string): number | null {
