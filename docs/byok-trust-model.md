@@ -18,7 +18,7 @@ By default, Anvil scans your repo locally, then expects a working AI provider fo
 
 If you want the privacy-first path, run:
 
-> **Current alpha note:** The published `0.1.0-alpha.10` proof packet uses one canonical repo-root `bunx` command with `--ci --output ./anvil-audit.md`. Packaged relative `--target` and `--output` paths still resolve from your shell cwd, so normal repo-relative first-run commands are honest when you use the unpinned command (it tracks the latest published build).
+> **Current alpha note:** The published `0.1.0-alpha.11` proof packet uses one canonical repo-root `bunx` command with `--ci --output ./anvil-audit.md`. Packaged relative `--target` and `--output` paths still resolve from your shell cwd, so normal repo-relative first-run commands are honest when you use the unpinned command (it tracks the latest published build).
 
 ```bash
 # zero-install
