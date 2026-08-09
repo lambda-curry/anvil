@@ -26,6 +26,7 @@
     "scripts/drift-detect.ts",
     "scripts/lib",
     "scripts/mine-pr-rules.ts",
+    "scripts/repo-audit.ts",
     "scripts/verify-first-user-proof.ts",
     "docs/bootstrap-templates",
     "docs/getting-started.md",

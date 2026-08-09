@@ -9,6 +9,13 @@ const SCRIPT_MAP: Record<string, string> = {
   drift: "scripts/drift-detect.ts",
   bootstrap: "scripts/bootstrap-generate.ts",
   "mine-pr": "scripts/mine-pr-rules.ts",
+  repo: "scripts/repo-audit.ts",
+};
+
+// Commands that take a subcommand. `anvil repo` alone is not runnable, and an
+// unknown subcommand must fail here rather than being parsed as a target path.
+const SUBCOMMANDS: Record<string, string[]> = {
+  repo: ["audit"],
 };
 
 function getVersion(repoRoot: string): string {
@@ -47,6 +54,26 @@ const SUBCOMMAND_HELP: Record<string, string> = {
     "Usage: anvil mine-pr <owner/repo> [--limit <N>] [--output <dir>] [--dry-run]\n\n" +
     "Example:\n" +
     "  anvil mine-pr block/ai-rules --limit 100",
+  repo:
+    "Usage: anvil repo audit [--target <path>] [--json] [--ci] [--fail-on <level>]\n" +
+    "                        [--verify-remote] [--remote <name>] [--default-branch <name>]\n" +
+    "                        [--reflog-days <n>] [--stale-fetch-hours <n>]\n" +
+    "                        [--include-unreachable] [--output <file>]\n\n" +
+    "Reports Git state read-only. It never merges, resets, checks out, stashes,\n" +
+    "drops, deletes branches, removes worktrees, prunes, or pushes.\n\n" +
+    "Options:\n" +
+    "  --target <path>          Repository to audit (default: current directory)\n" +
+    "  --json                   Emit the deterministic JSON report instead of human output\n" +
+    "  --ci                     Exit non-zero when findings reach the --fail-on level\n" +
+    "  --fail-on <level>        high | medium | low | info (default: high)\n" +
+    "  --verify-remote          Query the remote to confirm the canonical default branch\n" +
+    "  --include-unreachable    Also fsck for commits reachable from no ref or reflog (slower)\n" +
+    "  --remote <name>          Remote to resolve the default branch from (default: origin)\n" +
+    "  --default-branch <name>  Skip detection and treat this branch as the default\n" +
+    "  --reflog-days <n>        Reflog window for unreachable commits (default: 30)\n" +
+    "  --stale-fetch-hours <n>  Age at which cached remote refs are called stale (default: 24)\n" +
+    "  --output <file>          Also write the report to this path\n\n" +
+    "Exit codes: 0 clean (or findings without --ci), 1 findings at/above --fail-on with --ci, 2 usage or repository error",
 };
 
 function printHelp(version: string): void {
@@ -75,14 +102,36 @@ function printHelp(version: string): void {
   console.log("  drift      Detect drift in rule surfaces");
   console.log("  bootstrap  Generate bootstrap rule draft");
   console.log("  mine-pr    Mine PR review comments for rule candidates");
+  console.log(
+    "  repo       Repository hygiene checks (repo audit — read-only Git state)",
+  );
   console.log("");
   console.log("Examples:");
   console.log("  anvil audit --target /absolute/path/to/my-repo");
+  console.log("  anvil repo audit --target /absolute/path/to/my-repo");
   console.log("  anvil drift --target /absolute/path/to/my-repo");
   console.log(
     "  anvil bootstrap --target /absolute/path/to/my-repo --output /absolute/path/to/bootstrap-draft.md",
   );
   console.log("  anvil mine-pr owner/repo");
+}
+
+function requireValidSubcommand(
+  command: string,
+  subcommand: string | undefined,
+): void {
+  const allowed = SUBCOMMANDS[command];
+  if (!allowed || allowed.includes(subcommand ?? "")) {
+    return;
+  }
+  console.error(
+    subcommand
+      ? `Unknown '${command}' subcommand: ${subcommand}`
+      : `'${command}' requires a subcommand.`,
+  );
+  console.error("");
+  console.error(SUBCOMMAND_HELP[command] ?? "");
+  process.exit(1);
 }
 
 function main(argv: string[]): void {
@@ -118,6 +167,8 @@ function main(argv: string[]): void {
     console.log(SUBCOMMAND_HELP[first] ?? `No help available for '${first}'.`);
     process.exit(0);
   }
+
+  requireValidSubcommand(first, rest[0]);
 
   const proc = Bun.spawnSync(
     ["bun", "run", resolve(repoRoot, script), ...args.slice(1)],
