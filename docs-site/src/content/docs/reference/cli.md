@@ -47,6 +47,9 @@ anvil drift --target ./my-repo [options]
 | `--target <path>` | Path to the repo to scan (required) |
 | `--output <file>` | Write report to a specific path |
 | `--skip-dirs <dir1,dir2,...>` | Comma-separated directory names to exclude from scanning |
+| `--artifacts-dir <dir>` | Write the report into this directory |
+
+The report defaults to `./docs/audits/artifacts/<project>-<date>/drift-report.md`, **relative to your current directory — not to the repo being scanned**. Run it from inside a target repo and the report lands in that repo; pass `--artifacts-dir` or `--output` to put it somewhere deliberate.
 
 Checks path existence, glob pattern resolution, broken symlinks, validation dates, and command availability.
 The positional form `anvil drift ./my-repo` remains supported for compatibility.

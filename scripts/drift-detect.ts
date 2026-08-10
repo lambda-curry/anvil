@@ -150,9 +150,10 @@ function defaultReportOutputPath(projectRoot: string): string {
 
 export function usageAndExit(): never {
   console.error(
-    "Usage: anvil drift --target <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
-      "       anvil drift <project-path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
-      "Default output: docs/audits/artifacts/<project>-<date>/drift-report.md",
+    "Usage: anvil drift --target <project-path> [--skip-dirs dir1,dir2,...] [--artifacts-dir <dir>] [--output <file>]\n" +
+      "       anvil drift <project-path> [--skip-dirs dir1,dir2,...] [--artifacts-dir <dir>] [--output <file>]\n" +
+      "Default output: ./docs/audits/artifacts/<project>-<date>/drift-report.md,\n" +
+      "relative to YOUR CURRENT DIRECTORY — not to the audited repo.",
   );
   process.exit(1);
 }
@@ -161,6 +162,7 @@ export type ParsedArgs = {
   projectPath: string;
   extraSkipDirs: string[];
   outputFile: string | null;
+  artifactsDir: string | null;
 };
 
 export type IgnoreMatcher = {
@@ -172,6 +174,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
   let projectPath: string | null = null;
   let extraSkipDirs: string[] = [];
   let outputFile: string | null = null;
+  let artifactsDir: string | null = null;
 
   for (let i = 2; i < argv.length; i++) {
     const arg = argv[i];
@@ -196,6 +199,14 @@ export function parseArgs(argv: string[]): ParsedArgs {
         .map((d) => d.trim())
         .filter(Boolean);
       i++;
+    } else if (arg === "--artifacts-dir") {
+      const val = argv[i + 1];
+      if (!val || val.startsWith("--")) {
+        console.error("--artifacts-dir requires a directory path");
+        process.exit(1);
+      }
+      artifactsDir = val;
+      i++;
     } else if (arg === "--output") {
       const val = argv[i + 1];
       if (!val || val.startsWith("--")) {
@@ -216,7 +227,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     usageAndExit();
   }
 
-  return { projectPath, extraSkipDirs, outputFile };
+  return { projectPath, extraSkipDirs, outputFile, artifactsDir };
 }
 
 export function collectFiles(root: string): string[] {
@@ -1486,7 +1497,11 @@ export function main(): void {
     return (a.line ?? 0) - (b.line ?? 0);
   });
 
-  const outputPath = args.outputFile ?? defaultReportOutputPath(projectRoot);
+  const outputPath =
+    args.outputFile ??
+    (args.artifactsDir
+      ? join(resolve(args.artifactsDir), "drift-report.md")
+      : defaultReportOutputPath(projectRoot));
   mkdirSync(dirname(outputPath), { recursive: true });
   const report = buildReport(
     projectRoot,
