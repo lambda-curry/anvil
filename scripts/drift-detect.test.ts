@@ -20,6 +20,7 @@ import {
   normalizePath,
   expandTilde,
   isForeignRuntimePath,
+  isHomeRuntimeStatePath,
   collectFiles,
   compileIgnorePattern,
   loadAnvilIgnore,
@@ -1729,4 +1730,21 @@ describe("isForeignRuntimePath", () => {
     expect(isForeignRuntimePath("docs/guide.md")).toBe(false);
     expect(isForeignRuntimePath("~/saffron/AGENTS.md")).toBe(false);
   });
+});
+
+test("home dotdir paths are runtime state, plain home paths are not", () => {
+  // Measured before adding: 17 `~/.<dotdir>` references across the fleet's rule
+  // files, 12 resolve, and all 5 that do not are caches, credentials or a doc
+  // elision. None is a defect.
+  expect(isHomeRuntimeStatePath("~/.config/qmd-server/registry.json")).toBe(
+    true,
+  );
+  expect(isHomeRuntimeStatePath("~/.cache/huggingface/hub/")).toBe(true);
+  expect(isHomeRuntimeStatePath("~/.openclaw")).toBe(true);
+
+  // The guard: a home path that is NOT a dotdir is ordinary content and stays
+  // reportable — lc-classic-starter's `~/saffron/agents/...` was a real defect.
+  expect(isHomeRuntimeStatePath("~/saffron/agents/meg/charters")).toBe(false);
+  expect(isHomeRuntimeStatePath("~/projects/thing/AGENTS.md")).toBe(false);
+  expect(isHomeRuntimeStatePath("docs/testing.md")).toBe(false);
 });
