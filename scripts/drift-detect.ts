@@ -583,6 +583,23 @@ export function expandTilde(reference: string): string {
     : reference;
 }
 
+/**
+ * Host-local runtime state under a home dotdir: `~/.cache/...`,
+ * `~/.config/qmd-server/registry.json`, `~/.openclaw/agents/...`.
+ *
+ * These are caches, credentials and per-host config that are absent by design on
+ * any machine that has not run the thing yet — the same concept
+ * isForeignRuntimePath already encodes for container paths, in `~` form.
+ *
+ * Measured across the fleet's rule files before adding: 17 such references, 12
+ * resolve, and all 5 that do not are runtime state or a doc elision. None is a
+ * defect. A resolving path is silent either way, so treating the rest as notes
+ * has no false-negative cost on the measured population.
+ */
+export function isHomeRuntimeStatePath(reference: string): boolean {
+  return /^~\/\.[^/]+(?:\/|$)/.test(reference);
+}
+
 export function isForeignRuntimePath(reference: string): boolean {
   if (!reference.startsWith("/")) return false;
   // The running user's own home is never foreign, even inside a container
@@ -611,6 +628,10 @@ function classifyMissingReferenceContext(
 
   if (isForeignRuntimePath(reference)) {
     return `Path reference \`${reference}\` names a container or other-host runtime path; not resolvable here and not treated as drift`;
+  }
+
+  if (isHomeRuntimeStatePath(reference)) {
+    return `Path reference \`${reference}\` names host-local runtime state under a home dotdir; absent by design and not treated as drift`;
   }
 
   if (!isCrossProjectDocSurface(relativeFile)) {
