@@ -856,6 +856,22 @@ function requiresExplicitTier(ruleFile: RuleFile): boolean {
  * Pattern docs and bootstrap templates ship as reference material, so they were
  * never part of the loaded surface.
  */
+/**
+ * Trailing " (excludes N pointer/upstream doc(s))" when any were dropped.
+ *
+ * The signal is not lost, only unscored: a reader still sees that upstream ships
+ * rules we judged low-yield, without a blocking finding we have no standing to act on.
+ */
+function describeLowYieldExemptions(
+  scoringRuleFiles: RuleFile[],
+  candidates: RuleFile[],
+): string {
+  const dropped = scoringRuleFiles.length - candidates.length;
+  return dropped > 0
+    ? ` (excludes ${dropped} pointer/upstream doc${dropped === 1 ? "" : "s"})`
+    : "";
+}
+
 /** Trailing " (+N chain-loaded, +N path-scoped, +N mirror twin)" when non-zero. */
 function describeLazyLoad(load: {
   chainLoadedLines: number;
@@ -2182,8 +2198,18 @@ export function assessStageD(
   // document to score. Note this is scoped to Low-Yield deliberately: the same
   // file still counts toward Context Load Pressure, because Claude really does
   // load the shim in addition to what it imports.
+  // Upstream's rules join pointers here: a finding about the quality of a
+  // vendor's documentation is not actionable, because acting on it means
+  // rewriting a vendor's docs to satisfy our audit. Same justification as the
+  // date exemption — we did not write it.
+  //
+  // Scoped to low-yield deliberately, and NOT to the whole scoring surface.
+  // Upstream's AGENTS.md really is loaded into our sessions, so it still counts
+  // toward Context Load Pressure, redundancy and conflict. Dropping it from
+  // everything would understate load we actually pay, which is the mistake the
+  // pointer exclusion in #41 nearly made.
   const lowYieldCandidates = scoringRuleFiles.filter(
-    (ruleFile) => !ruleFile.importsRootMirror,
+    (ruleFile) => !ruleFile.importsRootMirror && !ruleFile.isUpstreamAuthored,
   );
   const lowYieldRules = lowYieldCandidates.filter(
     (ruleFile) => !ruleFile.hasWhySection || !ruleFile.hasExamplesSection,
@@ -2263,7 +2289,7 @@ export function assessStageD(
       status: lowYieldStatus,
       detail: toolNativeAdvisoryLowYield
         ? `${lowYieldRules}/${lowYieldCandidates.length || 0} scoring files miss Why or Examples; tool-native-first surface keeps this advisory while duplication/conflict/load stay healthy`
-        : `${lowYieldRules}/${lowYieldCandidates.length || 0} scoring files miss Why or Examples`,
+        : `${lowYieldRules}/${lowYieldCandidates.length || 0} scoring files miss Why or Examples${describeLowYieldExemptions(scoringRuleFiles, lowYieldCandidates)}`,
     },
   ];
 
