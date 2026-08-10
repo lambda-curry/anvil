@@ -78,5 +78,52 @@ export function upstreamAuthoredFiles(repoRoot: string): Set<string> {
       authored.add(trimmed);
     }
   }
+
+  for (const path of renamedUpstreamFiles(repoRoot, ref)) {
+    authored.add(path);
+  }
   return authored;
+}
+
+/**
+ * Files we renamed but did not write.
+ *
+ * We rename `CLAUDE.md` to `AGENTS.md` on every fork so Codex can read it, which
+ * gives the file a local commit and no counterpart at its own path upstream —
+ * so path-and-history alone calls upstream's document ours.
+ *
+ * The test is content identity, not a guess about renames: git's blob hash IS
+ * the content, so a file whose blob appears anywhere in the upstream tree
+ * contains zero bytes of ours no matter what it is called. Edit one character
+ * and the hash diverges and the exemption drops. That bound comes from
+ * construction rather than from sample size, which is what separates this from
+ * the basename discriminator that had to be abandoned.
+ */
+function renamedUpstreamFiles(repoRoot: string, ref: string): string[] {
+  const upstreamBlobs = new Set<string>();
+  for (const line of (git(repoRoot, ["ls-tree", "-r", ref]) ?? "").split(
+    "\n",
+  )) {
+    // `<mode> blob <sha>\t<path>`
+    const sha = line.split(/\s+/)[2];
+    if (sha) {
+      upstreamBlobs.add(sha);
+    }
+  }
+  if (upstreamBlobs.size === 0) {
+    return [];
+  }
+
+  const renamed: string[] = [];
+  for (const line of (git(repoRoot, ["ls-tree", "-r", "HEAD"]) ?? "").split(
+    "\n",
+  )) {
+    const parts = line.split("\t");
+    const sha = (parts[0] ?? "").split(/\s+/)[2];
+    const path = (parts[1] ?? "").trim();
+    if (sha && path && upstreamBlobs.has(sha)) {
+      renamed.push(path);
+    }
+  }
+  return renamed;
 }
