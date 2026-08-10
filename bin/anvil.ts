@@ -45,9 +45,15 @@ const SUBCOMMAND_HELP: Record<string, string> = {
     "  --ai-timeout-ms <ms>    Timeout for AI synthesis calls in milliseconds\n" +
     "  --force-stage-b         Run Stage B scoring even when Stage A fails",
   drift:
-    "Usage: anvil drift --target <path> [--skip-dirs dir1,dir2,...] [--output <file>]\n" +
-    "       anvil drift <path> [--skip-dirs dir1,dir2,...] [--output <file>]\n\n" +
-    "Default output: docs/audits/artifacts/<project>-<date>/drift-report.md",
+    "Usage: anvil drift --target <path> [--skip-dirs dir1,dir2,...] [--artifacts-dir <dir>] [--output <file>]\n" +
+    "       anvil drift <path> [--skip-dirs dir1,dir2,...] [--artifacts-dir <dir>] [--output <file>]\n\n" +
+    "Options:\n" +
+    "  --target <path>          Path to the repo to scan (required)\n" +
+    "  --skip-dirs <d1,d2,..>   Comma-separated directory names to exclude from scanning\n" +
+    "  --artifacts-dir <dir>    Write the report into this directory\n" +
+    "  --output <file>          Write the report to this exact path\n\n" +
+    "Default output: ./docs/audits/artifacts/<project>-<date>/drift-report.md,\n" +
+    "relative to your CURRENT DIRECTORY — not to the repo being scanned.",
   bootstrap:
     "Usage: anvil bootstrap --target <path> [--output <file>]\n" +
     "       anvil bootstrap <path> [--output <file>]",
