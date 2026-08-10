@@ -1,6 +1,6 @@
 {
   "name": "@lambdacurry/anvil",
-  "version": "0.1.0-alpha.19",
+  "version": "0.1.0-alpha.20",
   "description": "AI rules + engineering guardrails audit engine for AI-assisted codebases",
   "keywords": [
     "agents",
