@@ -5682,7 +5682,7 @@ export function buildReport(
       for (const finding of result.prMining.findings.slice(0, 10)) {
         const coverage =
           finding.coverageStatus === "match"
-            ? "🟡 signal match"
+            ? "🟢 signal match"
             : finding.coverageStatus === "missing"
               ? "🔴 no signal"
               : "— unknown";

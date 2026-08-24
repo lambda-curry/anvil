@@ -16,9 +16,61 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { detectStack, type StackSignals } from "./bootstrap-detect.ts";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────────
 
-type LoadingTier = "alwaysApply" | "glob" | "on-demand";
+export type LoadingTier = "alwaysApply" | "glob" | "on-demand";
+
+export type TemplateParseIssue = {
+  file: string;
+  reason: string;
+};
+
+export type TemplateParseResult =
+  | { ok: true; template: RuleTemplate }
+  | { ok: false; issue: TemplateParseIssue };
+
+export type TemplateLoadResult = {
+  templates: RuleTemplate[];
+  skipped: TemplateParseIssue[];
+};
+
+export const KNOWN_TEMPLATE_SIGNALS = [
+  "typescript.strict",
+  "typescript.esm",
+  "packageManager:bun",
+  "packageManager:pnpm",
+  "framework:nextjs:app",
+  "ui:react",
+  "orm:prisma",
+  "orm:drizzle",
+  "validation:zod",
+  "testing:vitest",
+  "testing:jest",
+  "styling:tailwind",
+  "general",
+  "testing",
+  "language:typescript",
+] as const;
+
+export type KnownTemplateSignal = (typeof KNOWN_TEMPLATE_SIGNALS)[number];
+
+const KNOWN_SIGNAL_SET = new Set<string>(KNOWN_TEMPLATE_SIGNALS);
+
+const TIER_ALIASES: Record<string, LoadingTier> = {
+  alwaysapply: "alwaysApply",
+  "always-apply": "alwaysApply",
+  "always apply": "alwaysApply",
+  glob: "glob",
+  "glob-matched": "glob",
+  "on-demand": "on-demand",
+  ondemand: "on-demand",
+  "on demand": "on-demand",
+};
+
+export function normalizeLoadingTier(raw: string): LoadingTier | null {
+  const key = raw.trim().toLowerCase();
+  return TIER_ALIASES[key] ?? null;
+}
 
 export type RuleTemplate = {
   id: string;
@@ -282,84 +334,91 @@ const TEMPLATES_DIR = join(
   "bootstrap-templates",
 );
 
-export function parseTemplateFile(filePath: string): RuleTemplate | null {
-  try {
-    const content = readFileSync(filePath, "utf8");
-    const lines = content.split("\n");
+function failTemplate(file: string, reason: string): TemplateParseResult {
+  return { ok: false, issue: { file, reason } };
+}
 
-    // H1 heading → title
-    const titleLine = lines.find((l) => l.startsWith("# "));
-    if (!titleLine) return null;
-    const title = titleLine.replace(/^# /, "").trim();
+export function parseTemplateContent(
+  fileName: string,
+  content: string,
+): TemplateParseResult {
+  const lines = content.split("\n");
 
-    // id from filename
-    const id = basename(filePath, ".md");
+  const titleLine = lines.find((l) => l.startsWith("# "));
+  if (!titleLine) {
+    return failTemplate(fileName, "missing or invalid field: Title (H1)");
+  }
+  const title = titleLine.replace(/^# /, "").trim();
+  const id = basename(fileName, ".md");
 
-    // Signal/Tier/Glob from the italic metadata line
-    const metaLine = lines.find((l) => l.startsWith("*Signal:"));
-    if (!metaLine) return null;
-    const signalMatch = metaLine.match(/Signal:\s*([^·]+)/);
-    const tierMatch = metaLine.match(/Tier:\s*([^·*]+)/);
-    const globMatch = metaLine.match(/Glob:\s*([^*]+)/);
-    if (!signalMatch) return null;
-    const signal = signalMatch[1].trim();
-    const tierRaw = tierMatch ? tierMatch[1].trim() : "alwaysApply";
-    const tier: LoadingTier =
-      tierRaw === "glob"
-        ? "glob"
-        : tierRaw === "on-demand"
-          ? "on-demand"
-          : "alwaysApply";
-    const glob = globMatch
-      ? globMatch[1].trim().replace(/\s*$/, "")
-      : undefined;
+  const metaLine = lines.find((l) => l.startsWith("*Signal:"));
+  if (!metaLine) {
+    return failTemplate(fileName, "missing or invalid field: Signal");
+  }
+  const signalMatch = metaLine.match(/Signal:\s*([^·*]+)/);
+  const tierMatch = metaLine.match(/Tier:\s*([^·*]+)/);
+  const globMatch = metaLine.match(/Glob:\s*([^*]+)/);
+  const signal = signalMatch?.[1]?.trim() ?? "";
+  if (!signal) {
+    return failTemplate(fileName, "missing or invalid field: Signal");
+  }
+  if (!KNOWN_SIGNAL_SET.has(signal)) {
+    return failTemplate(fileName, `unknown Signal: ${signal}`);
+  }
 
-    // Extract sections by heading
-    function extractSection(heading: string): string {
-      const startIdx = lines.findIndex((l) => l.trim() === `## ${heading}`);
-      if (startIdx === -1) return "";
-      const endIdx = lines.findIndex(
-        (l, i) => i > startIdx && l.startsWith("## "),
-      );
-      const sectionLines = lines.slice(
-        startIdx + 1,
-        endIdx === -1 ? undefined : endIdx,
-      );
-      return sectionLines.join("\n").trim();
-    }
+  const tierRaw = tierMatch?.[1]?.trim() ?? "";
+  if (!tierRaw) {
+    return failTemplate(fileName, "missing or invalid field: Tier");
+  }
+  const tier = normalizeLoadingTier(tierRaw);
+  if (!tier) {
+    return failTemplate(fileName, `unknown Tier: ${tierRaw}`);
+  }
 
-    const failureMode = extractSection("Why (Failure Mode)");
-    const rule = extractSection("The Rule");
+  const glob = globMatch ? globMatch[1].trim().replace(/\s*$/, "") : undefined;
 
-    // Extract DO/DON'T examples from code blocks in the Examples section
-    const examplesSection = extractSection("Examples");
-    function extractCodeBlock(
-      text: string,
-      marker: string,
-    ): string | undefined {
-      const markerIdx = text.indexOf(marker);
-      if (markerIdx === -1) return undefined;
-      const afterMarker = text.slice(markerIdx + marker.length);
-      const codeStart = afterMarker.indexOf("```");
-      if (codeStart === -1) return undefined;
-      const codeEnd = afterMarker.indexOf("```", codeStart + 3);
-      if (codeEnd === -1) return undefined;
-      return afterMarker
-        .slice(codeStart + 3, codeEnd)
-        .replace(/^[a-z]*\n/, "")
-        .trim();
-    }
-    const doExample = extractCodeBlock(examplesSection, "### ✅ DO");
-    const dontExample = extractCodeBlock(examplesSection, "### ❌ DON'T");
+  function extractSection(heading: string): string {
+    const startIdx = lines.findIndex((l) => l.trim() === `## ${heading}`);
+    if (startIdx === -1) return "";
+    const endIdx = lines.findIndex(
+      (l, i) => i > startIdx && l.startsWith("## "),
+    );
+    const sectionLines = lines.slice(
+      startIdx + 1,
+      endIdx === -1 ? undefined : endIdx,
+    );
+    return sectionLines.join("\n").trim();
+  }
 
-    // See Also
-    const seeAlsoSection = extractSection("See Also");
-    const seeAlso = seeAlsoSection
-      .split("\n")
-      .map((l) => l.replace(/^- /, "").trim())
-      .filter((l) => l.length > 0);
+  const failureMode = extractSection("Why (Failure Mode)");
+  const rule = extractSection("The Rule");
 
-    return {
+  const examplesSection = extractSection("Examples");
+  function extractCodeBlock(text: string, marker: string): string | undefined {
+    const markerIdx = text.indexOf(marker);
+    if (markerIdx === -1) return undefined;
+    const afterMarker = text.slice(markerIdx + marker.length);
+    const codeStart = afterMarker.indexOf("```");
+    if (codeStart === -1) return undefined;
+    const codeEnd = afterMarker.indexOf("```", codeStart + 3);
+    if (codeEnd === -1) return undefined;
+    return afterMarker
+      .slice(codeStart + 3, codeEnd)
+      .replace(/^[a-z]*\n/, "")
+      .trim();
+  }
+  const doExample = extractCodeBlock(examplesSection, "### ✅ DO");
+  const dontExample = extractCodeBlock(examplesSection, "### ❌ DON'T");
+
+  const seeAlsoSection = extractSection("See Also");
+  const seeAlso = seeAlsoSection
+    .split("\n")
+    .map((l) => l.replace(/^- /, "").trim())
+    .filter((l) => l.length > 0);
+
+  return {
+    ok: true,
+    template: {
       id,
       title,
       signal,
@@ -370,38 +429,71 @@ export function parseTemplateFile(filePath: string): RuleTemplate | null {
       tier,
       glob: glob && glob !== "—" ? glob : undefined,
       seeAlso: seeAlso.length > 0 ? seeAlso : undefined,
-    };
+    },
+  };
+}
+
+export function parseTemplateFile(filePath: string): TemplateParseResult {
+  try {
+    return parseTemplateContent(
+      basename(filePath),
+      readFileSync(filePath, "utf8"),
+    );
+  } catch (err) {
+    return failTemplate(
+      basename(filePath),
+      `unreadable template: ${(err as Error).message}`,
+    );
+  }
+}
+
+export const DOCUMENTED_TEMPLATE_EXCLUSIONS: ReadonlyArray<{
+  file: string;
+  reason: string;
+}> = [];
+
+export function loadTemplateCatalog(
+  templatesDir = TEMPLATES_DIR,
+): TemplateLoadResult {
+  if (!existsSync(templatesDir)) {
+    return { templates: [], skipped: [] };
+  }
+  try {
+    const files = readdirSync(templatesDir)
+      .filter((f) => f.endsWith(".md"))
+      .sort();
+    if (files.length === 0) return { templates: [], skipped: [] };
+    const templates: RuleTemplate[] = [];
+    const skipped: TemplateParseIssue[] = [];
+    const documented = new Map(
+      DOCUMENTED_TEMPLATE_EXCLUSIONS.map((entry) => [entry.file, entry.reason]),
+    );
+    for (const file of files) {
+      const documentedReason = documented.get(file);
+      if (documentedReason) {
+        skipped.push({ file, reason: documentedReason });
+        continue;
+      }
+      const parsed = parseTemplateFile(join(templatesDir, file));
+      if (parsed.ok) {
+        templates.push(parsed.template);
+      } else {
+        skipped.push(parsed.issue);
+      }
+    }
+    return { templates, skipped };
   } catch {
-    return null;
+    return { templates: [], skipped: [] };
   }
 }
 
 export function loadTemplatesFromFiles(): RuleTemplate[] {
-  if (!existsSync(TEMPLATES_DIR)) {
-    return [];
-  }
-  try {
-    const files = readdirSync(TEMPLATES_DIR)
-      .filter((f) => f.endsWith(".md"))
-      .sort();
-    if (files.length === 0) return [];
-    const templates: RuleTemplate[] = [];
-    for (const file of files) {
-      const parsed = parseTemplateFile(join(TEMPLATES_DIR, file));
-      if (parsed) {
-        templates.push(parsed);
-      }
-    }
-    return templates;
-  } catch {
-    return [];
-  }
+  return loadTemplateCatalog().templates;
 }
 
-// Load templates: from files if available, fall back to hardcoded
-const fileTemplates = loadTemplatesFromFiles();
-const RULE_TEMPLATES: RuleTemplate[] =
-  fileTemplates.length > 0 ? fileTemplates : RULE_TEMPLATES_HARDCODED;
+export function formatTemplateSkip(issue: TemplateParseIssue): string {
+  return `${issue.file}: ${issue.reason}`;
+}
 
 // ─── Signal matching ──────────────────────────────────────────────────────────
 
@@ -425,6 +517,10 @@ export function matchesSignal(
   if (sig === "testing:vitest") return signals.testing === "vitest";
   if (sig === "testing:jest") return signals.testing === "jest";
   if (sig === "styling:tailwind") return signals.styling.includes("tailwind");
+  if (sig === "testing") return signals.testing !== null;
+  if (sig === "language:typescript") return signals.typescript.present;
+  // Match-all: stack-independent hygiene that should be suggested for every project.
+  if (sig === "general") return true;
 
   return false;
 }
@@ -680,8 +776,10 @@ export async function main() {
     process.exit(1);
   }
 
-  // Match templates to detected signals
-  const matched = RULE_TEMPLATES.filter((t) => matchesSignal(t, signals));
+  const catalog = loadTemplateCatalog();
+  const activeTemplates =
+    catalog.templates.length > 0 ? catalog.templates : RULE_TEMPLATES_HARDCODED;
+  const matched = activeTemplates.filter((t) => matchesSignal(t, signals));
 
   const draft = buildDraft(signals, matched);
 
@@ -709,7 +807,7 @@ export async function main() {
   await Bun.write(outPath, draft);
 
   const templateSource =
-    fileTemplates.length > 0
+    catalog.templates.length > 0
       ? `files (${TEMPLATES_DIR})`
       : "hardcoded fallback";
   console.log(`Bootstrap draft written: ${outPath}`);
@@ -717,53 +815,55 @@ export async function main() {
     `Stack signals detected: ${signals.ui.length > 0 ? signals.ui.join(", ") : "—"} | ${signals.framework} | ${signals.packageManager}`,
   );
   console.log(
-    `Rules generated: ${matched.length} of ${RULE_TEMPLATES.length} templates matched (source: ${templateSource})`,
+    `Rules generated: ${matched.length} of ${activeTemplates.length} templates matched (source: ${templateSource})`,
   );
   console.log(`Matched: ${matched.map((r) => r.id).join(", ") || "(none)"}`);
+  if (catalog.skipped.length > 0) {
+    console.warn(
+      `Skipped templates (${catalog.skipped.length}): ${catalog.skipped.map(formatTemplateSkip).join("; ")}`,
+    );
+  }
 
-  // Detect stub/placeholder project and advise re-run
-  if (matched.length < 3) {
-    // Check for placeholder scripts ("echo 'TODO'") across package.json files (root + workspaces)
-    const pkgFiles = [join(root, "package.json")];
-    // Also check workspace sub-packages up to 2 levels deep
-    for (const dir of ["apps", "packages", "src"]) {
-      const subDir = join(root, dir);
-      if (existsSync(subDir)) {
-        try {
-          const { readdirSync } = await import("node:fs");
-          for (const entry of readdirSync(subDir)) {
-            pkgFiles.push(join(subDir, entry, "package.json"));
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-    }
-
-    let totalStubs = 0;
-    for (const pkgPath of pkgFiles) {
-      if (!existsSync(pkgPath)) {
-        continue;
-      }
+  // Detect stub/placeholder project and advise re-run. This is independent of
+  // how many templates matched — match-all `general` rules would otherwise hide stubs.
+  const pkgFiles = [join(root, "package.json")];
+  for (const dir of ["apps", "packages", "src"]) {
+    const subDir = join(root, dir);
+    if (existsSync(subDir)) {
       try {
-        const pkg = JSON.parse(await Bun.file(pkgPath).text());
-        const scripts: Record<string, string> = pkg.scripts ?? {};
-        totalStubs += Object.values(scripts).filter(
-          (s) => typeof s === "string" && /echo\s+['"]?TODO/i.test(s),
-        ).length;
+        const { readdirSync } = await import("node:fs");
+        for (const entry of readdirSync(subDir)) {
+          pkgFiles.push(join(subDir, entry, "package.json"));
+        }
       } catch {
         /* ignore */
       }
     }
+  }
 
-    if (totalStubs > 0) {
-      console.log(
-        `\n⚠️  Stub scripts detected: ${totalStubs} placeholder(s) found (echo 'TODO...') across workspace packages.`,
-      );
-      console.log(
-        "   Re-run bootstrap-generate.ts after wiring the real tech stack for fuller rule coverage.",
-      );
+  let totalStubs = 0;
+  for (const pkgPath of pkgFiles) {
+    if (!existsSync(pkgPath)) {
+      continue;
     }
+    try {
+      const pkg = JSON.parse(await Bun.file(pkgPath).text());
+      const scripts: Record<string, string> = pkg.scripts ?? {};
+      totalStubs += Object.values(scripts).filter(
+        (s) => typeof s === "string" && /echo\s+['"]?TODO/i.test(s),
+      ).length;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  if (totalStubs > 0) {
+    console.log(
+      `\n⚠️  Stub scripts detected: ${totalStubs} placeholder(s) found (echo 'TODO...') across workspace packages.`,
+    );
+    console.log(
+      "   Re-run bootstrap-generate.ts after wiring the real tech stack for fuller rule coverage.",
+    );
   }
 }
 

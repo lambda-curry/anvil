@@ -217,7 +217,7 @@ Remaining score delta is near-max: enforcement layer (0.8/1). Treat it as option
 | `docs/bootstrap-templates/pnpm-commands.md` | anvil-bootstrap-template | governance | ✅ | 39 | ✅ | ✅ | ✅ | ✅ |
 | `docs/bootstrap-templates/prisma-migrations.md` | anvil-bootstrap-template | governance | ✅ | 43 | ✅ | ✅ | ✅ | ✅ |
 | `docs/bootstrap-templates/react-hooks-deps.md` | anvil-bootstrap-template | governance | ✅ | 41 | ✅ | ✅ | ✅ | ✅ |
-| `docs/bootstrap-templates/scope-boundaries.md` | anvil-bootstrap-template | governance | ✅ | 161 | ✅ | ✅ | ✅ | ✅ |
+| `docs/bootstrap-templates/scope-boundaries.md` | anvil-bootstrap-template | governance | ✅ | 162 | ✅ | ✅ | ✅ | ✅ |
 | `docs/bootstrap-templates/security-patterns.md` | anvil-bootstrap-template | governance | ✅ | 82 | ✅ | ✅ | ✅ | ✅ |
 | `docs/bootstrap-templates/tailwind-no-inline-styles.md` | anvil-bootstrap-template | governance | ✅ | 38 | ✅ | ✅ | ✅ | ✅ |
 | `docs/bootstrap-templates/testing-patterns.md` | anvil-bootstrap-template | governance | ✅ | 136 | ✅ | ✅ | ✅ | ✅ |
@@ -237,7 +237,7 @@ Canonical governance surface:
 - `docs/bootstrap-templates/pnpm-commands.md` (39 lines)
 - `docs/bootstrap-templates/prisma-migrations.md` (43 lines)
 - `docs/bootstrap-templates/react-hooks-deps.md` (41 lines)
-- `docs/bootstrap-templates/scope-boundaries.md` (161 lines)
+- `docs/bootstrap-templates/scope-boundaries.md` (162 lines)
 - `docs/bootstrap-templates/security-patterns.md` (82 lines)
 - `docs/bootstrap-templates/tailwind-no-inline-styles.md` (38 lines)
 - `docs/bootstrap-templates/testing-patterns.md` (136 lines)
@@ -341,11 +341,11 @@ PRs analyzed: 43 · Comments reviewed: 37 · Substantive comments: 37 · Candida
 
 | Theme | Frequency | PR Spread | Severity | Rule Signal Match | Comment Alignment |
 |-------|-----------|-----------|----------|-------------------|------------------|
-| Naming | 12 comments | 6 PRs (high) | medium | 🟡 signal match | 100% strong |
-| Testing | 7 comments | 5 PRs (high) | medium | 🟡 signal match | 100% strong |
-| Error Handling | 3 comments | 3 PRs (medium) | medium | 🟡 signal match | 100% strong |
-| Documentation | 5 comments | 2 PRs (medium) | low | 🟡 signal match | 100% strong |
-| Types | 3 comments | 1 PRs (low) | medium | 🟡 signal match | 100% strong |
+| Naming | 12 comments | 6 PRs (high) | medium | 🟢 signal match | 100% strong |
+| Testing | 7 comments | 5 PRs (high) | medium | 🟢 signal match | 100% strong |
+| Error Handling | 3 comments | 3 PRs (medium) | medium | 🟢 signal match | 100% strong |
+| Documentation | 5 comments | 2 PRs (medium) | low | 🟢 signal match | 100% strong |
+| Types | 3 comments | 1 PRs (low) | medium | 🟢 signal match | 100% strong |
 
 
 ## Rule Portfolio Actions
