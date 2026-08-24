@@ -8,4 +8,5 @@ description = "Docs that intentionally contain example or archived sample creden
 paths = [
   '''(?:^|/)docs/audits/artifacts/''',
   '''(?:^|/)docs/bootstrap-templates/security-patterns\.md$''',
+  '''(?:^|/)scripts/__tests__/golden/bootstrap-generate\.sample-cli\.md$''',
 ]
