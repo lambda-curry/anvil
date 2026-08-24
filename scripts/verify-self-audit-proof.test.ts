@@ -887,13 +887,13 @@ test("a new PR-mined theme row is not a determinism failure", () => {
   // commit, the rows shifted, and "Documentation" was compared against a newly
   // inserted "Error Handling".
   const checkedIn = MINED_TABLE(
-    `| Naming | 9 comments | 3 PRs (medium) | low | 🟡 signal match | 100% strong |
-| Documentation | 5 comments | 2 PRs (medium) | low | 🟡 signal match | 100% strong |`,
+    `| Naming | 9 comments | 3 PRs (medium) | low | 🟢 signal match | 100% strong |
+| Documentation | 5 comments | 2 PRs (medium) | low | 🟢 signal match | 100% strong |`,
   );
   const fresh = MINED_TABLE(
-    `| Naming | 11 comments | 5 PRs (high) | medium | 🟡 signal match | 100% strong |
-| Error Handling | 3 comments | 3 PRs (medium) | medium | 🟡 signal match | 100% strong |
-| Documentation | 5 comments | 2 PRs (medium) | low | 🟡 signal match | 100% strong |`,
+    `| Naming | 11 comments | 5 PRs (high) | medium | 🟢 signal match | 100% strong |
+| Error Handling | 3 comments | 3 PRs (medium) | medium | 🟢 signal match | 100% strong |
+| Documentation | 5 comments | 2 PRs (medium) | low | 🟢 signal match | 100% strong |`,
   );
 
   expect(compareSelfAuditReports(checkedIn, fresh).failures).toEqual([]);
@@ -903,7 +903,7 @@ test("the mined table disappearing entirely is still a failure", () => {
   // The line held deliberately: rows changing is churn and normalizes away, but
   // the table vanishing means mining itself broke, and that should stay loud.
   const checkedIn = MINED_TABLE(
-    `| Naming | 9 comments | 3 PRs (medium) | low | 🟡 signal match | 100% strong |`,
+    `| Naming | 9 comments | 3 PRs (medium) | low | 🟢 signal match | 100% strong |`,
   );
   const fresh = MINED_TABLE("");
 
@@ -916,7 +916,7 @@ test("a real scoring change is still caught through the mined table", () => {
   // The guard: normalizing live PR data must not blind the proof to the
   // deterministic surface it exists to protect.
   const checkedIn = MINED_TABLE(
-    `| Naming | 9 comments | 3 PRs (medium) | low | 🟡 signal match | 100% strong |`,
+    `| Naming | 9 comments | 3 PRs (medium) | low | 🟢 signal match | 100% strong |`,
   );
   const fresh = checkedIn.replace("Issues found | none", "Issues found | 3");
 

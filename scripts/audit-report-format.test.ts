@@ -1587,6 +1587,87 @@ test("Heuristic empty state does not invent weak lanes when all scores are alrea
   );
 });
 
+test("PR mining table uses pass/partial/fail colors for rule signal match", () => {
+  const report = buildReport(
+    makeResult({
+      prMining: {
+        status: "available",
+        repo: "lambda-curry/anvil",
+        reason: null,
+        analyzedPrs: 4,
+        reviewedComments: 12,
+        substantiveComments: 8,
+        candidateCount: 3,
+        artifactPath: null,
+        findings: [
+          {
+            theme: "naming",
+            label: "Naming",
+            frequency: 4,
+            score: 2,
+            uniquePrs: 2,
+            severity: "low",
+            representativeness: "medium",
+            coverageStatus: "match",
+            commentAlignmentRate: 1,
+            commentAlignmentStatus: "strong",
+            samplePaths: ["src/names.ts"],
+          },
+          {
+            theme: "error-handling",
+            label: "Error Handling",
+            frequency: 3,
+            score: 2,
+            uniquePrs: 2,
+            severity: "medium",
+            representativeness: "medium",
+            coverageStatus: "missing",
+            commentAlignmentRate: 0.2,
+            commentAlignmentStatus: "weak",
+            samplePaths: ["src/errors.ts"],
+          },
+          {
+            theme: "general",
+            label: "General",
+            frequency: 2,
+            score: 1,
+            uniquePrs: 1,
+            severity: "low",
+            representativeness: "low",
+            coverageStatus: "unknown",
+            commentAlignmentRate: 0,
+            commentAlignmentStatus: "unknown",
+            samplePaths: [],
+          },
+        ],
+      },
+    }),
+  );
+
+  assert(
+    report.includes(
+      "| Naming | 4 comments | 2 PRs (medium) | low | 🟢 signal match | 100% strong |",
+    ),
+    "successful signal matches render as green pass",
+  );
+  assert(
+    report.includes(
+      "| Error Handling | 3 comments | 2 PRs (medium) | medium | 🔴 no signal | 20% weak |",
+    ),
+    "missing signal matches render as red failure",
+  );
+  assert(
+    report.includes(
+      "| General | 2 comments | 1 PRs (low) | low | — unknown | — unknown |",
+    ),
+    "unknown coverage stays unlabeled instead of yellow",
+  );
+  assert(
+    !report.includes("🟡 signal match"),
+    "does not paint a successful match as degraded yellow",
+  );
+});
+
 test("Diagnostic navigation stage-status line points to process stages when blockers exist", () => {
   const report = buildReport(
     makeResult({

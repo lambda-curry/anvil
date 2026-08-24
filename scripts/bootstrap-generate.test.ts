@@ -55,7 +55,16 @@ function restoreAll() {
 }
 
 // Import after mocks are set up
-import { main } from "./bootstrap-generate.ts";
+import {
+  DOCUMENTED_TEMPLATE_EXCLUSIONS,
+  formatTemplateSkip,
+  loadTemplateCatalog,
+  main,
+  matchesSignal,
+  normalizeLoadingTier,
+  parseTemplateContent,
+} from "./bootstrap-generate.ts";
+import type { StackSignals } from "./bootstrap-detect.ts";
 
 const FIXTURES_DIR = resolve(import.meta.dir, "__fixtures__");
 const SAMPLE_CLI = join(FIXTURES_DIR, "sample-cli-repo");
@@ -422,5 +431,124 @@ describe("bootstrap-generate main()", () => {
       process.argv = originalArgv;
       rmSync(tmp, { recursive: true, force: true });
     }
+  });
+});
+
+function emptySignals(): StackSignals {
+  return {
+    projectName: "empty",
+    projectPath: "/tmp/empty",
+    packageManager: "npm",
+    runtime: "node",
+    framework: "none",
+    frameworkVersion: null,
+    routerType: "unknown",
+    ui: [],
+    styling: [],
+    orm: null,
+    validation: [],
+    testing: null,
+    typescript: { present: false, strict: false, paths: false, esm: false },
+    configFiles: [],
+    dirPatterns: [],
+    scripts: {},
+    dependencies: [],
+    devDependencies: [],
+  };
+}
+
+describe("bootstrap template inventory and vocabulary", () => {
+  test("loads all 18 templates or only documented exclusions", () => {
+    const catalog = loadTemplateCatalog();
+    const loadedIds = catalog.templates.map((template) => template.id).sort();
+    const skippedFiles = catalog.skipped.map((issue) => issue.file).sort();
+    const documented = DOCUMENTED_TEMPLATE_EXCLUSIONS.map(
+      (entry) => entry.file,
+    ).sort();
+
+    expect(loadedIds.length + skippedFiles.length).toBe(18);
+    expect(skippedFiles).toEqual(documented);
+    expect(loadedIds).toContain("scope-boundaries");
+    expect(loadedIds).toContain("performance-measure-before-optimize");
+  });
+
+  test("onDemand alias is on-demand, never alwaysApply", () => {
+    expect(normalizeLoadingTier("onDemand")).toBe("on-demand");
+    expect(normalizeLoadingTier("on-demand")).toBe("on-demand");
+    expect(normalizeLoadingTier("glob-matched")).toBe("glob");
+    expect(normalizeLoadingTier("mystery-tier")).toBeNull();
+
+    const parsed = parseTemplateContent(
+      "performance-measure-before-optimize.md",
+      [
+        "# Performance work must start with measurement",
+        "",
+        "*Signal: general · Tier: onDemand · Glob: —*",
+        "",
+        "## Why (Failure Mode)",
+        "",
+        "Measure first.",
+        "",
+        "## The Rule",
+        "",
+        "Do not optimize from vibes.",
+      ].join("\n"),
+    );
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.template.tier).toBe("on-demand");
+      expect(parsed.template.signal).toBe("general");
+    }
+  });
+
+  test("unknown tier and missing signal produce named diagnostics", () => {
+    const unknownTier = parseTemplateContent(
+      "mystery.md",
+      ["# Mystery", "", "*Signal: general · Tier: nightly · Glob: —*"].join(
+        "\n",
+      ),
+    );
+    expect(unknownTier.ok).toBe(false);
+    if (!unknownTier.ok) {
+      expect(formatTemplateSkip(unknownTier.issue)).toBe(
+        "mystery.md: unknown Tier: nightly",
+      );
+    }
+
+    const missingSignal = parseTemplateContent(
+      "scope-boundaries.md",
+      ["# Scope", "", "*Last validated: 2026-05-27*"].join("\n"),
+    );
+    expect(missingSignal.ok).toBe(false);
+    if (!missingSignal.ok) {
+      expect(formatTemplateSkip(missingSignal.issue)).toBe(
+        "scope-boundaries.md: missing or invalid field: Signal",
+      );
+    }
+
+    const unknownSignal = parseTemplateContent(
+      "odd.md",
+      ["# Odd", "", "*Signal: mystery · Tier: alwaysApply · Glob: —*"].join(
+        "\n",
+      ),
+    );
+    expect(unknownSignal.ok).toBe(false);
+    if (!unknownSignal.ok) {
+      expect(formatTemplateSkip(unknownSignal.issue)).toBe(
+        "odd.md: unknown Signal: mystery",
+      );
+    }
+  });
+
+  test("general is an explicit match-all signal", () => {
+    const template = {
+      id: "security-patterns",
+      title: "Security",
+      signal: "general",
+      failureMode: "x",
+      rule: "y",
+      tier: "alwaysApply" as const,
+    };
+    expect(matchesSignal(template, emptySignals())).toBe(true);
   });
 });

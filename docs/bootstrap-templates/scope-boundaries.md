@@ -1,5 +1,6 @@
 # Bootstrap Template: Scope Boundaries
 
+*Signal: general · Tier: alwaysApply · Glob: —*
 *Last validated: 2026-05-27 · Author: Scout/Anvil · Status: Active*
 *Sources: Concentrix "12 Failure Patterns" (Nov 2025), 12-Factor Agents Factor 12, Gartner 2027 cancellation data*
 
