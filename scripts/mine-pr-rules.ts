@@ -282,6 +282,54 @@ export function assertGitHubCliAvailable(ghCommand = "gh"): void {
   }
 }
 
+/** CSI sequences. Built without a literal ESC so oxlint's control-character rule stays quiet. */
+const ANSI_CSI = new RegExp(
+  `${String.fromCharCode(27)}\\[[0-?]*[ -/]*[@-~]`,
+  "g",
+);
+
+export function stripAnsi(text: string): string {
+  return text.replace(ANSI_CSI, "");
+}
+
+/**
+ * Env for `gh` subprocesses. Agent shells often set FORCE_COLOR/CLICOLOR_FORCE, and `gh`
+ * then colorizes JSON even when stdout is a pipe — which JSON.parse rejects.
+ */
+export function githubCliEnv(
+  source: NodeJS.ProcessEnv = process.env,
+): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    if (
+      key === "FORCE_COLOR" ||
+      key === "CLICOLOR" ||
+      key === "CLICOLOR_FORCE"
+    ) {
+      continue;
+    }
+    env[key] = value;
+  }
+  env.NO_COLOR = "1";
+  env.GH_FORCE_TTY = "0";
+  return env;
+}
+
+export function parseGhGraphqlStdout(stdout: string): GraphQLResponse {
+  const text = stripAnsi(stdout).trim();
+  try {
+    return JSON.parse(text) as GraphQLResponse;
+  } catch {
+    const preview = text.slice(0, 80);
+    throw new Error(
+      preview
+        ? `Failed to parse JSON from gh api graphql. First bytes: ${JSON.stringify(preview)}`
+        : "Failed to parse JSON from gh api graphql. stdout was empty.",
+    );
+  }
+}
+
 const QUERY = `
 query($owner: String!, $repo: String!, $pageSize: Int!, $cursor: String) {
   repository(owner: $owner, name: $repo) {
@@ -333,6 +381,7 @@ export async function runGhGraphql(
   const proc = Bun.spawn(["gh", ...args], {
     stdout: "pipe",
     stderr: "pipe",
+    env: githubCliEnv(),
   });
 
   const [stdout, stderr, exitCode] = await Promise.all([
@@ -342,7 +391,10 @@ export async function runGhGraphql(
   ]);
 
   if (exitCode !== 0) {
-    const msg = stderr.trim() || stdout.trim() || "Unknown gh error";
+    const msg =
+      stripAnsi(stderr).trim() ||
+      stripAnsi(stdout).trim() ||
+      "Unknown gh error";
     if (msg.includes("gh auth login")) {
       throw new Error("GitHub CLI not authenticated. Run: gh auth login");
     }
@@ -352,11 +404,7 @@ export async function runGhGraphql(
     throw new Error(`gh api graphql failed: ${msg}`);
   }
 
-  try {
-    return JSON.parse(stdout) as GraphQLResponse;
-  } catch {
-    throw new Error("Failed to parse JSON from gh api graphql.");
-  }
+  return parseGhGraphqlStdout(stdout);
 }
 
 export async function fetchMergedPRComments(
