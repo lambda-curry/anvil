@@ -1,4 +1,5 @@
 import { type Dirent, existsSync, readdirSync, readFileSync } from "node:fs";
+import { todayEpochMs } from "./clock.ts";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import type { AuditConfig } from "./audit-config.ts";
 
@@ -731,7 +732,7 @@ function parseValidationDate(content: string): string | null {
 function ageDays(dateText: string): number | null {
   const date = new Date(`${dateText}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return null;
-  return Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.floor((todayEpochMs() - date.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function scoreDriftResilience(

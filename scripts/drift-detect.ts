@@ -19,6 +19,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { execSync } from "node:child_process";
+import { todayIso } from "./lib/clock.ts";
 import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { discoverRuleSurfaceFiles } from "./lib/rule-surface.ts";
@@ -136,7 +137,7 @@ const ANVIL_IGNORE_FILE = ".anvilignore";
 let SKIP_DIRS = DEFAULT_SKIP_DIRS;
 
 function defaultReportOutputPath(projectRoot: string): string {
-  const date = new Date().toISOString().split("T")[0];
+  const date = todayIso();
   const projectName = resolveProjectName(projectRoot);
   return join(
     process.cwd(),
@@ -1049,7 +1050,7 @@ export function daysSince(dateText: string): number | null {
   if (Number.isNaN(date.getTime())) {
     return null;
   }
-  const now = new Date();
+  const now = new Date(`${todayIso()}T00:00:00Z`);
   const diffMs = now.getTime() - date.getTime();
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
@@ -1370,7 +1371,7 @@ export function buildReport(
   scopeCount?: number,
 ): string {
   const projectName = resolveProjectName(projectRoot);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   const counts = countByType(issues);
   const brokenSymlinkCount = countBrokenSymlinkIssues(issues);
 

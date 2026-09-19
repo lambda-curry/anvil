@@ -272,7 +272,26 @@ export function retainVerificationBundle(
   }
 }
 
-export function runFreshAudit(outputPath: string): void {
+/**
+ * The checked-in packet was generated on its embedded date. Pinning the fresh
+ * rerun to that same date keeps the comparison deterministic against the wall
+ * clock: the audit reproduces exactly what the packet recorded, no matter how
+ * many days have passed (a faked +30 or +60 day clock still passes).
+ */
+export function pinnedClockEnvForPacket(
+  reportText: string,
+): Record<string, string> {
+  const match = reportText.match(REPORT_DATE_PATTERN);
+  if (!match) {
+    return {};
+  }
+  return { ANVIL_FAKE_TODAY: match[1] };
+}
+
+export function runFreshAudit(
+  outputPath: string,
+  env: Record<string, string> = {},
+): void {
   const audit = Bun.spawnSync({
     cmd: [
       "bun",
@@ -285,6 +304,7 @@ export function runFreshAudit(outputPath: string): void {
       outputPath,
     ],
     cwd: REPO_ROOT,
+    env: { ...process.env, ...env },
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -311,10 +331,10 @@ export function main(): void {
   const tempDirectory = mkdtempSync(join(tmpdir(), "anvil-self-audit-"));
   const freshPath = join(tempDirectory, "self-audit.md");
 
-  try {
-    runFreshAudit(freshPath);
+  const checkedInText = readFileSync(defaultCheckedInReport, "utf8");
 
-    const checkedInText = readFileSync(defaultCheckedInReport, "utf8");
+  try {
+    runFreshAudit(freshPath, pinnedClockEnvForPacket(checkedInText));
     const freshText = readFileSync(freshPath, "utf8");
     const result = compareSelfAuditReports(checkedInText, freshText);
     const checkedInReportDatePathFailure = validateCheckedInReportDatePath(

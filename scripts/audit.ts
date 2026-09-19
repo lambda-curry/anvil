@@ -60,6 +60,7 @@ import {
   type GuardrailScoreResult,
   scoreGuardrails,
 } from "./lib/guardrail-score.ts";
+import { todayIso } from "./lib/clock.ts";
 import { discoverRuleSurfaceFiles } from "./lib/rule-surface.ts";
 import {
   buildMarkdown as buildPrMiningMarkdown,
@@ -5862,7 +5863,7 @@ export async function runAudit(args: ParsedArgs): Promise<AuditResult> {
   }
 
   const projectName = resolveProjectName(projectRoot, args.projectName);
-  const auditDate = new Date().toISOString().split("T")[0];
+  const auditDate = todayIso();
 
   let auditConfig: AuditConfigLoadResult;
   try {

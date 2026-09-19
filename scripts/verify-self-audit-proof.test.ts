@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
   existsSync,
   mkdtempSync,
@@ -18,6 +18,7 @@ import {
   parseCliOptions,
   retainVerificationBundle,
   runFreshAudit,
+  pinnedClockEnvForPacket,
   validateCheckedInReportDatePath,
 } from "./verify-self-audit-proof.ts";
 
@@ -923,4 +924,52 @@ test("a real scoring change is still caught through the mined table", () => {
   expect(
     compareSelfAuditReports(checkedIn, fresh).failures.length,
   ).toBeGreaterThan(0);
+});
+
+describe("synthetic clock advance (SFD-387)", () => {
+  const packetText = readFileSync(defaultCheckedInReport, "utf8");
+
+  test("packet pins the clock to its embedded date", () => {
+    expect(pinnedClockEnvForPacket(packetText).ANVIL_FAKE_TODAY).toBe(
+      "2026-08-09",
+    );
+  });
+
+  test("verifier passes with a faked +30 day wall clock", () => {
+    const previous = process.env.ANVIL_FAKE_TODAY;
+    process.env.ANVIL_FAKE_TODAY = "2026-09-08"; // packet date + 30 days
+    try {
+      const tempDirectory = mkdtempSync(
+        join(tmpdir(), "anvil-self-audit-clock30-"),
+      );
+      const freshPath = join(tempDirectory, "self-audit.md");
+      runFreshAudit(freshPath, pinnedClockEnvForPacket(packetText));
+      const freshText = readFileSync(freshPath, "utf8");
+      const result = compareSelfAuditReports(packetText, freshText);
+      expect(result.failures).toEqual([]);
+      rmSync(tempDirectory, { recursive: true, force: true });
+    } finally {
+      if (previous === undefined) delete process.env.ANVIL_FAKE_TODAY;
+      else process.env.ANVIL_FAKE_TODAY = previous;
+    }
+  });
+
+  test("verifier passes with a faked +60 day wall clock", () => {
+    const previous = process.env.ANVIL_FAKE_TODAY;
+    process.env.ANVIL_FAKE_TODAY = "2026-10-08"; // packet date + 60 days
+    try {
+      const tempDirectory = mkdtempSync(
+        join(tmpdir(), "anvil-self-audit-clock60-"),
+      );
+      const freshPath = join(tempDirectory, "self-audit.md");
+      runFreshAudit(freshPath, pinnedClockEnvForPacket(packetText));
+      const freshText = readFileSync(freshPath, "utf8");
+      const result = compareSelfAuditReports(packetText, freshText);
+      expect(result.failures).toEqual([]);
+      rmSync(tempDirectory, { recursive: true, force: true });
+    } finally {
+      if (previous === undefined) delete process.env.ANVIL_FAKE_TODAY;
+      else process.env.ANVIL_FAKE_TODAY = previous;
+    }
+  });
 });
