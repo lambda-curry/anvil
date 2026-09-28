@@ -468,7 +468,14 @@ test("git subcommands the allowlist covers are spelled the way git accepts them"
     if (subcommand === "lfs" || subcommand === "ls-remote") {
       continue; // needs an external tool / network
     }
-    const probe = git(repo, [subcommand, "--help"]);
-    expect(`${subcommand}:${probe.status === 0}`).toBe(`${subcommand}:true`);
+    // `--help` delegates to the platform man viewer, which is absent in some
+    // otherwise-valid consumer environments. `-h` prints built-in usage.
+    const probe = git(repo, [subcommand, "-h"]);
+    const printsGitUsage = /usage: git /.test(
+      `${probe.stdout}\n${probe.stderr}`,
+    );
+    expect(
+      `${subcommand}:${probe.status === 0 || (probe.status === 129 && printsGitUsage)}`,
+    ).toBe(`${subcommand}:true`);
   }
 });
